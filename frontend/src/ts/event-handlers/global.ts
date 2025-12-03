@@ -2,7 +2,7 @@ import * as Misc from "../utils/misc";
 import * as PageTransition from "../states/page-transition";
 import Config from "../config";
 import * as TestWords from "../test/test-words";
-import * as Commandline from "../commandline/commandline";
+// import * as Commandline from "../commandline/commandline";
 import * as Notifications from "../elements/notifications";
 import * as ActivePage from "../states/active-page";
 import { ModifierKeys } from "../constants/modifier-keys";
@@ -51,7 +51,7 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     const popupVisible = Misc.isAnyPopupVisible();
     if (!popupVisible) {
-      Commandline.show();
+      // Commandline.show();
     }
   }
 
