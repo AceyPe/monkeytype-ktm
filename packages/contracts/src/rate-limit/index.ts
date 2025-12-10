@@ -386,6 +386,12 @@ export const limits = {
     window: "hour",
     max: 60,
   },
+
+  // Contact Routing
+  contactSend: {
+    window: "hour",
+    max: 5,
+  },
 } satisfies Record<string, RateLimitOptions>;
 
 export type RateLimiterId = keyof typeof limits;
