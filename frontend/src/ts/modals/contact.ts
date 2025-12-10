@@ -8,12 +8,14 @@ import { InputIndicator } from "../elements/input-indicator";
 import { z } from "zod";
 import * as Notifications from "../elements/notifications";
 import * as Loader from "../elements/loader";
+import Ape from "../ape";
 
 let select: SlimSelect | undefined = undefined;
 let nameIndicator: InputIndicator | undefined = undefined;
 let emailIndicator: InputIndicator | undefined = undefined;
 let contactTypeIndicator: InputIndicator | undefined = undefined;
 let messageIndicator: InputIndicator | undefined = undefined;
+type QuestionType = "Feedback" | "Bug Report" | "Suggestion" | "Other";
 
 const nameSchema = z
   .string()
@@ -66,8 +68,11 @@ async function submitContactForm(
   const contactTypeSelect = modalEl.querySelector(
     "select[name='contactType']",
   ) as HTMLSelectElement;
+  const selectedOption = select?.getSelected()[0] as
+    | { value: string }
+    | undefined;
   const contactType =
-    select?.getSelected()[0]?.valueOf || contactTypeSelect?.value || "";
+    (selectedOption?.value as QuestionType) || contactTypeSelect?.value || "";
   const message = (formData.get("message") as string)?.trim() || "";
 
   // Validate all fields and show indicators
@@ -142,29 +147,29 @@ async function submitContactForm(
   Loader.show();
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    // const response = await Ape.contact.send({
-    //   body: {
-    //     name,
-    //     email,
-    //     contactType,
-    //     message,
-    //   },
-    // });
-    // if (response.status === 200 && response.body.data?.success) {
-    //   Notifications.add("Message sent successfully!", 1);
-    //   form.reset();
-    //   nameIndicator?.hide();
-    //   emailIndicator?.hide();
-    //   contactTypeIndicator?.hide();
-    //   messageIndicator?.hide();
-    //   void modal.hide();
-    // } else {
-    //   // Handle error responses (non-200 status codes)
-    //   const errorMessage =
-    //     (response.body as { message?: string })?.message ||
-    //     `Failed to send message (status: ${response.status}). Please try again.`;
-    //   Notifications.add(errorMessage, -1);
-    // }
+    const response = await Ape.contact.send({
+      body: {
+        name,
+        email,
+        contactType,
+        message,
+      },
+    });
+    if (response.status === 200 && response.body.data?.success) {
+      Notifications.add("Message sent successfully!", 1);
+      form.reset();
+      nameIndicator?.hide();
+      emailIndicator?.hide();
+      contactTypeIndicator?.hide();
+      messageIndicator?.hide();
+      void modal.hide();
+    } else {
+      // Handle error responses (non-200 status codes)
+      const errorMessage =
+        (response.body as { message?: string })?.message ||
+        `Failed to send message (status: ${response.status}). Please try again.`;
+      Notifications.add(errorMessage, -1);
+    }
   } catch (error) {
     // This catch block handles network errors, timeouts, etc.
     console.error("Contact form error:", error);
@@ -299,9 +304,16 @@ export function show(): void {
       // Handle form submission
       const form = modalEl.querySelector(".contactForm") as HTMLFormElement;
       if (form) {
+        // Remove action and method attributes if they exist (defensive)
+        form.removeAttribute("action");
+        form.removeAttribute("method");
+
         form.addEventListener("submit", async (e) => {
           e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
           await submitContactForm(form, modalEl);
+          return false;
         });
       }
     },
