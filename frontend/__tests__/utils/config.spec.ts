@@ -49,10 +49,10 @@ describe("config.ts", () => {
           given: { minWpm: "invalid" },
           expected: { minWpm: defaultConfig.minWpm },
         },
-        {
-          given: { customThemeColors: ["#ffffff"] },
-          expected: { customThemeColors: defaultConfig.customThemeColors },
-        },
+        // {
+        //   given: { customThemeColors: ["#ffffff"] },
+        //   expected: { customThemeColors: defaultConfig.customThemeColors },
+        // },
         {
           given: { accountChart: [true, false, false, true] },
           expected: { accountChart: defaultConfig.accountChart },

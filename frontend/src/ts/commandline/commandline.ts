@@ -562,8 +562,9 @@ async function updateActiveCommand(): Promise<void> {
 
   clearFontPreview();
   if (
-    command.id?.startsWith("changeTheme") ||
-    command.id?.startsWith("setCustomThemeId")
+    command.id?.startsWith("changeTheme")
+    // ||
+    // command.id?.startsWith("setCustomThemeId")
   ) {
     removeCommandlineBackground();
   } else {

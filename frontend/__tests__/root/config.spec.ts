@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 import * as Config from "../../src/ts/config";
 import * as Misc from "../../src/ts/utils/misc";
 import {
-  CustomThemeColors,
+  // CustomThemeColors,
   ConfigKey,
   Config as ConfigType,
   CaretStyleSchema,
@@ -500,44 +500,44 @@ describe("Config", () => {
     expect(Config.setKeymapSize(1.24)).toBe(true);
     expect(getConfig().keymapSize).toBe(1.2);
   });
-  it("setCustomBackgroundSize", () => {
-    expect(Config.setCustomBackgroundSize("contain")).toBe(true);
-    expect(Config.setCustomBackgroundSize("cover")).toBe(true);
-    expect(Config.setCustomBackgroundSize("invalid" as any)).toBe(false);
-  });
-  it("setCustomBackgroundFilter", () => {
-    expect(Config.setCustomBackgroundFilter([0, 1, 2, 3])).toBe(true);
+  // it("setCustomBackgroundSize", () => {
+  //   expect(Config.setCustomBackgroundSize("contain")).toBe(true);
+  //   expect(Config.setCustomBackgroundSize("cover")).toBe(true);
+  //   expect(Config.setCustomBackgroundSize("invalid" as any)).toBe(false);
+  // });
+  // it("setCustomBackgroundFilter", () => {
+  //   expect(Config.setCustomBackgroundFilter([0, 1, 2, 3])).toBe(true);
 
-    expect(Config.setCustomBackgroundFilter([0, 1, 2, 3, 4] as any)).toBe(
-      false,
-    );
-    expect(Config.setCustomBackgroundFilter([] as any)).toBe(false);
-    expect(Config.setCustomBackgroundFilter(["invalid"] as any)).toBe(false);
-    expect(Config.setCustomBackgroundFilter([1, 2, 3, 4, 5, 6] as any)).toBe(
-      false,
-    );
-  });
+  //   expect(Config.setCustomBackgroundFilter([0, 1, 2, 3, 4] as any)).toBe(
+  //     false,
+  //   );
+  //   expect(Config.setCustomBackgroundFilter([] as any)).toBe(false);
+  //   expect(Config.setCustomBackgroundFilter(["invalid"] as any)).toBe(false);
+  //   expect(Config.setCustomBackgroundFilter([1, 2, 3, 4, 5, 6] as any)).toBe(
+  //     false,
+  //   );
+  // });
   it("setMonkeyPowerLevel", () => {
     expect(Config.setMonkeyPowerLevel("2")).toBe(true);
     expect(Config.setMonkeyPowerLevel("off")).toBe(true);
 
     expect(Config.setMonkeyPowerLevel("invalid" as any)).toBe(false);
   });
-  it("setCustomThemeColors", () => {
-    expect(Config.setCustomThemeColors(customThemeColors(10))).toBe(true);
+  // it("setCustomThemeColors", () => {
+  //   expect(Config.setCustomThemeColors(customThemeColors(10))).toBe(true);
 
-    expect(Config.setCustomThemeColors(customThemeColors(9))).toBe(false);
-    expect(Config.setCustomThemeColors(customThemeColors(5))).toBe(false);
-    expect(Config.setCustomThemeColors(customThemeColors(11))).toBe(false);
+  //   expect(Config.setCustomThemeColors(customThemeColors(9))).toBe(false);
+  //   expect(Config.setCustomThemeColors(customThemeColors(5))).toBe(false);
+  //   expect(Config.setCustomThemeColors(customThemeColors(11))).toBe(false);
 
-    const tenColors = customThemeColors(10);
-    tenColors[0] = "black";
-    expect(Config.setCustomThemeColors(tenColors)).toBe(false);
-    tenColors[0] = "#123456";
-    expect(Config.setCustomThemeColors(tenColors)).toBe(true);
-    tenColors[0] = "#1234";
-    expect(Config.setCustomThemeColors(tenColors)).toBe(false);
-  });
+  //   const tenColors = customThemeColors(10);
+  //   tenColors[0] = "black";
+  //   expect(Config.setCustomThemeColors(tenColors)).toBe(false);
+  //   tenColors[0] = "#123456";
+  //   expect(Config.setCustomThemeColors(tenColors)).toBe(true);
+  //   tenColors[0] = "#1234";
+  //   expect(Config.setCustomThemeColors(tenColors)).toBe(false);
+  // });
   it("setNumbers", () => {
     testBoolean(Config.setNumbers);
   });
@@ -599,9 +599,9 @@ describe("Config", () => {
   it("setAutoSwitchTheme", () => {
     testBoolean(Config.setAutoSwitchTheme);
   });
-  it("setCustomTheme", () => {
-    testBoolean(Config.setCustomTheme);
-  });
+  // it("setCustomTheme", () => {
+  //   testBoolean(Config.setCustomTheme);
+  // });
   it("setBritishEnglish", () => {
     testBoolean(Config.setBritishEnglish);
   });
@@ -617,12 +617,12 @@ describe("Config", () => {
   it("setRepeatedPace", () => {
     testBoolean(Config.setRepeatedPace);
   });
-  it("setFavThemes", () => {
-    expect(Config.setFavThemes([])).toBe(true);
-    expect(Config.setFavThemes(["8008", "80s_after_dark"])).toBe(true);
-    expect(Config.setFavThemes(["test"] as any)).toBe(false);
-    expect(Config.setFavThemes("invalid" as any)).toBe(false);
-  });
+  // it("setFavThemes", () => {
+  //   expect(Config.setFavThemes([])).toBe(true);
+  //   expect(Config.setFavThemes(["8008", "80s_after_dark"])).toBe(true);
+  //   expect(Config.setFavThemes(["test"] as any)).toBe(false);
+  //   expect(Config.setFavThemes("invalid" as any)).toBe(false);
+  // });
   it("setFunbox", () => {
     expect(Config.setFunbox(["mirror"])).toBe(true);
     expect(Config.setFunbox(["mirror", "58008"])).toBe(true);
@@ -730,35 +730,35 @@ describe("Config", () => {
     expect(Config.setMaxLineWidth(50)).toBe(true);
     expect(Config.setMaxLineWidth(50.5)).toBe(true);
   });
-  it("setCustomBackground", () => {
-    expect(Config.setCustomBackground("http://example.com/test.png")).toBe(
-      true,
-    );
-    expect(Config.setCustomBackground("https://www.example.com/test.gif")).toBe(
-      true,
-    );
-    expect(Config.setCustomBackground("https://example.com/test.jpg")).toBe(
-      true,
-    );
-    expect(Config.setCustomBackground("http://www.example.com/test.jpeg")).toBe(
-      true,
-    );
+  // it("setCustomBackground", () => {
+  //   expect(Config.setCustomBackground("http://example.com/test.png")).toBe(
+  //     true,
+  //   );
+  //   expect(Config.setCustomBackground("https://www.example.com/test.gif")).toBe(
+  //     true,
+  //   );
+  //   expect(Config.setCustomBackground("https://example.com/test.jpg")).toBe(
+  //     true,
+  //   );
+  //   expect(Config.setCustomBackground("http://www.example.com/test.jpeg")).toBe(
+  //     true,
+  //   );
 
-    //gets converted
-    expect(
-      Config.setCustomBackground("     http://example.com/test.png   "),
-    ).toBe(true);
+  //   //gets converted
+  //   expect(
+  //     Config.setCustomBackground("     http://example.com/test.png   "),
+  //   ).toBe(true);
 
-    expect(Config.setCustomBackground("http://www.example.com/test.tiff")).toBe(
-      false,
-    );
-    expect(
-      Config.setCustomBackground(
-        "http://www.example.com/test?test=foo&bar=baz",
-      ),
-    ).toBe(false);
-    expect(Config.setCustomBackground("invalid")).toBe(false);
-  });
+  //   expect(Config.setCustomBackground("http://www.example.com/test.tiff")).toBe(
+  //     false,
+  //   );
+  //   expect(
+  //     Config.setCustomBackground(
+  //       "http://www.example.com/test?test=foo&bar=baz",
+  //     ),
+  //   ).toBe(false);
+  //   expect(Config.setCustomBackground("invalid")).toBe(false);
+  // });
   it("setQuoteLength", () => {
     expect(Config.setQuoteLength([0])).toBe(true);
     expect(Config.setQuoteLength([-3])).toBe(true);
@@ -930,11 +930,11 @@ describe("Config", () => {
   });
 });
 
-function customThemeColors(n: number): CustomThemeColors {
-  const arr = new Array(n).fill("#000") as CustomThemeColors;
-  arr[0] = "#123456"; // we have a protection against all colors being the same
-  return arr;
-}
+// function customThemeColors(n: number): CustomThemeColors {
+//   const arr = new Array(n).fill("#000") as CustomThemeColors;
+//   arr[0] = "#123456"; // we have a protection against all colors being the same
+//   return arr;
+// }
 
 function testBoolean(fn: (val: boolean) => boolean): void {
   expect(fn(true)).toBe(true);

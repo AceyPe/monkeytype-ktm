@@ -1,28 +1,29 @@
 import Config, * as UpdateConfig from "../../config";
-import * as ThemeController from "../../controllers/theme-controller";
+// import * as ThemeController from "../../controllers/theme-controller";
 import * as Misc from "../../utils/misc";
 import * as Colors from "../../utils/colors";
 import * as Notifications from "../notifications";
-import * as ThemeColors from "../theme-colors";
-import * as ChartController from "../../controllers/chart-controller";
-import * as Loader from "../loader";
+// import * as ThemeColors from "../theme-colors";
+// import * as ChartController from "../../controllers/chart-controller";
+// import * as Loader from "../loader";
 import * as DB from "../../db";
 import * as ConfigEvent from "../../observables/config-event";
 import { isAuthenticated } from "../../firebase";
 import * as ActivePage from "../../states/active-page";
-import { CustomThemeColors, ThemeName } from "@monkeytype/schemas/configs";
+// CustomThemeColors,
+import { ThemeName } from "@monkeytype/schemas/configs";
 import { captureException } from "../../sentry";
 import { ThemesListSorted } from "../../constants/themes";
 
 function updateActiveButton(): void {
   let activeThemeName: string = Config.theme;
-  if (
-    Config.randomTheme !== "off" &&
-    Config.randomTheme !== "custom" &&
-    ThemeController.randomTheme !== null
-  ) {
-    activeThemeName = ThemeController.randomTheme;
-  }
+  // if (
+  //   // Config.randomTheme !== "off" &&
+  //   // Config.randomTheme !== "custom" &&
+  //   ThemeController.randomTheme !== null
+  // ) {
+  //   activeThemeName = ThemeController.randomTheme;
+  // }
 
   document
     .querySelectorAll(".pageSettings .section.themes .theme")
@@ -138,59 +139,59 @@ export async function fillPresetButtons(): Promise<void> {
   favThemesEl.innerHTML = "";
   themesEl.innerHTML = "";
 
-  let favThemesElHTML = "";
+  // let favThemesElHTML = "";
   let themesElHTML = "";
 
   let activeThemeName: string = Config.theme;
-  if (
-    Config.randomTheme !== "off" &&
-    Config.randomTheme !== "custom" &&
-    ThemeController.randomTheme !== null
-  ) {
-    activeThemeName = ThemeController.randomTheme;
-  }
+  // if (
+  //   // Config.randomTheme !== "off" &&
+  //   // Config.randomTheme !== "custom" &&
+  //   // ThemeController.randomTheme !== null
+  // ) {
+  //   activeThemeName = ThemeController.randomTheme;
+  // }
 
   const themes = ThemesListSorted;
 
   //first show favourites
-  if (Config.favThemes.length > 0) {
-    favThemesEl.style.marginBottom = "1rem";
-    for (const theme of themes) {
-      if (Config.favThemes.includes(theme.name)) {
-        const activeTheme = activeThemeName === theme.name ? "active" : "";
-        favThemesElHTML += `<div class="theme button ${activeTheme}" theme='${
-          theme.name
-        }' style="background: ${theme.bgColor}; color: ${
-          theme.mainColor
-        };outline: 0 solid ${theme.mainColor};">
-          <div class="favButton active"><i class="fas fa-star"></i></div>
-          <div class="text">${theme.name.replace(/_/g, " ")}</div>
-          <div class="themeBubbles" style="background: ${
-            theme.bgColor
-          };outline: 0.25rem solid ${theme.bgColor};">
-            <div class="themeBubble" style="background: ${
-              theme.mainColor
-            }"></div>
-            <div class="themeBubble" style="background: ${
-              theme.subColor
-            }"></div>
-            <div class="themeBubble" style="background: ${
-              theme.textColor
-            }"></div>
-          </div>
-          </div>
-          `;
-      }
-    }
-    favThemesEl.innerHTML = favThemesElHTML;
-  } else {
-    favThemesEl.style.marginBottom = "0";
-  }
+  // if (Config.favThemes.length > 0) {
+  //   favThemesEl.style.marginBottom = "1rem";
+  //   for (const theme of themes) {
+  //     if (Config.favThemes.includes(theme.name)) {
+  //       const activeTheme = activeThemeName === theme.name ? "active" : "";
+  //       favThemesElHTML += `<div class="theme button ${activeTheme}" theme='${
+  //         theme.name
+  //       }' style="background: ${theme.bgColor}; color: ${
+  //         theme.mainColor
+  //       };outline: 0 solid ${theme.mainColor};">
+  //         <div class="favButton active"><i class="fas fa-star"></i></div>
+  //         <div class="text">${theme.name.replace(/_/g, " ")}</div>
+  //         <div class="themeBubbles" style="background: ${
+  //           theme.bgColor
+  //         };outline: 0.25rem solid ${theme.bgColor};">
+  //           <div class="themeBubble" style="background: ${
+  //             theme.mainColor
+  //           }"></div>
+  //           <div class="themeBubble" style="background: ${
+  //             theme.subColor
+  //           }"></div>
+  //           <div class="themeBubble" style="background: ${
+  //             theme.textColor
+  //           }"></div>
+  //         </div>
+  //         </div>
+  //         `;
+  //     }
+  //   }
+  //   favThemesEl.innerHTML = favThemesElHTML;
+  // } else {
+  //   favThemesEl.style.marginBottom = "0";
+  // }
   //then the rest
   for (const theme of themes) {
-    if (Config.favThemes.includes(theme.name)) {
-      continue;
-    }
+    // if (Config.favThemes.includes(theme.name)) {
+    //   continue;
+    // }
 
     const activeTheme = activeThemeName === theme.name ? "active" : "";
     themesElHTML += `<div class="theme button ${activeTheme}" theme='${
@@ -256,76 +257,75 @@ export async function fillCustomButtons(): Promise<void> {
   }
 }
 
-export function setCustomInputs(noThemeUpdate = false): void {
-  $(
-    ".pageSettings .section.themes .tabContainer .customTheme .colorPicker",
-  ).each((_index, element: HTMLElement) => {
-    const currentColor = Config.customThemeColors[
-      ThemeController.colorVars.indexOf(
-        $(element).find("input.color").attr("id") as string,
-      )
-    ] as string;
-    updateColors($(element), currentColor, false, noThemeUpdate);
-  });
-}
+// export function setCustomInputs(noThemeUpdate = false): void {
+//   $(
+//     ".pageSettings .section.themes .tabContainer .customTheme .colorPicker",
+//   ).each((_index, element: HTMLElement) => {
+//     const currentColor = Config.customThemeColors[
+//       ThemeController.colorVars.indexOf(
+//         $(element).find("input.color").attr("id") as string,
+//       )
+//     ] as string;
+//     updateColors($(element), currentColor, false, noThemeUpdate);
+//   });
+// }
 
-function toggleFavourite(themeName: ThemeName): void {
-  if (Config.favThemes.includes(themeName)) {
-    // already favourite, remove
-    UpdateConfig.setFavThemes(Config.favThemes.filter((t) => t !== themeName));
-  } else {
-    // add to favourites
-    const newList: ThemeName[] = Config.favThemes;
-    newList.push(themeName);
-    UpdateConfig.setFavThemes(newList);
-  }
-  UpdateConfig.saveFullConfigToLocalStorage();
-}
+// function toggleFavourite(themeName: ThemeName): void {
+//   if (Config.favThemes.includes(themeName)) {
+//     // already favourite, remove
+//     UpdateConfig.setFavThemes(Config.favThemes.filter((t) => t !== themeName));
+//   } else {
+//     // add to favourites
+//     const newList: ThemeName[] = Config.favThemes;
+//     newList.push(themeName);
+//     UpdateConfig.setFavThemes(newList);
+//   }
+//   UpdateConfig.saveFullConfigToLocalStorage();
+// }
 
-function saveCustomThemeColors(): void {
-  const newColors: string[] = [];
-  for (const color of ThemeController.colorVars) {
-    newColors.push(
-      $(`.pageSettings .tabContent.customTheme #${color}[type='color']`).attr(
-        "value",
-      ) as string,
-    );
-  }
-  UpdateConfig.setCustomThemeColors(newColors as CustomThemeColors);
-  Notifications.add("Custom theme saved", 1);
-}
+// function saveCustomThemeColors(): void {
+//   const newColors: string[] = [];
+//   for (const color of ThemeController.colorVars) {
+//     newColors.push(
+//       $(`.pageSettings .tabContent.customTheme #${color}[type='color']`).attr(
+//         "value",
+//       ) as string,
+//     );
+//   }
+//   // UpdateConfig.setCustomThemeColors(newColors as CustomThemeColors);
+//   // Notifications.add("Custom theme saved", 1);
+// }
 
 export function updateActiveTab(): void {
   // Set force to true only when some change for the active tab has taken place
   // Prevent theme buttons from being added twice by doing an update only when the state has changed
   $(".pageSettings .section.themes .tabs button").removeClass("active");
   $(
-    `.pageSettings .section.themes .tabs button[data-tab="${
-      Config.customTheme ? "custom" : "preset"
-    }"]`,
+    `.pageSettings .section.themes .tabs button[data-tab="${"preset"}"]`,
   ).addClass("active");
 
-  if (Config.customTheme) {
-    void Misc.swapElements(
-      document.querySelector(
-        '.pageSettings [tabContent="preset"]',
-      ) as HTMLElement,
-      document.querySelector(
-        '.pageSettings [tabContent="custom"]',
-      ) as HTMLElement,
-      250,
-    );
-  } else {
-    void Misc.swapElements(
-      document.querySelector(
-        '.pageSettings [tabContent="custom"]',
-      ) as HTMLElement,
-      document.querySelector(
-        '.pageSettings [tabContent="preset"]',
-      ) as HTMLElement,
-      250,
-    );
-  }
+  // if (Config.customTheme) {
+  //   void Misc.swapElements(
+  //     document.querySelector(
+  //       '.pageSettings [tabContent="preset"]',
+  //     ) as HTMLElement,
+  //     document.querySelector(
+  //       '.pageSettings [tabContent="custom"]',
+  //     ) as HTMLElement,
+  //     250,
+  //   );
+  // }
+  // else {
+  void Misc.swapElements(
+    document.querySelector(
+      '.pageSettings [tabContent="custom"]',
+    ) as HTMLElement,
+    document.querySelector(
+      '.pageSettings [tabContent="preset"]',
+    ) as HTMLElement,
+    250,
+  );
+  // }
 }
 
 // separated to avoid repeated calls
@@ -343,34 +343,34 @@ $(".pageSettings .section.themes .tabs button").on("click", (e) => {
   $target.addClass("active");
   // setCustomInputs();
   //test
-  if ($target.attr("data-tab") === "preset") {
-    UpdateConfig.setCustomTheme(false);
-  } else {
-    UpdateConfig.setCustomTheme(true);
-  }
+  // if ($target.attr("data-tab") === "preset") {
+  //   UpdateConfig.setCustomTheme(false);
+  // } else {
+  //   UpdateConfig.setCustomTheme(true);
+  // }
 });
 
-// Handle click on custom theme button
-$(".pageSettings").on("click", " .section.themes .customTheme.button", (e) => {
-  // Do not apply if user wanted to delete it
-  if ($(e.target).hasClass("delButton")) return;
-  if ($(e.target).hasClass("editButton")) return;
-  const customThemeId = $(e.currentTarget).attr("customThemeId") ?? "";
-  const theme = DB.getSnapshot()?.customThemes?.find(
-    (e) => e._id === customThemeId,
-  );
+// // Handle click on custom theme button
+// $(".pageSettings").on("click", " .section.themes .customTheme.button", (e) => {
+//   // Do not apply if user wanted to delete it
+//   if ($(e.target).hasClass("delButton")) return;
+//   if ($(e.target).hasClass("editButton")) return;
+//   const customThemeId = $(e.currentTarget).attr("customThemeId") ?? "";
+//   const theme = DB.getSnapshot()?.customThemes?.find(
+//     (e) => e._id === customThemeId,
+//   );
 
-  if (theme === undefined) {
-    //this shouldnt happen but typescript needs this check
-    console.error(
-      "Could not find custom theme in snapshot for id ",
-      customThemeId,
-    );
-    return;
-  }
+//   if (theme === undefined) {
+//     //this shouldnt happen but typescript needs this check
+//     console.error(
+//       "Could not find custom theme in snapshot for id ",
+//       customThemeId,
+//     );
+//     return;
+//   }
 
-  UpdateConfig.setCustomThemeColors(theme.colors);
-});
+//   // UpdateConfig.setCustomThemeColors(theme.colors);
+// });
 
 // Handle click on favorite preset theme button
 $(".pageSettings").on("click", ".section.themes .theme .favButton", (e) => {
@@ -378,7 +378,7 @@ $(".pageSettings").on("click", ".section.themes .theme .favButton", (e) => {
     .parents(".theme.button")
     .attr("theme") as ThemeName;
   if (theme !== undefined) {
-    toggleFavourite(theme);
+    // toggleFavourite(theme);
   } else {
     console.error(
       "Could not find the theme attribute attached to the button clicked!",
@@ -432,69 +432,69 @@ $(".pageSettings .section.themes .tabContainer .customTheme input.input")
     }
   });
 
-$(".pageSettings #loadCustomColorsFromPreset").on("click", async () => {
-  // previewTheme(Config.theme);
-  // $("#currentTheme").attr("href", `themes/${Config.theme}.css`);
-  await ThemeController.loadStyle(Config.theme);
+// $(".pageSettings #loadCustomColorsFromPreset").on("click", async () => {
+//   // previewTheme(Config.theme);
+//   // $("#currentTheme").attr("href", `themes/${Config.theme}.css`);
+//   await ThemeController.loadStyle(Config.theme);
 
-  ThemeController.colorVars.forEach((e) => {
-    document.documentElement.style.setProperty(e, "");
-  });
+//   ThemeController.colorVars.forEach((e) => {
+//     document.documentElement.style.setProperty(e, "");
+//   });
 
-  // setTimeout(async () => {
-  ChartController.updateAllChartColors();
+//   // setTimeout(async () => {
+//   ChartController.updateAllChartColors();
 
-  const themeColors = await ThemeColors.getAll();
+//   const themeColors = await ThemeColors.getAll();
 
-  ThemeController.colorVars.forEach((colorName) => {
-    let color;
-    if (colorName === "--bg-color") {
-      color = themeColors.bg;
-    } else if (colorName === "--main-color") {
-      color = themeColors.main;
-    } else if (colorName === "--sub-color") {
-      color = themeColors.sub;
-    } else if (colorName === "--sub-alt-color") {
-      color = themeColors.subAlt;
-    } else if (colorName === "--caret-color") {
-      color = themeColors.caret;
-    } else if (colorName === "--text-color") {
-      color = themeColors.text;
-    } else if (colorName === "--error-color") {
-      color = themeColors.error;
-    } else if (colorName === "--error-extra-color") {
-      color = themeColors.errorExtra;
-    } else if (colorName === "--colorful-error-color") {
-      color = themeColors.colorfulError;
-    } else if (colorName === "--colorful-error-extra-color") {
-      color = themeColors.colorfulErrorExtra;
-    }
+//   ThemeController.colorVars.forEach((colorName) => {
+//     let color;
+//     if (colorName === "--bg-color") {
+//       color = themeColors.bg;
+//     } else if (colorName === "--main-color") {
+//       color = themeColors.main;
+//     } else if (colorName === "--sub-color") {
+//       color = themeColors.sub;
+//     } else if (colorName === "--sub-alt-color") {
+//       color = themeColors.subAlt;
+//     } else if (colorName === "--caret-color") {
+//       color = themeColors.caret;
+//     } else if (colorName === "--text-color") {
+//       color = themeColors.text;
+//     } else if (colorName === "--error-color") {
+//       color = themeColors.error;
+//     } else if (colorName === "--error-extra-color") {
+//       color = themeColors.errorExtra;
+//     } else if (colorName === "--colorful-error-color") {
+//       color = themeColors.colorfulError;
+//     } else if (colorName === "--colorful-error-extra-color") {
+//       color = themeColors.colorfulErrorExtra;
+//     }
 
-    updateColors($(".colorPicker #" + colorName).parent(), color as string);
-  });
-  // }, 250);
-});
+//     updateColors($(".colorPicker #" + colorName).parent(), color as string);
+//   });
+//   // }, 250);
+// });
 
-$(".pageSettings #saveCustomThemeButton").on("click", async () => {
-  saveCustomThemeColors();
-  if (isAuthenticated()) {
-    const newCustomTheme = {
-      name: "custom",
-      colors: Config.customThemeColors,
-    };
+// $(".pageSettings #saveCustomThemeButton").on("click", async () => {
+//   // saveCustomThemeColors();
+//   if (isAuthenticated()) {
+//     // const newCustomTheme = {
+//     //   name: "custom",
+//     //   // colors: Config.customThemeColors,
+//     // };
 
-    Loader.show();
-    await DB.addCustomTheme(newCustomTheme);
-    Loader.hide();
-  }
-  void fillCustomButtons();
-});
+//     Loader.show();
+//     // await DB.addCustomTheme(newCustomTheme);
+//     Loader.hide();
+//   }
+//   void fillCustomButtons();
+// });
 
 ConfigEvent.subscribe((eventKey) => {
   if (eventKey === "theme" && ActivePage.get() === "settings") {
     updateActiveButton();
   }
-  if (eventKey === "favThemes" && ActivePage.get() === "settings") {
-    void fillPresetButtons();
-  }
+  // if (eventKey === "favThemes" && ActivePage.get() === "settings") {
+  //   void fillPresetButtons();
+  // }
 });
