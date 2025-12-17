@@ -59,9 +59,9 @@ describe("config.ts", () => {
         },
         {
           given: {
-            favThemes: ["nord", "invalid", "serika_dark", "invalid2", "8008"],
+            favThemes: ["nord", "invalid", "dark", "invalid2", "8008"],
           },
-          expected: { favThemes: ["nord", "serika_dark", "8008"] },
+          expected: { favThemes: ["nord", "dark", "8008"] },
         },
       ])(`$given`, ({ given, expected }) => {
         const description = `given: ${JSON.stringify(

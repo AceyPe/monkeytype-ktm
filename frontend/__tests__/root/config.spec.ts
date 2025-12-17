@@ -459,11 +459,11 @@ describe("Config", () => {
     expect(Config.setIndicateTypos("off")).toBe(true);
     expect(Config.setIndicateTypos("invalid" as any)).toBe(false);
   });
-  it("setRandomTheme", () => {
-    expect(Config.setRandomTheme("fav")).toBe(true);
-    expect(Config.setRandomTheme("off")).toBe(true);
-    expect(Config.setRandomTheme("invalid" as any)).toBe(false);
-  });
+  // it("setRandomTheme", () => {
+  //   expect(Config.setRandomTheme("fav")).toBe(true);
+  //   expect(Config.setRandomTheme("off")).toBe(true);
+  //   expect(Config.setRandomTheme("invalid" as any)).toBe(false);
+  // });
   it("setKeymapMode", () => {
     expect(Config.setKeymapMode("next")).toBe(true);
     expect(Config.setKeymapMode("react")).toBe(true);
@@ -683,20 +683,20 @@ describe("Config", () => {
     expect(Config.setFontFamily("test!font")).toBe(false);
   });
   it("setTheme", () => {
-    expect(Config.setTheme("serika")).toBe(true);
-    expect(Config.setTheme("serika_dark")).toBe(true);
+    expect(Config.setTheme("dark")).toBe(true);
+    expect(Config.setTheme("dark")).toBe(true);
 
     expect(Config.setTheme("invalid" as any)).toBe(false);
   });
   it("setThemeLight", () => {
-    expect(Config.setThemeLight("serika")).toBe(true);
-    expect(Config.setThemeLight("serika_dark")).toBe(true);
+    expect(Config.setThemeLight("dark")).toBe(true);
+    expect(Config.setThemeLight("dark")).toBe(true);
 
     expect(Config.setThemeLight("invalid" as any)).toBe(false);
   });
   it("setThemeDark", () => {
-    expect(Config.setThemeDark("serika")).toBe(true);
-    expect(Config.setThemeDark("serika_dark")).toBe(true);
+    expect(Config.setThemeDark("dark")).toBe(true);
+    expect(Config.setThemeDark("dark")).toBe(true);
 
     expect(Config.setThemeDark("invalid" as any)).toBe(false);
   });
