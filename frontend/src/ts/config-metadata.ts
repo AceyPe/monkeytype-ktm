@@ -1,5 +1,5 @@
 import { checkCompatibility } from "@monkeytype/funbox";
-import * as DB from "./db";
+// import * as DB from "./db";
 import * as Notifications from "./elements/notifications";
 import { isAuthenticated } from "./firebase";
 import { canSetFunboxWithConfig } from "./test/funbox/funbox-validation";
@@ -7,7 +7,7 @@ import { isDevEnvironment, reloadAfter } from "./utils/misc";
 import * as ConfigSchemas from "@monkeytype/schemas/configs";
 import { roundTo1 } from "@monkeytype/util/numbers";
 import { capitalizeFirstLetter } from "./utils/strings";
-import { getDefaultConfig } from "./constants/default-config";
+// import { getDefaultConfig } from "./constants/default-config";
 // type SetBlock = {
 //   [K in keyof ConfigSchemas.Config]?: ConfigSchemas.Config[K][];
 // };
@@ -623,24 +623,24 @@ export const configMetadata: ConfigMetadataObject = {
     displayString: "colorful mode",
     changeRequiresRestart: false,
   },
-  customBackground: {
-    icon: "fa-link",
-    displayString: "URL background",
-    changeRequiresRestart: false,
-    overrideValue: ({ value }) => {
-      return value.trim();
-    },
-  },
-  customBackgroundSize: {
-    icon: "fa-image",
-    displayString: "custom background size",
-    changeRequiresRestart: false,
-  },
-  customBackgroundFilter: {
-    icon: "fa-image",
-    displayString: "custom background filter",
-    changeRequiresRestart: false,
-  },
+  // customBackground: {
+  //   icon: "fa-link",
+  //   displayString: "URL background",
+  //   changeRequiresRestart: false,
+  //   overrideValue: ({ value }) => {
+  //     return value.trim();
+  //   },
+  // },
+  // customBackgroundSize: {
+  //   icon: "fa-image",
+  //   displayString: "custom background size",
+  //   changeRequiresRestart: false,
+  // },
+  // customBackgroundFilter: {
+  //   icon: "fa-image",
+  //   displayString: "custom background filter",
+  //   changeRequiresRestart: false,
+  // },
   autoSwitchTheme: {
     icon: "fa-palette",
     displayString: "auto switch theme",
@@ -656,70 +656,70 @@ export const configMetadata: ConfigMetadataObject = {
     displayString: "theme dark",
     changeRequiresRestart: false,
   },
-  randomTheme: {
-    icon: "fa-palette",
-    changeRequiresRestart: false,
-    displayString: "random theme",
-    isBlocked: ({ value }) => {
-      if (value === "custom") {
-        const snapshot = DB.getSnapshot();
-        if (!isAuthenticated()) {
-          Notifications.add(
-            "Random theme 'custom' is unavailable without an account",
-            0,
-          );
-          return true;
-        }
-        if (!snapshot) {
-          Notifications.add(
-            "Random theme 'custom' requires a snapshot to be set",
-            0,
-          );
-          return true;
-        }
-        if (snapshot?.customThemes?.length === 0) {
-          Notifications.add(
-            "Random theme 'custom' requires at least one custom theme to be saved",
-            0,
-          );
-          return true;
-        }
-      }
-      return false;
-    },
-  },
-  favThemes: {
-    icon: "fa-palette",
-    displayString: "favorite themes",
-    changeRequiresRestart: false,
-  },
+  // randomTheme: {
+  //   icon: "fa-palette",
+  //   changeRequiresRestart: false,
+  //   displayString: "random theme",
+  //   isBlocked: ({ value }) => {
+  //     if (value === "custom") {
+  //       const snapshot = DB.getSnapshot();
+  //       if (!isAuthenticated()) {
+  //         Notifications.add(
+  //           "Random theme 'custom' is unavailable without an account",
+  //           0,
+  //         );
+  //         return true;
+  //       }
+  //       if (!snapshot) {
+  //         Notifications.add(
+  //           "Random theme 'custom' requires a snapshot to be set",
+  //           0,
+  //         );
+  //         return true;
+  //       }
+  //       if (snapshot?.customThemes?.length === 0) {
+  //         Notifications.add(
+  //           "Random theme 'custom' requires at least one custom theme to be saved",
+  //           0,
+  //         );
+  //         return true;
+  //       }
+  //     }
+  //     return false;
+  //   },
+  // },
+  // favThemes: {
+  //   icon: "fa-palette",
+  //   displayString: "favorite themes",
+  //   changeRequiresRestart: false,
+  // },
   theme: {
     icon: "fa-palette",
     changeRequiresRestart: false,
     overrideConfig: () => {
       return {
-        customTheme: false,
+        // customTheme: false,
       };
     },
   },
-  customTheme: {
-    icon: "fa-palette",
-    displayString: "custom theme",
-    changeRequiresRestart: false,
-  },
-  customThemeColors: {
-    icon: "fa-palette",
-    displayString: "custom theme colors",
-    changeRequiresRestart: false,
-    overrideValue: ({ value }) => {
-      const allColorsThesame = value.every((color) => color === value[0]);
-      if (allColorsThesame) {
-        return getDefaultConfig().customThemeColors;
-      } else {
-        return value;
-      }
-    },
-  },
+  // customTheme: {
+  //   icon: "fa-palette",
+  //   displayString: "custom theme",
+  //   changeRequiresRestart: false,
+  // },
+  // customThemeColors: {
+  //   icon: "fa-palette",
+  //   displayString: "custom theme colors",
+  //   changeRequiresRestart: false,
+  //   overrideValue: ({ value }) => {
+  //     const allColorsThesame = value.every((color) => color === value[0]);
+  //     if (allColorsThesame) {
+  //       return getDefaultConfig().customThemeColors;
+  //     } else {
+  //       return value;
+  //     }
+  //   },
+  // },
 
   // hide elements
   showKeyTips: {

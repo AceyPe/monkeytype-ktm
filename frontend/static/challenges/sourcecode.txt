@@ -3790,7 +3790,7 @@ backend/anticheat
     />
     <link rel="stylesheet" href="css/balloon.css" />
     <link rel="stylesheet" href="css/style.css?v=1" />
-    <link rel="stylesheet" href="themes/serika_dark.css" id="currentTheme" />
+    <link rel="stylesheet" href="themes/dark.css" id="currentTheme" />
     <link rel="stylesheet" href="" id="funBoxTheme" />
     <link id="favicon" rel="shortcut icon" href="/images/favicon/favicon.ico" />
     <link
@@ -8497,7 +8497,7 @@ backend/anticheat
     <!-- <link rel="stylesheet" href="css/fa.css" /> -->
     <link rel="stylesheet" href="css/balloon.css" />
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="themes/serika_dark.css" id="currentTheme" />
+    <link rel="stylesheet" href="themes/dark.css" id="currentTheme" />
     <link rel="stylesheet" href="" id="funBoxTheme" />
     <link id="favicon" rel="shortcut icon" href="images/fav.png" />
     <link rel="shortcut icon" href="images/fav.png" />
@@ -9058,7 +9058,7 @@ letter {
     <!-- <link rel="stylesheet" href="css/fa.css" /> -->
     <link rel="stylesheet" href="css/balloon.css" />
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="themes/serika_dark.css" id="currentTheme" />
+    <link rel="stylesheet" href="themes/dark.css" id="currentTheme" />
     <link rel="stylesheet" href="" id="funBoxTheme" />
     <link id="favicon" rel="shortcut icon" href="images/fav.png" />
     <link rel="shortcut icon" href="images/fav.png" />
@@ -9436,7 +9436,7 @@ letter {
     <!-- <link rel="stylesheet" href="css/fa.css" /> -->
     <link rel="stylesheet" href="css/balloon.css" />
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="themes/serika_dark.css" id="currentTheme" />
+    <link rel="stylesheet" href="themes/dark.css" id="currentTheme" />
     <link rel="stylesheet" href="" id="funBoxTheme" />
     <link id="favicon" rel="shortcut icon" href="images/fav.png" />
     <link rel="shortcut icon" href="images/fav.png" />
@@ -9813,7 +9813,7 @@ Disallow:
     <!-- <link rel="stylesheet" href="css/fa.css" /> -->
     <link rel="stylesheet" href="css/balloon.css" />
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="themes/serika_dark.css" id="currentTheme" />
+    <link rel="stylesheet" href="themes/dark.css" id="currentTheme" />
     <link rel="stylesheet" href="" id="funBoxTheme" />
     <link id="favicon" rel="shortcut icon" href="images/fav.png" />
     <link rel="shortcut icon" href="images/fav.png" />
@@ -11098,7 +11098,7 @@ a:hover,
   --colorful-error-extra-color: #7e2a33;
 }
 
-==> ./monkeytype/static/themes/serika_dark.css <==
+==> ./monkeytype/static/themes/dark.css <==
 :root {
   --bg-color: #323437;
   --main-color: #e2b714;

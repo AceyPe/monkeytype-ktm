@@ -69,16 +69,16 @@ export type LiveSpeedAccBurstStyle = z.infer<
   typeof LiveSpeedAccBurstStyleSchema
 >;
 
-export const RandomThemeSchema = z.enum([
-  "off",
-  "on",
-  "fav",
-  "light",
-  "dark",
-  "custom",
-  "auto",
-]);
-export type RandomTheme = z.infer<typeof RandomThemeSchema>;
+// export const RandomThemeSchema = z.enum([
+//   "off",
+//   "on",
+//   "fav",
+//   "light",
+//   "dark",
+//   // "custom",
+//   "auto",
+// ]);
+// export type RandomTheme = z.infer<typeof RandomThemeSchema>;
 
 export const TimerColorSchema = z.enum(["black", "sub", "text", "main"]);
 export type TimerColor = z.infer<typeof TimerColorSchema>;
@@ -455,17 +455,17 @@ export const ConfigSchema = z
     // theme
     flipTestColors: z.boolean(),
     colorfulMode: z.boolean(),
-    customBackground: CustomBackgroundSchema,
-    customBackgroundSize: CustomBackgroundSizeSchema,
-    customBackgroundFilter: CustomBackgroundFilterSchema,
+    // customBackground: CustomBackgroundSchema,
+    // customBackgroundSize: CustomBackgroundSizeSchema,
+    // customBackgroundFilter: CustomBackgroundFilterSchema,
     autoSwitchTheme: z.boolean(),
     themeLight: ThemeNameSchema,
     themeDark: ThemeNameSchema,
-    randomTheme: RandomThemeSchema,
-    favThemes: FavThemesSchema,
+    // randomTheme: RandomThemeSchema,
+    // favThemes: FavThemesSchema,
     theme: ThemeNameSchema,
-    customTheme: z.boolean(),
-    customThemeColors: CustomThemeColorsSchema,
+    // customTheme: z.boolean(),
+    // customThemeColors: CustomThemeColorsSchema,
 
     // hide elements
     showKeyTips: z.boolean(),
@@ -591,17 +591,17 @@ export const ConfigGroupsLiteral = {
   //theme
   flipTestColors: "theme",
   colorfulMode: "theme",
-  customBackground: "theme",
-  customBackgroundSize: "theme",
-  customBackgroundFilter: "theme",
+  // customBackground: "theme",
+  // customBackgroundSize: "theme",
+  // customBackgroundFilter: "theme",
   autoSwitchTheme: "theme",
   themeLight: "theme",
   themeDark: "theme",
-  randomTheme: "theme",
-  favThemes: "theme",
+  // randomTheme: "theme",
+  // favThemes: "theme",
   theme: "theme",
-  customTheme: "theme",
-  customThemeColors: "theme",
+  // customTheme: "theme",
+  // customThemeColors: "theme",
 
   //hide elements
   showKeyTips: "hideElements",

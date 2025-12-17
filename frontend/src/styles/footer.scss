@@ -12,6 +12,10 @@ footer {
     line-height: 2;
   }
 
+  .footerLink {
+    margin-left: 0.5em;
+  }
+
   #commandLineMobileButton {
     display: none;
     // top: -4rem;
@@ -54,6 +58,13 @@ footer {
       text-align: right;
       display: flex;
       justify-self: right;
+      width: max-content;
+      height: max-content;
+    }
+    .bottom {
+      text-align: left;
+      display: flex;
+      justify-self: end;
       width: max-content;
       height: max-content;
     }
@@ -110,6 +121,9 @@ footer {
     #commandLineMobileButton {
       opacity: 0 !important;
       pointer-events: none !important;
+    }
+    p {
+      opacity: 0 !important;
     }
   }
 }

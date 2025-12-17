@@ -17,7 +17,7 @@ import { isAuthenticated } from "../firebase";
 import { get as getTypingSpeedUnit } from "../utils/typing-speed-units";
 import SlimSelect from "slim-select";
 import * as Skeleton from "../utils/skeleton";
-import * as CustomBackgroundFilter from "../elements/custom-background-filter";
+// import * as CustomBackgroundFilter from "../elements/custom-background-filter";
 import {
   ThemeName,
   CustomLayoutFluid,
@@ -35,11 +35,11 @@ import { areSortedArraysEqual, areUnsortedArraysEqual } from "../utils/arrays";
 import { LayoutName } from "@monkeytype/schemas/layouts";
 import { LanguageGroupNames, LanguageGroups } from "../constants/languages";
 import { Language } from "@monkeytype/schemas/languages";
-import FileStorage from "../utils/file-storage";
+// import FileStorage from "../utils/file-storage";
 import { z } from "zod";
 import { handleConfigInput } from "../elements/input-validation";
 import { Fonts } from "../constants/fonts";
-import * as CustomBackgroundPicker from "../elements/settings/custom-background-picker";
+// import * as CustomBackgroundPicker from "../elements/settings/custom-background-picker";
 import * as CustomFontPicker from "../elements/settings/custom-font-picker";
 import * as AuthEvent from "../observables/auth-event";
 import * as FpsLimitSection from "../elements/settings/fps-limit-section";
@@ -270,11 +270,11 @@ async function initGroups(): Promise<void> {
     UpdateConfig.setAutoSwitchTheme,
     "button",
   );
-  groups["randomTheme"] = new SettingsGroup(
-    "randomTheme",
-    UpdateConfig.setRandomTheme,
-    "button",
-  );
+  // groups["randomTheme"] = new SettingsGroup(
+  //   "randomTheme",
+  //   UpdateConfig.setRandomTheme,
+  //   "button",
+  // );
   groups["stopOnError"] = new SettingsGroup(
     "stopOnError",
     UpdateConfig.setStopOnError,
@@ -471,11 +471,11 @@ async function initGroups(): Promise<void> {
     UpdateConfig.setTypingSpeedUnit,
     "button",
   );
-  groups["customBackgroundSize"] = new SettingsGroup(
-    "customBackgroundSize",
-    UpdateConfig.setCustomBackgroundSize,
-    "button",
-  );
+  // groups["customBackgroundSize"] = new SettingsGroup(
+  //   "customBackgroundSize",
+  //   UpdateConfig.setCustomBackgroundSize,
+  //   "button",
+  // );
 }
 
 async function fillSettingsPage(): Promise<void> {
@@ -692,16 +692,16 @@ async function fillSettingsPage(): Promise<void> {
     },
   });
 
-  handleConfigInput({
-    input: document.querySelector(
-      ".pageSettings .section[data-config-name='customBackgroundSize'] input[type='text']",
-    ),
-    configName: "customBackground",
-    validation: {
-      schema: true,
-      resetIfEmpty: false,
-    },
-  });
+  // handleConfigInput({
+  //   input: document.querySelector(
+  //     ".pageSettings .section[data-config-name='customBackgroundSize'] input[type='text']",
+  //   ),
+  //   configName: "customBackground",
+  //   validation: {
+  //     schema: true,
+  //     resetIfEmpty: false,
+  //   },
+  // });
 
   setEventDisabled(true);
 
@@ -810,22 +810,22 @@ function refreshPresetsSettingsSection(): void {
   }
 }
 
-export async function updateFilterSectionVisibility(): Promise<void> {
-  const hasBackgroundUrl =
-    Config.customBackground !== "" ||
-    (await FileStorage.hasFile("LocalBackgroundFile"));
-  const isImageVisible = $(".customBackground img").is(":visible");
+// export async function updateFilterSectionVisibility(): Promise<void> {
+//   const hasBackgroundUrl =
+//     Config.customBackground !== "" ||
+//     (await FileStorage.hasFile("LocalBackgroundFile"));
+//   const isImageVisible = $(".customBackground img").is(":visible");
 
-  if (hasBackgroundUrl && isImageVisible) {
-    $(
-      ".pageSettings .section[data-config-name='customBackgroundFilter']",
-    ).removeClass("hidden");
-  } else {
-    $(
-      ".pageSettings .section[data-config-name='customBackgroundFilter']",
-    ).addClass("hidden");
-  }
-}
+//   if (hasBackgroundUrl && isImageVisible) {
+//     $(
+//       ".pageSettings .section[data-config-name='customBackgroundFilter']",
+//     ).removeClass("hidden");
+//   } else {
+//     $(
+//       ".pageSettings .section[data-config-name='customBackgroundFilter']",
+//     ).addClass("hidden");
+//   }
+// }
 
 export async function update(
   options: {
@@ -854,9 +854,9 @@ export async function update(
   setActiveFunboxButton();
   await Misc.sleep(0);
   ThemePicker.updateActiveTab();
-  ThemePicker.setCustomInputs(true);
-  await CustomBackgroundPicker.updateUI();
-  await updateFilterSectionVisibility();
+  // ThemePicker.setCustomInputs(true);
+  // await CustomBackgroundPicker.updateUI();
+  // await updateFilterSectionVisibility();
   await CustomFontPicker.updateUI();
   FpsLimitSection.update();
 
@@ -940,11 +940,11 @@ export async function update(
     Config.tapeMargin,
   );
 
-  setInputValue(
-    "customBackground",
-    ".pageSettings .section[data-config-name='customBackgroundSize'] input[type='text']",
-    Config.customBackground,
-  );
+  // setInputValue(
+  //   "customBackground",
+  //   ".pageSettings .section[data-config-name='customBackgroundSize'] input[type='text']",
+  //   Config.customBackground,
+  // );
 
   if (isAuthenticated()) {
     showAccountSection();
@@ -952,7 +952,7 @@ export async function update(
     hideAccountSection();
   }
 
-  CustomBackgroundFilter.updateUI();
+  // CustomBackgroundFilter.updateUI();
 
   const userAgent = window.navigator.userAgent.toLowerCase();
   const modifierKey =
@@ -1222,11 +1222,11 @@ ConfigEvent.subscribe((eventKey, eventValue) => {
   }
   //make sure the page doesnt update a billion times when applying a preset/config at once
   if (configEventDisabled || eventKey === "saveToLocalStorage") return;
-  if (ActivePage.get() === "settings" && eventKey !== "theme") {
-    void (eventKey === "customBackground"
-      ? updateFilterSectionVisibility()
-      : update({ eventKey }));
-  }
+  // if (ActivePage.get() === "settings" && eventKey !== "theme") {
+  //   void (eventKey === "customBackground"
+  //     ? updateFilterSectionVisibility()
+  //     : update({ eventKey }));
+  // }
 });
 
 AuthEvent.subscribe((event) => {

@@ -103,12 +103,12 @@ describe("ConfigMeta", () => {
         { value: 0.4, expected: { keymapSize: 0.5 } },
         { value: 3.6, expected: { keymapSize: 3.5 } },
       ],
-      customBackground: [
-        {
-          value: " https://example.com/test.jpg ",
-          expected: { customBackground: "https://example.com/test.jpg" },
-        },
-      ],
+      // customBackground: [
+      //   {
+      //     value: " https://example.com/test.jpg ",
+      //     expected: { customBackground: "https://example.com/test.jpg" },
+      //   },
+      // ],
       accountChart: [
         {
           value: ["on", "off", "off", "off"],
@@ -255,13 +255,13 @@ describe("ConfigMeta", () => {
           expected: { showAllLines: false },
         },
       ],
-      theme: [
-        {
-          value: "8008",
-          given: { customTheme: true },
-          expected: { customTheme: false },
-        },
-      ],
+      // theme: [
+      //   {
+      //     value: "8008",
+      //     given: { customTheme: true },
+      //     expected: { customTheme: false },
+      //   },
+      // ],
       keymapLayout: [
         {
           value: "3l",

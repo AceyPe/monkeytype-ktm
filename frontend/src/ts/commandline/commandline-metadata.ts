@@ -30,7 +30,7 @@ type ConfigKeysWithoutCommands =
 
 type SkippedConfigKeys =
   | "minBurst" //this is skipped for now because it has 2 nested inputs;
-  | "customBackgroundFilter" //this is skipped for now because it has 4 nested inputs;
+  // | "customBackgroundFilter" //this is skipped for now because it has 4 nested inputs;
   | "theme" //themes are sorted by color and also affected by config.favThemes
   | "funbox"; //is using a special non schema command at the top to clear funboxes
 
@@ -651,11 +651,11 @@ export const commandlineConfigMetadata: CommandlineConfigMetadataObject = {
   },
 
   //themes
-  customTheme: {
-    subgroup: {
-      options: "fromSchema",
-    },
-  },
+  // customTheme: {
+  //   subgroup: {
+  //     options: "fromSchema",
+  //   },
+  // },
   flipTestColors: {
     subgroup: {
       options: "fromSchema",
@@ -666,21 +666,21 @@ export const commandlineConfigMetadata: CommandlineConfigMetadataObject = {
       options: "fromSchema",
     },
   },
-  customBackground: {
-    input: {},
-  },
-  customBackgroundSize: {
-    subgroup: {
-      options: "fromSchema",
-    },
-  },
-  randomTheme: {
-    subgroup: {
-      options: "fromSchema",
-      isAvailable: (value) =>
-        value === "custom" ? isAuthenticated : undefined,
-    },
-  },
+  // customBackground: {
+  //   input: {},
+  // },
+  // customBackgroundSize: {
+  //   subgroup: {
+  //     options: "fromSchema",
+  //   },
+  // },
+  // randomTheme: {
+  //   subgroup: {
+  //     options: "fromSchema",
+  //     isAvailable: (value) =>
+  //       value === "custom" ? isAuthenticated : undefined,
+  //   },
+  // },
 
   //showhide
   showKeyTips: {

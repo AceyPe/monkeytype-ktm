@@ -49,19 +49,19 @@ describe("config.ts", () => {
           given: { minWpm: "invalid" },
           expected: { minWpm: defaultConfig.minWpm },
         },
-        {
-          given: { customThemeColors: ["#ffffff"] },
-          expected: { customThemeColors: defaultConfig.customThemeColors },
-        },
+        // {
+        //   given: { customThemeColors: ["#ffffff"] },
+        //   expected: { customThemeColors: defaultConfig.customThemeColors },
+        // },
         {
           given: { accountChart: [true, false, false, true] },
           expected: { accountChart: defaultConfig.accountChart },
         },
         {
           given: {
-            favThemes: ["nord", "invalid", "serika_dark", "invalid2", "8008"],
+            favThemes: ["nord", "invalid", "dark", "invalid2", "8008"],
           },
-          expected: { favThemes: ["nord", "serika_dark", "8008"] },
+          expected: { favThemes: ["nord", "dark", "8008"] },
         },
       ])(`$given`, ({ given, expected }) => {
         const description = `given: ${JSON.stringify(

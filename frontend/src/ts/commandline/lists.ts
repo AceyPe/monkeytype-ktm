@@ -1,18 +1,19 @@
+/* eslint-disable @typescript-eslint/strict-boolean-expressions */
 import MinBurstCommands from "./lists/min-burst";
 import BailOutCommands from "./lists/bail-out";
 import QuoteFavoriteCommands from "./lists/quote-favorites";
 import ResultSavingCommands from "./lists/result-saving";
 import NavigationCommands from "./lists/navigation";
 import ResultScreenCommands from "./lists/result-screen";
-import CustomBackgroundCommands from "./lists/custom-background";
+// import CustomBackgroundCommands from "./lists/custom-background";
 import FontFamilyCommands from "./lists/font-family";
-import CustomBackgroundFilterCommands from "./lists/background-filter";
-import AddOrRemoveThemeToFavorite from "./lists/add-or-remove-theme-to-favorites";
+// import CustomBackgroundFilterCommands from "./lists/background-filter";
+// import AddOrRemoveThemeToFavorite from "./lists/add-or-remove-theme-to-favorites";
 import TagsCommands from "./lists/tags";
-import CustomThemesListCommands from "./lists/custom-themes-list";
+// import CustomThemesListCommands from "./lists/custom-themes-list";
 import PresetsCommands from "./lists/presets";
 import FunboxCommands from "./lists/funbox";
-import ThemesCommands from "./lists/themes";
+// import ThemesCommands from "./lists/themes";
 import LoadChallengeCommands, {
   update as updateLoadChallengeCommands,
 } from "./lists/load-challenge";
@@ -20,7 +21,7 @@ import LoadChallengeCommands, {
 import Config, * as UpdateConfig from "../config";
 import * as Misc from "../utils/misc";
 import * as JSONData from "../utils/json-data";
-import { randomizeTheme } from "../controllers/theme-controller";
+// import { randomizeTheme } from "../controllers/theme-controller";
 import * as CustomTextPopup from "../modals/custom-text";
 import * as Notifications from "../elements/notifications";
 import * as VideoAdPopup from "../popups/video-ad-popup";
@@ -54,7 +55,7 @@ const layoutCommand = buildCommandForConfigKey("layout");
 const showAverageCommand = buildCommandForConfigKey("showAverage");
 const showPbCommand = buildCommandForConfigKey("showPb");
 const keymapLayoutCommand = buildCommandForConfigKey("keymapLayout");
-const customThemeCommand = buildCommandForConfigKey("customTheme");
+// const customThemeCommand = buildCommandForConfigKey("customTheme");
 const adsCommand = buildCommandForConfigKey("ads");
 const minSpeedCommand = buildCommandForConfigKey("minWpm");
 const minAccCommand = buildCommandForConfigKey("minAcc");
@@ -187,29 +188,29 @@ export const commands: CommandsSubgroup = {
     ),
 
     //theme
-    ...buildCommands(
-      ...ThemesCommands,
-      customThemeCommand,
+    // ...buildCommands(
+    //   // ...ThemesCommands,
+    //   // customThemeCommand,
 
-      ...CustomThemesListCommands,
-      "flipTestColors",
-      "colorfulMode",
-      ...AddOrRemoveThemeToFavorite,
-      ...CustomBackgroundCommands,
-      "customBackgroundSize",
-      ...CustomBackgroundFilterCommands,
-      "randomTheme",
-    ),
+    //   // ...CustomThemesListCommands,
+    //   "flipTestColors",
+    //   "colorfulMode",
+    //   // ...AddOrRemoveThemeToFavorite,
+    //   // ...CustomBackgroundCommands,
+    //   // "customBackgroundSize",
+    //   // ...CustomBackgroundFilterCommands,
+    //   "randomTheme",
+    // ),
 
-    {
-      id: "randomizeTheme",
-      display: "Next random theme",
-      icon: "fa-random",
-      exec: async (): Promise<void> => randomizeTheme(),
-      available: (): boolean => {
-        return Config.randomTheme !== "off";
-      },
-    },
+    // {
+    //   id: "randomizeTheme",
+    //   display: "Next random theme",
+    //   icon: "fa-random",
+    //   exec: async (): Promise<void> => randomizeTheme(),
+    //   available: (): boolean => {
+    //     return Config.randomTheme !== "off";
+    //   },
+    // },
 
     //showhide elements
     ...buildCommands(
@@ -371,8 +372,8 @@ export const commands: CommandsSubgroup = {
 const lists = {
   keymapLayouts: keymapLayoutCommand.subgroup,
   enableAds: adsCommand.subgroup,
-  customThemesList: customThemeCommand.subgroup,
-  themes: ThemesCommands[0]?.subgroup,
+  // customThemesList: customThemeCommand.subgroup,
+  // themes: ThemesCommands[0]?.subgroup,
   loadChallenge: LoadChallengeCommands[0]?.subgroup,
   languages: languageCommand.subgroup,
   difficulty: difficultyCommand.subgroup,

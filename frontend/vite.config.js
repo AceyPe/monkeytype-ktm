@@ -9,7 +9,7 @@ import { Fonts } from "./src/ts/constants/fonts";
 
 // Load environment variables based on NODE_ENV
 const envFile =
-  process.env.NODE_ENV === "production" ? ".env.production" : ".env";
+  process.env.NODE_ENV === "production" ? /*".env.production"*/ ".env" : ".env";
 dotenvConfig({ path: envFile });
 
 /** @type {import("vite").UserConfig} */
@@ -69,7 +69,9 @@ const BASE_CONFIG = {
 export default defineConfig(({ command }) => {
   if (command === "build") {
     const envFileName =
-      process.env.NODE_ENV === "production" ? ".env.production" : ".env";
+      process.env.NODE_ENV === "production"
+        ? /*.env.production*/ ".env"
+        : ".env";
     if (process.env.RECAPTCHA_SITE_KEY === undefined) {
       throw new Error(`${envFileName}: RECAPTCHA_SITE_KEY is not defined`);
     }

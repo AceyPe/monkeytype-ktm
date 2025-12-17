@@ -75,6 +75,7 @@ function saveToLocalStorage(
 
 export function saveFullConfigToLocalStorage(noDbCheck = false): void {
   console.log("saving full config to localStorage");
+  console.log(config);
   configLS.set(config);
   if (!noDbCheck) {
     AccountButton.loading(true);
@@ -248,12 +249,12 @@ export function setDifficulty(
 }
 
 //set fav themes
-export function setFavThemes(
-  themes: ConfigSchemas.FavThemes,
-  nosave?: boolean,
-): boolean {
-  return genericSet("favThemes", themes, nosave);
-}
+// export function setFavThemes(
+//   themes: ConfigSchemas.FavThemes,
+//   nosave?: boolean,
+// ): boolean {
+//   return genericSet("favThemes", themes, nosave);
+// }
 
 export function setFunbox(
   funbox: ConfigSchemas.Funbox,
@@ -636,9 +637,9 @@ export function setAutoSwitchTheme(
   return genericSet("autoSwitchTheme", boolean, nosave);
 }
 
-export function setCustomTheme(boolean: boolean, nosave?: boolean): boolean {
-  return genericSet("customTheme", boolean, nosave);
-}
+// export function setCustomTheme(boolean: boolean, nosave?: boolean): boolean {
+//   return genericSet("customTheme", boolean, nosave);
+// }
 
 export function setTheme(
   name: ConfigSchemas.ThemeName,
@@ -661,12 +662,12 @@ export function setThemeDark(
   return genericSet("themeDark", name, nosave);
 }
 
-export function setRandomTheme(
-  val: ConfigSchemas.RandomTheme,
-  nosave?: boolean,
-): boolean {
-  return genericSet("randomTheme", val, nosave);
-}
+// export function setRandomTheme(
+//   val: ConfigSchemas.RandomTheme,
+//   nosave?: boolean,
+// ): boolean {
+//   return genericSet("randomTheme", val, nosave);
+// }
 
 export function setBritishEnglish(val: boolean, nosave?: boolean): boolean {
   return genericSet("britishEnglish", val, nosave);
@@ -676,12 +677,12 @@ export function setLazyMode(val: boolean, nosave?: boolean): boolean {
   return genericSet("lazyMode", val, nosave);
 }
 
-export function setCustomThemeColors(
-  colors: ConfigSchemas.CustomThemeColors,
-  nosave?: boolean,
-): boolean {
-  return genericSet("customThemeColors", colors, nosave);
-}
+// export function setCustomThemeColors(
+//   colors: ConfigSchemas.CustomThemeColors,
+//   nosave?: boolean,
+// ): boolean {
+//   return genericSet("customThemeColors", colors, nosave);
+// }
 
 export function setLanguage(language: Language, nosave?: boolean): boolean {
   return genericSet("language", language, nosave);
@@ -754,12 +755,12 @@ export function setMaxLineWidth(
   return genericSet("maxLineWidth", maxLineWidth, nosave);
 }
 
-export function setCustomBackground(
-  value: ConfigSchemas.CustomBackground,
-  nosave?: boolean,
-): boolean {
-  return genericSet("customBackground", value, nosave);
-}
+// export function setCustomBackground(
+//   value: ConfigSchemas.CustomBackground,
+//   nosave?: boolean,
+// ): boolean {
+//   return genericSet("customBackground", value, nosave);
+// }
 
 export function setCustomLayoutfluid(
   value: ConfigSchemas.CustomLayoutFluid,
@@ -775,19 +776,19 @@ export function setCustomPolyglot(
   return genericSet("customPolyglot", value, nosave);
 }
 
-export function setCustomBackgroundSize(
-  value: ConfigSchemas.CustomBackgroundSize,
-  nosave?: boolean,
-): boolean {
-  return genericSet("customBackgroundSize", value, nosave);
-}
+// export function setCustomBackgroundSize(
+//   value: ConfigSchemas.CustomBackgroundSize,
+//   nosave?: boolean,
+// ): boolean {
+//   return genericSet("customBackgroundSize", value, nosave);
+// }
 
-export function setCustomBackgroundFilter(
-  array: ConfigSchemas.CustomBackgroundFilter,
-  nosave?: boolean,
-): boolean {
-  return genericSet("customBackgroundFilter", array, nosave);
-}
+// export function setCustomBackgroundFilter(
+//   array: ConfigSchemas.CustomBackgroundFilter,
+//   nosave?: boolean,
+// ): boolean {
+//   return genericSet("customBackgroundFilter", array, nosave);
+// }
 
 export function setMonkeyPowerLevel(
   level: ConfigSchemas.MonkeyPowerLevel,

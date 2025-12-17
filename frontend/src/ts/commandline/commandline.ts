@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/strict-boolean-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as Focus from "../test/focus";
 import * as CommandlineLists from "./lists";
 import Config from "../config";
@@ -556,8 +562,9 @@ async function updateActiveCommand(): Promise<void> {
 
   clearFontPreview();
   if (
-    command.id?.startsWith("changeTheme") ||
-    command.id?.startsWith("setCustomThemeId")
+    command.id?.startsWith("changeTheme")
+    // ||
+    // command.id?.startsWith("setCustomThemeId")
   ) {
     removeCommandlineBackground();
   } else {
