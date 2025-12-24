@@ -224,7 +224,7 @@ async function initGroups(): Promise<void> {
     UpdateConfig.setRepeatQuotes,
     "button",
   );
-  groups["ads"] = new SettingsGroup("ads", UpdateConfig.setAds, "button");
+  // groups["ads"] = new SettingsGroup("ads", UpdateConfig.setAds, "button");
   groups["alwaysShowWordsHistory"] = new SettingsGroup(
     "alwaysShowWordsHistory",
     UpdateConfig.setAlwaysShowWordsHistory,
@@ -265,11 +265,11 @@ async function initGroups(): Promise<void> {
     UpdateConfig.setStartGraphsAtZero,
     "button",
   );
-  groups["autoSwitchTheme"] = new SettingsGroup(
-    "autoSwitchTheme",
-    UpdateConfig.setAutoSwitchTheme,
-    "button",
-  );
+  // groups["autoSwitchTheme"] = new SettingsGroup(
+  //   "autoSwitchTheme",
+  //   UpdateConfig.setAutoSwitchTheme,
+  //   "button",
+  // );
   // groups["randomTheme"] = new SettingsGroup(
   //   "randomTheme",
   //   UpdateConfig.setRandomTheme,
