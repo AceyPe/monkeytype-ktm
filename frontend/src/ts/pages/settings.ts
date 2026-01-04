@@ -38,7 +38,7 @@ import { Language } from "@monkeytype/schemas/languages";
 // import FileStorage from "../utils/file-storage";
 import { z } from "zod";
 import { handleConfigInput } from "../elements/input-validation";
-import { Fonts } from "../constants/fonts";
+// import { Fonts } from "../constants/fonts";
 // import * as CustomBackgroundPicker from "../elements/settings/custom-background-picker";
 import * as CustomFontPicker from "../elements/settings/custom-font-picker";
 import * as AuthEvent from "../observables/auth-event";
@@ -438,29 +438,29 @@ async function initGroups(): Promise<void> {
     UpdateConfig.setTimerColor,
     "button",
   );
-  groups["fontFamily"] = new SettingsGroup(
-    "fontFamily",
-    UpdateConfig.setFontFamily,
-    "button",
-    {
-      updateCallback: () => {
-        const customButton = $(
-          ".pageSettings .section[data-config-name='fontFamily'] .buttons button[data-config-value='custom']",
-        );
+  // groups["fontFamily"] = new SettingsGroup(
+  //   "fontFamily",
+  //   UpdateConfig.setFontFamily,
+  //   "button",
+  //   {
+  //     updateCallback: () => {
+  //       const customButton = $(
+  //         ".pageSettings .section[data-config-name='fontFamily'] .buttons button[data-config-value='custom']",
+  //       );
 
-        if (
-          $(
-            ".pageSettings .section[data-config-name='fontFamily'] .buttons .active",
-          ).length === 0
-        ) {
-          customButton.addClass("active");
-          customButton.text(`Custom (${Config.fontFamily.replace(/_/g, " ")})`);
-        } else {
-          customButton.text("Custom");
-        }
-      },
-    },
-  );
+  //       if (
+  //         $(
+  //           ".pageSettings .section[data-config-name='fontFamily'] .buttons .active",
+  //         ).length === 0
+  //       ) {
+  //         customButton.addClass("active");
+  //         customButton.text(`Custom (${Config.fontFamily.replace(/_/g, " ")})`);
+  //       } else {
+  //         customButton.text("Custom");
+  //       }
+  //     },
+  //   },
+  // );
   groups["alwaysShowDecimalPlaces"] = new SettingsGroup(
     "alwaysShowDecimalPlaces",
     UpdateConfig.setAlwaysShowDecimalPlaces,
@@ -576,35 +576,35 @@ async function fillSettingsPage(): Promise<void> {
   }
   funboxEl.innerHTML = funboxElHTML;
 
-  const fontsEl = document.querySelector(
-    ".pageSettings .section[data-config-name='fontFamily'] .buttons",
-  ) as HTMLDivElement;
+  // const fontsEl = document.querySelector(
+  //   ".pageSettings .section[data-config-name='fontFamily'] .buttons",
+  // ) as HTMLDivElement;
 
-  if (fontsEl.innerHTML === "") {
-    let fontsElHTML = "";
+  // if (fontsEl.innerHTML === "") {
+  //   let fontsElHTML = "";
 
-    for (const name of Misc.typedKeys(Fonts).sort((a, b) =>
-      (Fonts[a].display ?? a.replace(/_/g, " ")).localeCompare(
-        Fonts[b].display ?? b.replace(/_/g, " "),
-      ),
-    )) {
-      const font = Fonts[name];
-      let fontFamily = name.replace(/_/g, " ");
+  //   for (const name of Misc.typedKeys(Fonts).sort((a, b) =>
+  //     (Fonts[a].display ?? a.replace(/_/g, " ")).localeCompare(
+  //       Fonts[b].display ?? b.replace(/_/g, " "),
+  //     ),
+  //   )) {
+  //     const font = Fonts[name];
+  //     let fontFamily = name.replace(/_/g, " ");
 
-      if (!font.systemFont) {
-        fontFamily += " Preview";
-      }
-      const activeClass = Config.fontFamily === name ? " active" : "";
-      const display = font.display ?? name.replace(/_/g, " ");
+  //     if (!font.systemFont) {
+  //       fontFamily += " Preview";
+  //     }
+  //     const activeClass = Config.fontFamily === name ? " active" : "";
+  //     const display = font.display ?? name.replace(/_/g, " ");
 
-      fontsElHTML += `<button class="${activeClass}" style="font-family:'${fontFamily}'" data-config-value="${name}">${display}</button>`;
-    }
+  //     fontsElHTML += `<button class="${activeClass}" style="font-family:'${fontFamily}'" data-config-value="${name}">${display}</button>`;
+  //   }
 
-    fontsElHTML +=
-      '<button class="no-auto-handle" data-config-value="custom"">Custom</button>';
+  //   fontsElHTML +=
+  //     '<button class="no-auto-handle" data-config-value="custom"">Custom</button>';
 
-    fontsEl.innerHTML = fontsElHTML;
-  }
+  //   fontsEl.innerHTML = fontsElHTML;
+  // }
 
   customLayoutFluidSelect = new SlimSelect({
     select:
