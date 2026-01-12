@@ -14,7 +14,7 @@ import { debounce } from "throttle-debounce";
 // import { ThemeName } from "@monkeytype/schemas/configs";
 // import { themes } from "../constants/themes";
 //ThemesList
-import fileStorage from "../utils/file-storage";
+// import fileStorage from "../utils/file-storage";
 
 // export let randomTheme: ThemeName | string | null = null;
 let isPreviewingTheme = false;
@@ -450,29 +450,26 @@ export async function clearPreview(applyTheme = true): Promise<void> {
 // }
 
 export async function applyFontFamily(): Promise<void> {
-  let font = Config.fontFamily.replace(/_/g, " ");
-
-  const localFont = await fileStorage.getFile("LocalFontFamilyFile");
-  if (localFont === undefined) {
-    //use config font
-    $(".customFont").empty();
-  } else {
-    font = "LOCALCUSTOM";
-
-    $(".customFont").html(`
-      @font-face{ 
-        font-family: LOCALCUSTOM;
-        src: url(${localFont});
-        font-weight: 400;
-        font-style: normal;
-        font-display: block;
-      }`);
-  }
-
-  document.documentElement.style.setProperty(
-    "--font",
-    `"${font}", "Roboto Mono", "Vazirmatn", monospace`,
-  );
+  // let font = Config.fontFamily.replace(/_/g, " ");
+  // const localFont = await fileStorage.getFile("LocalFontFamilyFile");
+  // if (localFont === undefined) {
+  //   //use config font
+  //   $(".customFont").empty();
+  // } else {
+  //   font = "LOCALCUSTOM";
+  //   $(".customFont").html(`
+  //     @font-face{
+  //       font-family: LOCALCUSTOM;
+  //       src: url(${localFont});
+  //       font-weight: 400;
+  //       font-style: normal;
+  //       font-display: block;
+  //     }`);
+  // }
+  // document.documentElement.style.setProperty(
+  //   "--font",
+  //   `"${font}", "Roboto Mono", "Vazirmatn", monospace`,
+  // );
 }
 
 window
