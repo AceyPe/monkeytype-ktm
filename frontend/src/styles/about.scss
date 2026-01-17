@@ -15,7 +15,9 @@
   }
 
   .section {
-    display: grid;
+    .sub-section {
+      margin-top: 1em;
+    }
 
     .bigtitle {
       font-size: 2rem;
@@ -76,6 +78,110 @@
         font-size: 0.75em;
         color: var(--sub-color);
         text-align: right;
+      }
+    }
+
+    .faq-accordion {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+
+      .faq-item {
+        border: 1px solid var(--sub-color);
+        border-radius: 0.25rem;
+        overflow: hidden;
+        transition: border-color 0.2s ease;
+
+        &:hover {
+          border-color: var(--text-color);
+        }
+
+        .faq-question {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.25rem;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          text-align: left;
+          color: var(--text-color);
+          font-size: 1rem;
+          font-weight: 500;
+          transition:
+            background-color 0.2s ease,
+            color 0.2s ease;
+
+          &:hover {
+            background-color: var(--sub-alt-color);
+          }
+
+          &:focus {
+            outline: 2px solid var(--main-color, var(--text-color));
+            outline-offset: -2px;
+          }
+
+          span {
+            flex: 1;
+            margin-right: 1rem;
+          }
+
+          i {
+            transition: transform 0.3s ease;
+            color: var(--sub-color);
+            font-size: 0.875rem;
+          }
+        }
+
+        &.active {
+          .faq-question {
+            i {
+              transform: rotate(180deg);
+            }
+          }
+
+          .faq-answer {
+            max-height: 1000px;
+            opacity: 1;
+            padding: 0 1.25rem 1rem 1.25rem;
+          }
+        }
+
+        .faq-answer {
+          max-height: 0;
+          overflow: hidden;
+          opacity: 0;
+          transition:
+            max-height 0.3s ease,
+            opacity 0.3s ease,
+            padding 0.3s ease;
+          padding: 0 1.25rem;
+          color: var(--text-color);
+
+          p {
+            margin: 0.75rem 0;
+            line-height: 1.6;
+
+            &:first-child {
+              margin-top: 0;
+            }
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            a {
+              color: var(--main-color, var(--text-color));
+              text-decoration: underline;
+
+              &:hover {
+                opacity: 0.8;
+              }
+            }
+          }
+        }
       }
     }
   }
