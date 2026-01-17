@@ -3,6 +3,86 @@
   flex-direction: column;
   gap: 2rem;
 
+  .hero-section {
+    position: relative;
+    width: 100%;
+    min-height: 600px;
+    background-image: url("/images/about_page.webp");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--roundness, 0.5rem);
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 1;
+    }
+
+    .main-title {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      color: white;
+      padding: 2rem;
+
+      h1 {
+        font-size: 3rem;
+        margin: 0 0 1rem 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        color: white;
+      }
+
+      .slogan {
+        font-size: 1.5rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        color: white;
+      }
+    }
+
+    @media (max-width: 768px) {
+      min-height: 300px;
+
+      .main-title {
+        padding: 1.5rem;
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        .slogan {
+          font-size: 1.2rem;
+        }
+      }
+    }
+
+    @media (max-width: 480px) {
+      min-height: 250px;
+
+      .main-title {
+        padding: 1rem;
+
+        h1 {
+          font-size: 1.5rem;
+          margin: 0 0 0.5rem 0;
+        }
+
+        .slogan {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+
   h2 {
     font-size: 1rem;
     margin: 0;
