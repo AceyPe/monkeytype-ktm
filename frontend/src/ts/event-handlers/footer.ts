@@ -3,7 +3,7 @@ import { isAuthenticated } from "../firebase";
 import * as DB from "../db";
 import * as Notifications from "../elements/notifications";
 import * as Commandline from "../commandline/commandline";
-import * as SupportPopup from "../modals/support";
+// import * as SupportPopup from "../modals/support";
 import * as ContactModal from "../modals/contact";
 import * as VersionHistoryModal from "../modals/version-history";
 import { envConfig } from "virtual:env-config";
@@ -73,11 +73,11 @@ document
     }
   });
 
-document
-  .querySelector("footer #supportMeButton")
-  ?.addEventListener("click", () => {
-    SupportPopup.show();
-  });
+// document
+//   .querySelector("footer #supportMeButton")
+//   ?.addEventListener("click", () => {
+//     SupportPopup.show();
+//   });
 
 document
   .querySelector("footer #contactPopupButton")
