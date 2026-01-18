@@ -1,3 +1,4 @@
+import Config, { setTheme } from "../config";
 // import Config, * as UpdateConfig from "../config";
 import { isAuthenticated } from "../firebase";
 import * as DB from "../db";
@@ -66,11 +67,10 @@ document
       }
       // UpdateConfig.setCustomTheme(true);
     } else {
-      //Config.customTheme ? "customThemesList" :
-      const subgroup = "themes";
-      Commandline.show({
-        subgroupOverride: subgroup,
-      });
+      // Toggle between dark and light themes
+      const currentTheme = Config.theme;
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      setTheme(newTheme);
     }
   });
 
