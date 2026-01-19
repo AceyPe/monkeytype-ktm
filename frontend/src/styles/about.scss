@@ -216,10 +216,10 @@
             background-color: var(--sub-alt-color);
           }
 
-          &:focus {
-            outline: 2px solid var(--main-color, var(--text-color));
-            outline-offset: -2px;
-          }
+          // &:focus {
+          //   outline: 2px solid var(--main-color, var(--text-color));
+          //   outline-offset: -2px;
+          // }
 
           span {
             flex: 1;
@@ -235,6 +235,7 @@
 
         &.active {
           .faq-question {
+            background-color: var(--main-color, var(--text-color));
             i {
               transform: rotate(180deg);
             }
@@ -243,7 +244,7 @@
           .faq-answer {
             max-height: 1000px;
             opacity: 1;
-            padding: 0 1.25rem 1rem 1.25rem;
+            padding: 1rem 1.25rem 1rem 1.25rem;
           }
         }
 

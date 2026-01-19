@@ -130,6 +130,9 @@ function initFaqAccordion(): void {
       const $faqItem = $(this).closest(".faq-item");
       const isActive = $faqItem.hasClass("active");
 
+      // Close all other FAQ items
+      $(".pageAbout .faq-item").not($faqItem).removeClass("active");
+
       // Toggle the clicked item
       $faqItem.toggleClass("active", !isActive);
     });
