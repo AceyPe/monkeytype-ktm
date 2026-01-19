@@ -6,16 +6,24 @@
   .hero-section {
     position: relative;
     width: 100%;
-    min-height: 600px;
-    background-image: url("/images/about_page.webp");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    min-height: 800px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--roundness, 0.5rem);
     overflow: hidden;
+    translate: 0 -50px;
+
+    .hero-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      z-index: 0;
+    }
 
     &::before {
       content: "";
