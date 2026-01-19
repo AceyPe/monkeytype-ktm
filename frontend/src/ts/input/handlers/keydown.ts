@@ -12,13 +12,13 @@ import * as KeyConverter from "../../utils/key-converter";
 import * as ShiftTracker from "../../test/shift-tracker";
 import * as CompositionState from "../../states/composition";
 import * as ManualRestart from "../../test/manual-restart-tracker";
-import { canQuickRestart } from "../../utils/quick-restart";
-import * as CustomText from "../../test/custom-text";
-import * as CustomTextState from "../../states/custom-text-name";
+// import { canQuickRestart } from "../../utils/quick-restart";
+// import * as CustomText from "../../test/custom-text";
+// import * as CustomTextState from "../../states/custom-text-name";
 import {
-  getLastBailoutAttempt,
+  // getLastBailoutAttempt,
   setCorrectShiftUsed,
-  setLastBailoutAttempt,
+  // setLastBailoutAttempt,
 } from "../state";
 import {
   getActiveFunboxesWithFunction,
@@ -47,39 +47,43 @@ export async function handleEnter(
   e: KeyboardEvent,
   now: number,
 ): Promise<void> {
-  if (e.shiftKey) {
+  if (e.ctrlKey) {
     if (Config.mode === "zen") {
       void TestLogic.finish();
       return;
-    } else if (
-      !canQuickRestart(
-        Config.mode,
-        Config.words,
-        Config.time,
-        CustomText.getData(),
-        CustomTextState.isCustomTextLong() ?? false,
-      )
-    ) {
-      const delay = Date.now() - getLastBailoutAttempt();
-      if (getLastBailoutAttempt() === -1 || delay > 200) {
-        setLastBailoutAttempt(Date.now());
-        if (delay >= 5000) {
-          Notifications.add(
-            "Please double tap shift+enter to confirm bail out",
-            0,
-            {
-              important: true,
-              duration: 5,
-            },
-          );
-        }
-        return;
-      } else {
-        TestState.setBailedOut(true);
-        void TestLogic.finish();
-        return;
-      }
+      // } else if (
+      //   !canQuickRestart(
+      //     Config.mode,
+      //     Config.words,
+      //     Config.time,
+      //     CustomText.getData(),
+      //     CustomTextState.isCustomTextLong() ?? false,
+      //   )
+      // ) {
+      //   const delay = Date.now() - getLastBailoutAttempt();
+      //   if (getLastBailoutAttempt() === -1 || delay > 200) {
+      //     setLastBailoutAttempt(Date.now());
+      //     if (delay >= 5000) {
+      //       Notifications.add(
+      //         "Please double tap shift+enter to confirm bail out",
+      //         0,
+      //         {
+      //           important: true,
+      //           duration: 5,
+      //         },
+      //       );
+      //     }
+      //     return;
+      //   } else {
+      //     TestState.setBailedOut(true);
+      //     void TestLogic.finish();
+      //     return;
+      //   }
+      // }
     }
+    TestState.setBailedOut(true);
+    void TestLogic.finish();
+    return;
   }
 
   if (Config.quickRestart === "enter") {

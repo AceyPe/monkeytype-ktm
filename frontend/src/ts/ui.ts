@@ -77,6 +77,7 @@ window.addEventListener("beforeunload", (event) => {
     )
   ) {
     //ignore
+    // event.preventDefault();
   } else {
     if (TestState.isActive) {
       event.preventDefault();
