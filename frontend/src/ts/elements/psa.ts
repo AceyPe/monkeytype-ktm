@@ -8,7 +8,7 @@ import { PSA } from "@monkeytype/schemas/psas";
 import { z } from "zod";
 import { LocalStorageWithSchema } from "../utils/local-storage-with-schema";
 import { IdSchema } from "@monkeytype/schemas/util";
-import { tryCatch } from "@monkeytype/util/trycatch";
+// import { tryCatch } from "@monkeytype/util/trycatch";
 import { isSafeNumber } from "@monkeytype/util/numbers";
 import * as AuthEvent from "../observables/auth-event";
 
@@ -44,78 +44,73 @@ async function getLatest(): Promise<PSA[] | null> {
         false,
       );
     } else {
-      type InstatusSummary = {
-        page: {
-          name: string;
-          url: string;
-          status: string;
-        };
-        activeIncidents: {
-          id: string;
-          name: string;
-          started: string;
-          status: string;
-          impact: string;
-          url: string;
-          updatedAt: string;
-        }[];
-        activeMaintenances:
-          | {
-              id: string;
-              name: string;
-              start: string;
-              status: "NOTSTARTEDYET" | "INPROGRESS" | "COMPLETED";
-              duration: number;
-              url: string;
-              updatedAt: string;
-            }[]
-          | undefined;
-      };
-
-      const { data: instatus, error } = await tryCatch(
-        fetch("https://monkeytype.instatus.com/summary.json"),
-      );
-
-      let maintenanceData: undefined | InstatusSummary["activeMaintenances"];
-
-      if (error) {
-        console.log("Failed to fetch Instatus summary", error);
-      } else {
-        const instatusData =
-          (await instatus.json()) as unknown as InstatusSummary;
-
-        maintenanceData = instatusData.activeMaintenances;
-      }
-
-      if (
-        maintenanceData !== undefined &&
-        maintenanceData.length > 0 &&
-        maintenanceData[0] !== undefined &&
-        maintenanceData[0].status === "INPROGRESS"
-      ) {
-        Notifications.addPSA(
-          `Server is currently offline for scheduled maintenance. <a target= '_blank' href='${maintenanceData[0].url}'>Check the status page</a> for more info.`,
-          -1,
-          "bullhorn",
-          true,
-          undefined,
-          true,
-        );
-      } else {
-        Notifications.addPSA(
-          "Looks like the server is experiencing unexpected down time.",
-          -1,
-          "exclamation-triangle",
-          false,
-          undefined,
-          true,
-        );
-      }
+      // type InstatusSummary = {
+      //   page: {
+      //     name: string;
+      //     url: string;
+      //     status: string;
+      //   };
+      //   activeIncidents: {
+      //     id: string;
+      //     name: string;
+      //     started: string;
+      //     status: string;
+      //     impact: string;
+      //     url: string;
+      //     updatedAt: string;
+      //   }[];
+      //   activeMaintenances:
+      //   | {
+      //     id: string;
+      //     name: string;
+      //     start: string;
+      //     status: "NOTSTARTEDYET" | "INPROGRESS" | "COMPLETED";
+      //     duration: number;
+      //     url: string;
+      //     updatedAt: string;
+      //   }[]
+      //   | undefined;
+      // };
+      // const { data: instatus, error } = await tryCatch(
+      //   fetch("https://monkeytype.instatus.com/summary.json"),
+      // );
+      // let maintenanceData: undefined | InstatusSummary["activeMaintenances"];
+      // if (error) {
+      //   console.log("Failed to fetch Instatus summary", error);
+      // } else {
+      //   const instatusData =
+      //     (await instatus.json()) as unknown as InstatusSummary;
+      //   maintenanceData = instatusData.activeMaintenances;
+      // }
+      // if (
+      //   maintenanceData !== undefined &&
+      //   maintenanceData.length > 0 &&
+      //   maintenanceData[0] !== undefined &&
+      //   maintenanceData[0].status === "INPROGRESS"
+      // ) {
+      //   Notifications.addPSA(
+      //     `Server is currently offline for scheduled maintenance. <a target= '_blank' href='${maintenanceData[0].url}'>Check the status page</a> for more info.`,
+      //     -1,
+      //     "bullhorn",
+      //     true,
+      //     undefined,
+      //     true,
+      //   );
+      // } else {
+      //   Notifications.addPSA(
+      //     "Looks like the server is experiencing unexpected down time.",
+      //     -1,
+      //     "exclamation-triangle",
+      //     false,
+      //     undefined,
+      //     true,
+      //   );
+      // }
     }
     return null;
   } else if (response.status === 503) {
     Notifications.addPSA(
-      "Server is currently under maintenance. <a target= '_blank' href='https://monkeytype.instatus.com/'>Check the status page</a> for more info.",
+      "Server is currently under maintenance.",
       -1,
       "bullhorn",
       true,
