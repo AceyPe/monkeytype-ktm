@@ -103,7 +103,7 @@ async function getLatest(): Promise<PSA[] | null> {
         );
       } else {
         Notifications.addPSA(
-          "Looks like the server is experiencing unexpected down time.<br>Check the <a target= '_blank' href='https://monkeytype.instatus.com/'>status page</a> for more information.",
+          "Looks like the server is experiencing unexpected down time.",
           -1,
           "exclamation-triangle",
           false,
