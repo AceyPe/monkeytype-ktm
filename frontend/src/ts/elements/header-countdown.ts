@@ -16,7 +16,7 @@ function getNextAprilFirst(now: Date): Date {
 
 function formatTime(diffMs: number): string {
   if (diffMs <= 0) {
-    return "000:00:00:00";
+    return "0 days, 0 hours, 0 minutes, and 0 seconds";
   }
 
   const totalSeconds = Math.floor(diffMs / 1000);
@@ -25,12 +25,15 @@ function formatTime(diffMs: number): string {
   const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
   const seconds = totalSeconds % 60;
 
-  const dStr = String(days).padStart(3, "0");
-  const hStr = String(hours).padStart(2, "0");
-  const mStr = String(minutes).padStart(2, "0");
-  const sStr = String(seconds).padStart(2, "0");
+  const parts: string[] = [
+    `${days} ${days === 1 ? "day" : "days"}`,
+    `${hours} ${hours === 1 ? "hour" : "hours"}`,
+    `${minutes} ${minutes === 1 ? "minute" : "minutes"}`,
+    `${seconds} ${seconds === 1 ? "second" : "seconds"}`,
+  ];
 
-  return `${dStr}:${hStr}:${mStr}:${sStr}`;
+  const lastPart = parts.pop();
+  return `${parts.join(", ")}, and ${lastPart}`;
 }
 
 function initHeaderCountdown(): void {
