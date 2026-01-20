@@ -64,6 +64,16 @@ function initCountdown(bannerId: number): void {
 }
 
 export function showIfNotClosedBefore(): void {
+  // Check if April 1st has already passed
+  const now = new Date();
+  const year = now.getFullYear();
+  const aprilFirstThisYear = new Date(year, 3, 1, 0, 0, 0, 0); // month is 0-based; 3 = April
+
+  // If we're on or past April 1st, don't show the banner
+  if (now >= aprilFirstThisYear) {
+    return;
+  }
+
   // Check if banner was closed in this session
   const isClosed = sessionStorage.getItem(SESSION_STORAGE_KEY) === "true";
   if (isClosed) {
