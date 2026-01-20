@@ -1,4 +1,7 @@
-const ANNOUNCEMENT_SELECTOR = ".announcment .counter";
+const ANNOUNCEMENT_SELECTOR = ".announcment";
+const ANNOUNCEMENT_COUNTER_SELECTOR = ".announcment .counter";
+const ANNOUNCEMENT_CLOSE_BUTTON_SELECTOR = ".announcment button:last-child";
+const SESSION_STORAGE_KEY = "announcementClosed";
 
 function getNextAprilFirst(now: Date): Date {
   const year = now.getFullYear();
@@ -31,24 +34,48 @@ function formatTime(diffMs: number): string {
 }
 
 function initHeaderCountdown(): void {
-  const counterElement = document.querySelector<HTMLElement>(
+  const announcementElement = document.querySelector<HTMLElement>(
     ANNOUNCEMENT_SELECTOR,
   );
-  if (!counterElement) {
+  if (!announcementElement) {
     return;
   }
 
-  const target = getNextAprilFirst(new Date());
-
-  const update = (): void => {
-    const now = new Date();
-    const diff = target.getTime() - now.getTime();
-    counterElement.textContent = formatTime(diff);
+  // Check if announcement was closed in this session
+  const isClosed = sessionStorage.getItem(SESSION_STORAGE_KEY) === "true";
+  if (isClosed) {
+    announcementElement.classList.add("hidden");
     return;
-  };
+  }
 
-  update();
-  window.setInterval(update, 1000);
+  // Initialize countdown
+  const counterElement = announcementElement.querySelector<HTMLElement>(
+    ANNOUNCEMENT_COUNTER_SELECTOR,
+  );
+  if (counterElement) {
+    const target = getNextAprilFirst(new Date());
+
+    const update = (): void => {
+      const now = new Date();
+      const diff = target.getTime() - now.getTime();
+      counterElement.textContent = formatTime(diff);
+      return;
+    };
+
+    update();
+    window.setInterval(update, 1000);
+  }
+
+  // Setup close button
+  const closeButton = announcementElement.querySelector<HTMLButtonElement>(
+    ANNOUNCEMENT_CLOSE_BUTTON_SELECTOR,
+  );
+  if (closeButton) {
+    closeButton.addEventListener("click", () => {
+      announcementElement.classList.add("hidden");
+      sessionStorage.setItem(SESSION_STORAGE_KEY, "true");
+    });
+  }
 }
 
 if (document.readyState === "loading") {
