@@ -107,6 +107,30 @@
     font-size: 1rem;
     margin: 0;
     font-weight: unset;
+
+    button {
+      background: transparent;
+      border: 1px solid var(--sub-color);
+      color: var(--sub-color);
+      padding: 0.5rem 1rem;
+      border-radius: var(--roundness, 0.5rem);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+      font-weight: normal;
+
+      &:hover {
+        border-color: var(--text-color);
+        color: var(--text-color);
+        background-color: var(--sub-alt-color);
+      }
+
+      &.active {
+        background-color: var(--main-color, var(--text-color));
+        color: var(--bg-color, white);
+        border-color: var(--main-color, var(--text-color));
+      }
+    }
   }
 
   .created {
@@ -178,6 +202,18 @@
       grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
       gap: 0.25rem;
       color: var(--text-color);
+    }
+
+    .frameSection {
+      margin-bottom: 2rem;
+
+      .frameSectionTitle {
+        font-size: 1.5rem;
+        color: var(--text-color);
+        margin-bottom: 1rem;
+        font-weight: 600;
+        text-align: center;
+      }
     }
 
     .frameSectionContainer {
