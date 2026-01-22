@@ -9,6 +9,7 @@ export type PageName =
   | "test"
   | "settings"
   | "about"
+  | "team"
   | "account"
   | "login"
   | "profile"
