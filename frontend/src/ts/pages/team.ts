@@ -8,60 +8,73 @@ function renderTeamContent(year: string): void {
 
   const sections = teamData[year] || [];
 
-  // Clear existing content
-  frame.innerHTML = "";
+  // Add fade-out animation
+  frame.classList.remove("fade-in");
+  frame.classList.add("fade-out");
 
-  // Render each section
-  sections.forEach((section: TeamSection) => {
-    const frameSection = document.createElement("div");
-    frameSection.className = "frameSection";
+  // Wait for fade-out animation, then update content and fade in
+  setTimeout(() => {
+    // Clear existing content
+    frame.innerHTML = "";
 
-    const title = document.createElement("div");
-    title.className = "frameSectionTitle";
-    title.textContent = section.title;
+    // Render each section
+    sections.forEach((section: TeamSection) => {
+      const frameSection = document.createElement("div");
+      frameSection.className = "frameSection";
 
-    const container = document.createElement("div");
-    container.className = "frameSectionContainer";
+      const title = document.createElement("div");
+      title.className = "frameSectionTitle";
+      title.textContent = section.title;
 
-    // Render cards for each team member
-    section.items.forEach((member) => {
-      const card = document.createElement("div");
-      card.className = "card";
+      const container = document.createElement("div");
+      container.className = "frameSectionContainer";
 
-      const imageDiv = document.createElement("div");
-      const img = document.createElement("img");
-      img.src = member.imagePath || "/images/team_page.webp";
-      img.alt = member.name || "Team Member";
-      img.loading = "lazy";
-      imageDiv.appendChild(img);
+      // Render cards for each team member
+      section.items.forEach((member) => {
+        const card = document.createElement("div");
+        card.className = "card";
 
-      const position = document.createElement("h3");
-      position.textContent = member.title || "";
+        const imageDiv = document.createElement("div");
+        const img = document.createElement("img");
+        img.src = member.imagePath || "/images/team_page.webp";
+        img.alt = member.name || "Team Member";
+        img.loading = "lazy";
+        imageDiv.appendChild(img);
 
-      const name = document.createElement("span");
-      name.textContent = member.name || "";
+        const position = document.createElement("h3");
+        position.textContent = member.title || "";
 
-      const linkedinIcon = document.createElement("i");
-      linkedinIcon.className = "fab fa-linkedin-in circle-icon";
-      if (member.linkedin) {
-        linkedinIcon.style.cursor = "pointer";
-        linkedinIcon.addEventListener("click", () => {
-          window.open(member.linkedin, "_blank");
-        });
-      }
+        const name = document.createElement("span");
+        name.textContent = member.name || "";
 
-      card.appendChild(imageDiv);
-      card.appendChild(position);
-      card.appendChild(name);
-      card.appendChild(linkedinIcon);
+        const linkedinIcon = document.createElement("i");
+        linkedinIcon.className = "fab fa-linkedin-in circle-icon";
+        if (member.linkedin) {
+          linkedinIcon.style.cursor = "pointer";
+          linkedinIcon.addEventListener("click", () => {
+            window.open(member.linkedin, "_blank");
+          });
+        }
 
-      container.appendChild(card);
+        card.appendChild(imageDiv);
+        card.appendChild(position);
+        card.appendChild(name);
+        card.appendChild(linkedinIcon);
+
+        container.appendChild(card);
+      });
+
+      frameSection.appendChild(title);
+      frameSection.appendChild(container);
+      frame.appendChild(frameSection);
     });
 
-    frameSection.appendChild(title);
-    frameSection.appendChild(container);
-    frame.appendChild(frameSection);
-  });
+    // Trigger fade-in animation
+    requestAnimationFrame(() => {
+      frame.classList.remove("fade-out");
+      frame.classList.add("fade-in");
+    });
+  }, 300); // Match the transition duration
 }
 
 function setActiveYear(year: string): void {
@@ -98,6 +111,10 @@ function initTeamPage(): void {
   });
 
   // Initialize with default year
+  const frame = page.querySelector(".frame");
+  if (frame) {
+    frame.classList.add("fade-in");
+  }
   setActiveYear("2026");
 }
 
