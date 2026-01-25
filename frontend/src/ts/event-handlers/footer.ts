@@ -1,11 +1,13 @@
+import Config, { setTheme } from "../config";
 // import Config, * as UpdateConfig from "../config";
 import { isAuthenticated } from "../firebase";
 import * as DB from "../db";
 import * as Notifications from "../elements/notifications";
 import * as Commandline from "../commandline/commandline";
-import * as SupportPopup from "../modals/support";
+// import * as SupportPopup from "../modals/support";
 import * as ContactModal from "../modals/contact";
 import * as VersionHistoryModal from "../modals/version-history";
+// eslint-disable-next-line import/no-unresolved
 import { envConfig } from "virtual:env-config";
 import { COMPATIBILITY_CHECK } from "@monkeytype/contracts";
 import { lastSeenServerCompatibility } from "../ape/adapters/ts-rest-adapter";
@@ -65,19 +67,18 @@ document
       }
       // UpdateConfig.setCustomTheme(true);
     } else {
-      //Config.customTheme ? "customThemesList" :
-      const subgroup = "themes";
-      Commandline.show({
-        subgroupOverride: subgroup,
-      });
+      // Toggle between dark and light themes
+      const currentTheme = Config.theme;
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      setTheme(newTheme);
     }
   });
 
-document
-  .querySelector("footer #supportMeButton")
-  ?.addEventListener("click", () => {
-    SupportPopup.show();
-  });
+// document
+//   .querySelector("footer #supportMeButton")
+//   ?.addEventListener("click", () => {
+//     SupportPopup.show();
+//   });
 
 document
   .querySelector("footer #contactPopupButton")

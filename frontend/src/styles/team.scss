@@ -1,7 +1,19 @@
-.pageAbout {
+.pageTeam {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+
+  .circle-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #0a66c2; /* LinkedIn blue */
+    color: white;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
 
   .hero-section {
     position: relative;
@@ -95,6 +107,30 @@
     font-size: 1rem;
     margin: 0;
     font-weight: unset;
+
+    button {
+      background: transparent;
+      border: 1px solid var(--sub-color);
+      color: var(--sub-color);
+      padding: 0.5rem 1rem;
+      border-radius: var(--roundness, 0.5rem);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+      font-weight: normal;
+
+      &:hover {
+        border-color: var(--text-color);
+        color: var(--text-color);
+        background-color: var(--sub-alt-color);
+      }
+
+      &.active {
+        background-color: var(--main-color, var(--text-color));
+        color: var(--bg-color, white);
+        border-color: var(--main-color, var(--text-color));
+      }
+    }
   }
 
   .created {
@@ -120,10 +156,13 @@
     .bigtitle {
       font-size: 2rem;
       color: var(--sub-color);
-      margin: 0 0 1rem 0;
-      display: inline-flex;
+      margin: 0 auto 1rem auto;
+      display: flex;
       align-items: baseline;
+      justify-content: center;
+      gap: 1rem;
       margin-bottom: 0.25em;
+      flex-wrap: wrap;
       i {
         margin-right: 0.5em;
       }
@@ -166,6 +205,90 @@
       grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
       gap: 0.25rem;
       color: var(--text-color);
+    }
+
+    .frameSection {
+      margin-bottom: 2rem;
+
+      .frameSectionTitle {
+        font-size: 1.5rem;
+        color: var(--text-color);
+        margin-bottom: 1rem;
+        font-weight: 600;
+        text-align: center;
+      }
+    }
+
+    .frameSectionContainer {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      margin-top: 1rem;
+
+      @media (max-width: 768px) {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 1rem;
+        border-radius: var(--roundness, 0.5rem);
+        background-color: var(--sub-alt-color, transparent);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+
+        &:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        > div {
+          width: 100%;
+          aspect-ratio: 1;
+          border-radius: var(--roundness, 0.5rem);
+          overflow: hidden;
+          margin-bottom: 1rem;
+
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+          }
+        }
+
+        h3 {
+          font-size: 1rem;
+          font-weight: 600;
+          margin: 0 0 0.5rem 0;
+          color: var(--text-color);
+        }
+
+        span {
+          display: block;
+          font-size: 0.875rem;
+          color: var(--sub-color);
+          margin-bottom: 0.75rem;
+        }
+
+        .circle-icon {
+          margin-top: 0.5rem;
+          cursor: pointer;
+          transition:
+            transform 0.2s ease,
+            background-color 0.2s ease;
+
+          &:hover {
+            transform: scale(1.1);
+            background-color: #004182;
+          }
+        }
+      }
     }
 
     p {
@@ -316,5 +439,27 @@
   .chart {
     margin-top: 1rem;
     position: relative;
+  }
+
+  .frame {
+    position: relative;
+    min-height: 200px;
+    overflow: hidden;
+
+    &.fade-out {
+      opacity: 0;
+      transform: translateY(20px);
+      transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+    }
+
+    &.fade-in {
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+    }
   }
 }

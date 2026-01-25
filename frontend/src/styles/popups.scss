@@ -720,82 +720,82 @@ body.darkMode {
     }
   }
 }
-// #cookiesModal {
-//   align-items: end;
-//   justify-items: end;
-//   .extensionMessage {
-//     max-width: 465px;
-//     width: 100%;
-//     font-size: 0.75rem;
-//     color: var(--text-color);
-//     grid-column: 1/2;
-//     grid-row: 1/2;
-//     padding: 1rem;
-//   }
-//   .modal {
-//     grid-column: 1/2;
-//     grid-row: 1/2;
-//     max-width: 465px;
-//     z-index: 100000001;
-//     // outline: 0.5rem solid var(--bg-color)
-//     -webkit-user-select: none;
-//     user-select: none;
-//     .main {
-//       display: grid;
-//       gap: 1rem;
-//     }
-//     .buttons {
-//       margin-top: 0.25rem;
-//       display: grid;
-//       gap: 1rem;
-//     }
-//     .title {
-//       color: var(--sub-color);
-//     }
-//     .description {
-//       color: var(--text-color);
-//     }
-//     .settings {
-//       display: grid;
-//       gap: 1rem;
-//       .cookie label {
-//         display: grid;
-//         gap: 0 1rem;
-//         grid-template-columns: 1fr min-content;
-//         grid-template-areas:
-//           "title check"
-//           "description check";
-//         .title {
-//           grid-area: title;
-//           font-size: 1.25rem;
-//         }
-//         .description {
-//           grid-area: description;
-//         }
-//         input[type="checkbox"] {
-//           align-self: center;
-//           grid-area: check;
-//           font-size: 2em;
-//         }
-//       }
-//       .cookie.ads label {
-//         grid-template-columns: 1fr;
-//         grid-template-areas:
-//           "title"
-//           "description";
-//         a {
-//           margin-top: 0.25rem;
-//         }
-//         .textButton {
-//           padding: 0;
-//           padding-top: 0.25em;
-//           width: unset;
-//           text-align: unset;
-//         }
-//       }
-//     }
-//   }
-// }
+#cookiesModal {
+  align-items: end;
+  justify-items: end;
+  .extensionMessage {
+    max-width: 465px;
+    width: 100%;
+    font-size: 0.75rem;
+    color: var(--text-color);
+    grid-column: 1/2;
+    grid-row: 1/2;
+    padding: 1rem;
+  }
+  .modal {
+    grid-column: 1/2;
+    grid-row: 1/2;
+    max-width: 465px;
+    z-index: 100000001;
+    // outline: 0.5rem solid var(--bg-color)
+    -webkit-user-select: none;
+    user-select: none;
+    .main {
+      display: grid;
+      gap: 1rem;
+    }
+    .buttons {
+      margin-top: 0.25rem;
+      display: grid;
+      gap: 1rem;
+    }
+    .title {
+      color: var(--sub-color);
+    }
+    .description {
+      color: var(--text-color);
+    }
+    .settings {
+      display: grid;
+      gap: 1rem;
+      .cookie label {
+        display: grid;
+        gap: 0 1rem;
+        grid-template-columns: 1fr min-content;
+        grid-template-areas:
+          "title check"
+          "description check";
+        .title {
+          grid-area: title;
+          font-size: 1.25rem;
+        }
+        .description {
+          grid-area: description;
+        }
+        input[type="checkbox"] {
+          align-self: center;
+          grid-area: check;
+          font-size: 2em;
+        }
+      }
+      .cookie.ads label {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "title"
+          "description";
+        a {
+          margin-top: 0.25rem;
+        }
+        .textButton {
+          padding: 0;
+          padding-top: 0.25em;
+          width: unset;
+          text-align: unset;
+        }
+      }
+    }
+  }
+}
 
 #videoAdPopupWrapper {
   display: flex;
@@ -1378,56 +1378,56 @@ body.darkMode {
   }
 }
 
-#supportModal {
-  .modal {
-    max-width: 900px;
-    width: 100%;
-    // height: 400px;
-    overflow-y: scroll;
-    max-height: 100%;
-    background: var(--bg-color);
-    border-radius: var(--roundness);
-    display: grid;
-    gap: 1rem;
-    @extend .ffscroll;
+// #supportModal {
+//   .modal {
+//     max-width: 900px;
+//     width: 100%;
+//     // height: 400px;
+//     overflow-y: scroll;
+//     max-height: 100%;
+//     background: var(--bg-color);
+//     border-radius: var(--roundness);
+//     display: grid;
+//     gap: 1rem;
+//     @extend .ffscroll;
 
-    .text {
-      color: var(--text-color);
-    }
+//     .text {
+//       color: var(--text-color);
+//     }
 
-    .subtext {
-      color: var(--sub-color);
-      font-size: 0.75rem;
-    }
+//     .subtext {
+//       color: var(--sub-color);
+//       font-size: 0.75rem;
+//     }
 
-    .buttons {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-      gap: 1rem;
+//     .buttons {
+//       display: grid;
+//       grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+//       gap: 1rem;
 
-      button,
-      .button {
-        display: block;
-        width: 100%;
-        height: 100%;
-        padding: 1rem 0;
-        display: grid;
-        gap: 1rem;
-        text-decoration: none;
-        .text {
-          transition: 0.25s;
-        }
-        &:hover .text {
-          color: var(--bg-color);
-        }
-        .icon {
-          font-size: 3rem;
-          line-height: 3rem;
-        }
-      }
-    }
-  }
-}
+//       button,
+//       .button {
+//         display: block;
+//         width: 100%;
+//         height: 100%;
+//         padding: 1rem 0;
+//         display: grid;
+//         gap: 1rem;
+//         text-decoration: none;
+//         .text {
+//           transition: 0.25s;
+//         }
+//         &:hover .text {
+//           color: var(--bg-color);
+//         }
+//         .icon {
+//           font-size: 3rem;
+//           line-height: 3rem;
+//         }
+//       }
+//     }
+//   }
+// }
 #shareCustomThemeModal {
   .modal {
     max-width: 400px;

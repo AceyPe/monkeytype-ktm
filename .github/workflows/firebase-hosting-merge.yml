@@ -5,13 +5,21 @@ name: Deploy to Firebase Hosting on merge
 on:
   push:
     branches:
+<<<<<<< HEAD
       - master
+=======
+      - contest-mode
+>>>>>>> c846b444af19cd67918b023651d5a0047efe71c3
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+<<<<<<< HEAD
       - run: pnpm run build
+=======
+      - run: npm ci && npm run build
+>>>>>>> c846b444af19cd67918b023651d5a0047efe71c3
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

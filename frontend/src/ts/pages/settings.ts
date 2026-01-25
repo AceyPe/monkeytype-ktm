@@ -55,7 +55,7 @@ export const groups: SettingsGroups = {};
 const HighlightSchema = ConfigKeySchema.or(
   z.enum([
     "resetSettings",
-    "updateCookiePreferences",
+    // "updateCookiePreferences",
     "importexportSettings",
     "theme",
     "presets",

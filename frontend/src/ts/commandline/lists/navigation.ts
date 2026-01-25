@@ -40,7 +40,15 @@ const commands: Command[] = [
       void navigate("/settings");
     },
   },
-
+  {
+    id: "viewTeam",
+    display: "View Team Page",
+    alias: "navigate go to",
+    icon: "fa-cog",
+    exec: (): void => {
+      void navigate("/team");
+    },
+  },
   {
     id: "viewAccount",
     display: "View Account Page",

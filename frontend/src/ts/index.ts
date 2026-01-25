@@ -30,6 +30,7 @@ import "./input/listeners";
 import "./ready";
 import "./controllers/route-controller";
 import "./pages/about";
+import "./pages/team";
 import "./elements/scroll-to-top";
 import * as Account from "./pages/account";
 import "./elements/no-css";

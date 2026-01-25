@@ -79,6 +79,12 @@ const routes: Route[] = [
     },
   },
   {
+    path: "/team",
+    load: async (_params, options) => {
+      await PageController.change("team", options);
+    },
+  },
+  {
     path: "/settings",
     load: async (_params, options) => {
       await PageController.change("settings", options);
