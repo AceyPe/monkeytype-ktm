@@ -331,6 +331,26 @@ export type GetStreakResponse = z.infer<typeof GetStreakResponseSchema>;
 export const GetFriendsResponseSchema = responseWithData(z.array(FriendSchema));
 export type GetFriendsResponse = z.infer<typeof GetFriendsResponseSchema>;
 
+export const SamlInitiateResponseSchema = responseWithData(
+  z.object({
+    url: z.string().url(),
+  }),
+);
+export type SamlInitiateResponse = z.infer<typeof SamlInitiateResponseSchema>;
+
+export const AcsRequestSchema = z.object({
+  SAMLResponse: z.string(),
+  RelayState: z.string().optional(),
+});
+export type AcsRequest = z.infer<typeof AcsRequestSchema>;
+
+export const AcsResponseSchema = responseWithData(
+  z.object({
+    token: z.string(),
+  }),
+);
+export type AcsResponse = z.infer<typeof AcsResponseSchema>;
+
 const c = initContract();
 
 export const usersContract = c.router(
@@ -952,6 +972,33 @@ export const usersContract = c.router(
         },
       }),
     },
+    samlInitiate: {
+      summary: "initiate SAML SSO",
+      description: "Initiate SAML SSO authentication flow",
+      method: "GET",
+      path: "/login",
+      responses: {
+        200: SamlInitiateResponseSchema,
+      },
+      metadata: meta({
+        authenticationOptions: { isPublic: true },
+        rateLimit: "userSamlInitiate",
+      }),
+    },
+    // acs: {
+    //   summary: "SAML ACS",
+    //   description: "Assertion Consumer Service endpoint for SAML SSO",
+    //   method: "POST",
+    //   path: "/acs",
+    //   body: AcsRequestSchema.strict(),
+    //   responses: {
+    //     200: AcsResponseSchema,
+    //   },
+    //   metadata: meta({
+    //     authenticationOptions: { isPublic: true },
+    //     rateLimit: "userSamlAcs",
+    //   }),
+    // },
   },
   {
     pathPrefix: "/users",

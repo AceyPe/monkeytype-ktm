@@ -5,6 +5,15 @@ import { callController } from "../ts-rest-adapter";
 
 const s = initServer();
 export default s.router(usersContract, {
+  // login: {
+
+  // },
+  samlInitiate: {
+    handler: async (r) => callController(UserController.samlInitiate)(r),
+  },
+  // acs: {
+  //   handler: async (r) => callController(UserController.acs)(r),
+  // },
   get: {
     handler: async (r) => callController(UserController.getUser)(r),
   },

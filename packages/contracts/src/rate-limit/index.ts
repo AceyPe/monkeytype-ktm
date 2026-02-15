@@ -351,6 +351,16 @@ export const limits = {
     max: 60,
   },
 
+  userSamlInitiate: {
+    window: "minute",
+    max: 10,
+  },
+
+  userSamlAcs: {
+    window: "minute",
+    max: 10,
+  },
+
   // ApeKeys Routing
   apeKeysGet: {
     window: "hour",
