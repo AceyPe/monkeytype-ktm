@@ -1,15 +1,25 @@
-import FirebaseAdmin from "./../init/firebase-admin";
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import LRUCache from "lru-cache";
 import {
   recordTokenCacheAccess,
   setTokenCacheLength,
   setTokenCacheSize,
 } from "./prometheus";
-import { type DecodedIdToken, UserRecord } from "firebase-admin/auth";
-import { getFrontendUrl } from "./misc";
-import emailQueue from "../queues/email-queue";
-import * as UserDAL from "../dal/user";
-import { isFirebaseError } from "./error";
+import jwt from "jsonwebtoken";
+import MonkeyError from "./error";
+
+export type DecodedIdToken = {
+  uid: string;
+  email: string;
+  iat: number;
+  exp: number;
+  type: string;
+  iss?: string;
+  aud?: string;
+};
 
 const tokenCache = new LRUCache<string, DecodedIdToken>({
   max: 20000,
@@ -20,91 +30,158 @@ const tokenCache = new LRUCache<string, DecodedIdToken>({
 
 const TOKEN_CACHE_BUFFER = 1000 * 60 * 5; // 5 minutes
 
+/**
+ * Get JWT secret from environment or generate a secure one
+ * In production, JWT_SECRET should be set in environment variables
+ */
+function getJwtSecret(): string {
+  const secret = process.env["JWT_SECRET"];
+  if (secret !== undefined && secret !== null && secret.length >= 32) {
+    return secret;
+  }
+  if (process.env["MODE"] === "dev") {
+    // Use a default secret for development only
+    return "dev-secret-key-change-in-production-min-32-chars";
+  }
+  throw new Error(
+    "JWT_SECRET environment variable must be set (minimum 32 characters)",
+  );
+}
+
 export async function verifyIdToken(
   idToken: string,
   noCache = false,
 ): Promise<DecodedIdToken> {
-  if (noCache) {
-    return await FirebaseAdmin().auth().verifyIdToken(idToken, true);
-  }
+  const secret = getJwtSecret();
 
-  setTokenCacheLength(tokenCache.size);
-  setTokenCacheSize(tokenCache.calculatedSize ?? 0);
+  if (!noCache) {
+    setTokenCacheLength(tokenCache.size);
+    setTokenCacheSize(tokenCache.calculatedSize ?? 0);
 
-  const cached = tokenCache.get(idToken);
+    const cached = tokenCache.get(idToken);
 
-  if (cached) {
-    const expirationDate = cached.exp * 1000 - TOKEN_CACHE_BUFFER;
+    if (cached) {
+      const expirationDate = cached.exp * 1000 - TOKEN_CACHE_BUFFER;
 
-    if (expirationDate < Date.now()) {
-      recordTokenCacheAccess("hit_expired");
-      tokenCache.delete(idToken);
+      if (expirationDate < Date.now()) {
+        recordTokenCacheAccess("hit_expired");
+        tokenCache.delete(idToken);
+      } else {
+        recordTokenCacheAccess("hit");
+        return cached;
+      }
     } else {
-      recordTokenCacheAccess("hit");
-      return cached;
+      recordTokenCacheAccess("miss");
     }
-  } else {
-    recordTokenCacheAccess("miss");
   }
 
-  const decoded = await FirebaseAdmin().auth().verifyIdToken(idToken, true);
-  tokenCache.set(idToken, decoded);
-  return decoded;
+  try {
+    const decoded = jwt.verify(idToken, secret, {
+      issuer: "monkeytype-api",
+      audience: "monkeytype-client",
+      algorithms: ["HS256"],
+    }) as jwt.JwtPayload & {
+      uid: string;
+      email: string;
+      iat: number;
+      exp: number;
+      type: string;
+    };
+
+    if (
+      typeof decoded.uid !== "string" ||
+      typeof decoded.email !== "string" ||
+      decoded.uid === "" ||
+      decoded.email === ""
+    ) {
+      throw new MonkeyError(
+        401,
+        "Invalid token: missing required fields",
+        "verifyIdToken",
+      );
+    }
+
+    // Handle aud which can be string, string[], or undefined
+    const audValue =
+      typeof decoded.aud === "string"
+        ? decoded.aud
+        : Array.isArray(decoded.aud)
+          ? decoded.aud[0]
+          : undefined;
+
+    const decodedToken: DecodedIdToken = {
+      uid: decoded.uid,
+      email: decoded.email,
+      iat: typeof decoded.iat === "number" ? decoded.iat : 0,
+      exp: typeof decoded.exp === "number" ? decoded.exp : 0,
+      type: typeof decoded.type === "string" ? decoded.type : "Bearer",
+      iss: typeof decoded.iss === "string" ? decoded.iss : undefined,
+      aud: audValue,
+    };
+
+    if (!noCache) {
+      tokenCache.set(idToken, decodedToken);
+    }
+
+    return decodedToken;
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      throw new MonkeyError(401, "Token expired", "verifyIdToken");
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      throw new MonkeyError(401, "Invalid token", "verifyIdToken");
+    } else if (error instanceof MonkeyError) {
+      throw error;
+    }
+    throw new MonkeyError(
+      401,
+      "Token verification failed",
+      error instanceof Error ? error.message : String(error),
+    );
+  }
 }
 
-export async function updateUserEmail(
-  uid: string,
-  email: string,
-): Promise<UserRecord> {
-  await revokeTokensByUid(uid);
-  return await FirebaseAdmin().auth().updateUser(uid, {
-    email,
-    emailVerified: false,
-  });
-}
-
-export async function updateUserPassword(
-  uid: string,
-  password: string,
-): Promise<UserRecord> {
-  await revokeTokensByUid(uid);
-  return await FirebaseAdmin().auth().updateUser(uid, {
-    password,
-  });
-}
-
-export async function deleteUser(uid: string): Promise<void> {
-  await revokeTokensByUid(uid);
-  await FirebaseAdmin().auth().deleteUser(uid);
-}
-
+/**
+ * Revoke tokens for a user by clearing them from cache
+ * Note: With JWT tokens, we can't revoke tokens server-side without a blacklist.
+ * This function clears cached tokens, but clients may still use tokens until they expire.
+ * For production, consider implementing a token blacklist in Redis.
+ */
 export async function revokeTokensByUid(uid: string): Promise<void> {
-  await FirebaseAdmin().auth().revokeRefreshTokens(uid);
   for (const entry of tokenCache.entries()) {
     if (entry[1].uid === uid) {
       tokenCache.delete(entry[0]);
     }
   }
+  // TODO: Implement token blacklist in Redis for production use
 }
 
-export async function sendForgotPasswordEmail(email: string): Promise<void> {
-  try {
-    const uid = (await FirebaseAdmin().auth().getUserByEmail(email)).uid;
-    const { name } = await UserDAL.getPartialUser(
-      uid,
-      "request forgot password email",
-      ["name"],
-    );
+/**
+ * Generate a JWT token for a user
+ * @param uid - User ID
+ * @param email - User email
+ * @param expiresIn - Token expiration time (default: 1 hour)
+ * @returns JWT token string
+ */
+export function generateJwtToken(
+  uid: string,
+  email: string,
+  expiresIn: string = "1h",
+): string {
+  const secret = getJwtSecret();
+  const now = Math.floor(Date.now() / 1000);
 
-    const link = await FirebaseAdmin()
-      .auth()
-      .generatePasswordResetLink(email, { url: getFrontendUrl() });
+  const payload = {
+    uid,
+    email,
+    iat: now,
+    type: "Bearer",
+  };
 
-    await emailQueue.sendForgotPasswordEmail(email, name, link);
-  } catch (err) {
-    if (isFirebaseError(err) && err.errorInfo.code !== "auth/user-not-found") {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
-      throw err;
-    }
-  }
+  const token: string = jwt.sign(payload, secret, {
+    expiresIn,
+    issuer: "monkeytype-api",
+    audience: "monkeytype-client",
+    algorithm: "HS256",
+  });
+  return token;
 }

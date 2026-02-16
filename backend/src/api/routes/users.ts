@@ -11,9 +11,9 @@ export default s.router(usersContract, {
   samlInitiate: {
     handler: async (r) => callController(UserController.samlInitiate)(r),
   },
-  // acs: {
-  //   handler: async (r) => callController(UserController.acs)(r),
-  // },
+  acs: {
+    handler: async (r) => callController(UserController.acs)(r),
+  },
   get: {
     handler: async (r) => callController(UserController.getUser)(r),
   },
@@ -38,9 +38,9 @@ export default s.router(usersContract, {
   updateEmail: {
     handler: async (r) => callController(UserController.updateEmail)(r),
   },
-  updatePassword: {
-    handler: async (r) => callController(UserController.updatePassword)(r),
-  },
+  // updatePassword: {
+  //   handler: async (r) => callController(UserController.updatePassword)(r),
+  // },
   getPersonalBests: {
     handler: async (r) => callController(UserController.getPersonalBests)(r),
   },

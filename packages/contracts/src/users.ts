@@ -467,20 +467,20 @@ export const usersContract = c.router(
         rateLimit: "userUpdateEmail",
       }),
     },
-    updatePassword: {
-      summary: "update password",
-      description: "Updates a user's password",
-      method: "PATCH",
-      path: "/password",
-      body: UpdatePasswordRequestSchema.strict(),
-      responses: {
-        200: MonkeyResponseSchema,
-      },
-      metadata: meta({
-        authenticationOptions: { requireFreshToken: true },
-        rateLimit: "userUpdateEmail",
-      }),
-    },
+    // updatePassword: {
+    //   summary: "update password",
+    //   description: "Updates a user's password",
+    //   method: "PATCH",
+    //   path: "/password",
+    //   body: UpdatePasswordRequestSchema.strict(),
+    //   responses: {
+    //     200: MonkeyResponseSchema,
+    //   },
+    //   metadata: meta({
+    //     authenticationOptions: { requireFreshToken: true },
+    //     rateLimit: "userUpdateEmail",
+    //   }),
+    // },
     getPersonalBests: {
       summary: "get personal bests",
       description: "Get user's personal bests",
@@ -985,20 +985,20 @@ export const usersContract = c.router(
         rateLimit: "userSamlInitiate",
       }),
     },
-    // acs: {
-    //   summary: "SAML ACS",
-    //   description: "Assertion Consumer Service endpoint for SAML SSO",
-    //   method: "POST",
-    //   path: "/acs",
-    //   body: AcsRequestSchema.strict(),
-    //   responses: {
-    //     200: AcsResponseSchema,
-    //   },
-    //   metadata: meta({
-    //     authenticationOptions: { isPublic: true },
-    //     rateLimit: "userSamlAcs",
-    //   }),
-    // },
+    acs: {
+      summary: "SAML ACS",
+      description: "Assertion Consumer Service endpoint for SAML SSO",
+      method: "POST",
+      path: "/acs",
+      body: AcsRequestSchema.strict(),
+      responses: {
+        200: AcsResponseSchema,
+      },
+      metadata: meta({
+        authenticationOptions: { isPublic: true },
+        rateLimit: "userSamlAcs",
+      }),
+    },
   },
   {
     pathPrefix: "/users",

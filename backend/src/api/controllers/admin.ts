@@ -3,7 +3,6 @@ import { buildMonkeyMail } from "../../utils/monkey-mail";
 import * as UserDAL from "../../dal/user";
 import * as ReportDAL from "../../dal/report";
 import GeorgeQueue from "../../queues/george-queue";
-import { sendForgotPasswordEmail as authSendForgotPasswordEmail } from "../../utils/auth";
 import {
   AcceptReportsRequest,
   ClearStreakHourOffsetRequest,
@@ -142,7 +141,17 @@ export async function handleReports(
 export async function sendForgotPasswordEmail(
   req: MonkeyRequest<undefined, SendForgotPasswordEmailRequest>,
 ): Promise<MonkeyResponse> {
+  // With SAML authentication, password resets are handled by the IdP
+  // This endpoint is kept for API compatibility
   const { email } = req.body;
-  await authSendForgotPasswordEmail(email);
-  return new MonkeyResponse("Password reset request email sent.", null);
+  // Email is logged for admin reference, but password reset must be done via IdP
+  void addImportantLog(
+    "admin_password_reset_requested",
+    `Admin requested password reset for ${email}`,
+    "",
+  );
+  return new MonkeyResponse(
+    "Password reset must be done through the SAML Identity Provider. Please contact the user or use the IdP's password reset functionality.",
+    null,
+  );
 }

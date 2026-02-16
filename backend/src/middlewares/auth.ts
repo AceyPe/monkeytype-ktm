@@ -191,47 +191,39 @@ async function authenticateWithBearerToken(
       email: decodedToken.email ?? "",
     };
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message.includes("An internal error has occurred")
-    ) {
-      throw new MonkeyError(
-        503,
-        "Firebase returned an internal error when trying to verify the token.",
-        "authenticateWithBearerToken",
-      );
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const errorCode = error?.errorInfo?.code as string | undefined;
-
-    if (errorCode?.includes("auth/id-token-expired")) {
-      throw new MonkeyError(
-        401,
-        "Token expired - please login again",
-        "authenticateWithBearerToken",
-      );
-    } else if (errorCode?.includes("auth/id-token-revoked")) {
-      throw new MonkeyError(
-        401,
-        "Token revoked - please login again",
-        "authenticateWithBearerToken",
-      );
-    } else if (errorCode?.includes("auth/user-not-found")) {
-      throw new MonkeyError(
-        404,
-        "User not found",
-        "authenticateWithBearerToken",
-      );
-    } else if (errorCode?.includes("auth/argument-error")) {
-      throw new MonkeyError(
-        400,
-        "Incorrect Bearer token format",
-        "authenticateWithBearerToken",
-      );
-    } else {
+    if (error instanceof MonkeyError) {
+      // Re-throw MonkeyError as-is (it already has proper error messages)
       throw error;
     }
+
+    // Handle JWT-specific errors
+    if (error instanceof Error) {
+      if (error.message.includes("Token expired")) {
+        throw new MonkeyError(
+          401,
+          "Token expired - please login again",
+          "authenticateWithBearerToken",
+        );
+      } else if (error.message.includes("Invalid token")) {
+        throw new MonkeyError(
+          401,
+          "Invalid token - please login again",
+          "authenticateWithBearerToken",
+        );
+      } else if (
+        error.message.includes("jwt malformed") ||
+        error.message.includes("invalid signature")
+      ) {
+        throw new MonkeyError(
+          400,
+          "Incorrect Bearer token format",
+          "authenticateWithBearerToken",
+        );
+      }
+    }
+
+    // Re-throw any other errors
+    throw error;
   }
 }
 

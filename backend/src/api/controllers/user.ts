@@ -1,13 +1,11 @@
 import * as UserDAL from "../../dal/user";
-import MonkeyError, {
-  getErrorMessage,
-  isFirebaseError,
-} from "../../utils/error";
+import MonkeyError from // getErrorMessage,
+"../../utils/error";
 import { MonkeyResponse } from "../../utils/monkey-response";
 import * as DiscordUtils from "../../utils/discord";
 import {
   buildAgentLog,
-  getFrontendUrl,
+  // getFrontendUrl,
   omit,
   replaceObjectId,
   replaceObjectIds,
@@ -25,12 +23,12 @@ import { purgeUserFromXpLeaderboards } from "../../services/weekly-xp-leaderboar
 import { v4 as uuidv4 } from "uuid";
 import { ObjectId } from "mongodb";
 import * as ReportDAL from "../../dal/report";
-import emailQueue from "../../queues/email-queue";
-import FirebaseAdmin from "../../init/firebase-admin";
+// import emailQueue from "../../queues/email-queue";
 import * as AuthUtil from "../../utils/auth";
 import * as Dates from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
 import * as BlocklistDal from "../../dal/blocklist";
+import crypto from "crypto";
 import {
   AllTimeLbs,
   ResultFilters,
@@ -41,10 +39,9 @@ import {
   UserProfileDetails,
 } from "@monkeytype/schemas/users";
 import { addImportantLog, addLog, deleteUserLogs } from "../../dal/logs";
-import { sendForgotPasswordEmail as authSendForgotPasswordEmail } from "../../utils/auth";
 import {
-  // AcsRequest,
-  // AcsResponse,
+  AcsRequest,
+  AcsResponse,
   AddCustomThemeRequest,
   AddCustomThemeResponse,
   AddFavoriteQuoteRequest,
@@ -85,7 +82,7 @@ import {
   TagIdPathParams,
   UpdateEmailRequest,
   UpdateLeaderboardMemoryRequest,
-  UpdatePasswordRequest,
+  // UpdatePasswordRequest,
   UpdateUserInboxRequest,
   UpdateUserNameRequest,
   UpdateUserProfileRequest,
@@ -111,193 +108,144 @@ async function verifyCaptcha(captcha: string): Promise<void> {
   }
 }
 
-export async function samlInitiate(): Promise<SamlInitiateResponse> {
+export async function samlInitiate(
+  _req: MonkeyRequest,
+): Promise<SamlInitiateResponse> {
   await SamlUtils.generateSamlRequestId();
   const url = SamlUtils.getSamlAuthUrl();
   return new MonkeyResponse("SAML SSO URL generated", { url });
 }
 
-// export async function acs(
-//   req: MonkeyRequest<undefined, AcsRequest>,
+/**
+ * Generate a deterministic UID from email using SHA-256 hash
+ * This ensures the same email always gets the same UID
+ */
+function generateUidFromEmail(email: string): string {
+  return crypto.createHash("sha256").update(email.toLowerCase()).digest("hex");
+}
+
+async function generateAvailableUsername(
+  emailRaw: string,
+  uid: string,
+): Promise<string> {
+  const defaultName = emailRaw.split("@")[0] ?? emailRaw;
+  let username: string = defaultName;
+  let counter = 1;
+
+  while (!(await UserDAL.isNameAvailable(username, uid))) {
+    username = `${defaultName}${counter}`;
+    counter++;
+  }
+
+  return username;
+}
+
+// async function ensureUserInDatabase(
+//   uid: string,
+//   normalizedEmail: string,
+//   emailRaw: string,
 // ): Promise<void> {
-//   const { SAMLResponse, RelayState } = req.body;
-
-//   if (!SAMLResponse) {
-//     throw new MonkeyError(400, "SAMLResponse is required");
-//   }
-
-//   // Validate SAML response
-//   let profile: SamlUtils.SamlProfile;
-//   try {
-//     profile = await SamlUtils.validateSamlResponse(SAMLResponse, RelayState);
-//   } catch (error) {
-//     if (error instanceof MonkeyError) {
-//       throw error;
-//     }
-//     throw new MonkeyError(
-//       401,
-//       "SAML validation failed",
-//       error instanceof Error ? error.message : String(error),
-//     );
-//   }
-
-//   // Extract user information from SAML profile
-//   // Mock SAML typically provides: email, firstName, lastName
-//   const emailRaw =
-//     profile.email ??
-//     profile.nameID ??
-//     (profile["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] as
-//       | string
-//       | undefined);
-//   const firstName =
-//     profile.firstName ??
-//     (profile["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"] as
-//       | string
-//       | undefined) ??
-//     "";
-//   const lastName =
-//     profile.lastName ??
-//     (profile["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"] as
-//       | string
-//       | undefined) ??
-//     "";
-
-//   if (emailRaw === undefined || emailRaw === null || emailRaw === "") {
-//     throw new MonkeyError(400, "Email not found in SAML response");
-//   }
-
-//   // Normalize email
-//   const normalizedEmail = emailRaw.toLowerCase();
-
-//   // Check if user exists by email in Firebase
-//   let uid!: string; // Definite assignment assertion - will be assigned in all code paths
-//   let userExists = false;
-
-//   try {
-//     const firebaseUser = await FirebaseAdmin()
-//       .auth()
-//       .getUserByEmail(normalizedEmail);
-//     uid = firebaseUser.uid;
-//     // Check if user exists in database
-//     try {
-//       await UserDAL.getUser(uid, "saml acs check");
-//       userExists = true;
-//     } catch (error) {
-//       if (error instanceof MonkeyError && error.status === 404) {
-//         // Firebase user exists but not in database - create database entry
-//         const defaultName = emailRaw.split("@")[0];
-//         let username = defaultName;
-//         let counter = 1;
-
-//         while (!(await UserDAL.isNameAvailable(username as string, uid))) {
-//           username = `${defaultName}${counter}`;
-//           counter++;
-//         }
-
-//         await UserDAL.addUser(username as string, normalizedEmail, uid);
-//         void addImportantLog(
-//           "user_created_saml_sync",
-//           `${username} ${emailRaw}`,
-//           uid,
-//         );
-//         userExists = true;
-//       } else {
-//         throw error;
-//       }
-//     }
-//   } catch (error) {
-//     if (isFirebaseError(error) && error.code === "auth/user-not-found") {
-//       // User doesn't exist, create new user
-//       userExists = false;
-//     } else {
-//       throw error;
-//     }
-//   }
-
-//   if (!userExists) {
-//     // Create new Firebase user
-//     const displayName =
-//       [firstName, lastName].filter((n) => n !== null && n !== "").join(" ") ||
-//       emailRaw;
-//     try {
-//       const firebaseUser = await FirebaseAdmin().auth().createUser({
-//         email: normalizedEmail,
-//         emailVerified: true,
-//         displayName,
-//       });
-//       uid = firebaseUser.uid;
-
-//       // Generate a default username from email
-//       const defaultName = emailRaw.split("@")[0];
-//       let username = defaultName;
-//       let counter = 1;
-
-//       // Ensure username is available
-//       while (!(await UserDAL.isNameAvailable(username as string, uid))) {
-//         username = `${defaultName}${counter}`;
-//         counter++;
-//       }
-
-//       // Create user in database
-//       await UserDAL.addUser(username as string, normalizedEmail, uid);
-//       void addImportantLog("user_created_saml", `${username} ${emailRaw}`, uid);
-//     } catch (error) {
-//       if (isFirebaseError(error)) {
-//         if (error.code === "auth/email-already-exists") {
-//           // User was created between our check and creation attempt
-//           // Try to get the user
-//           const firebaseUser = await FirebaseAdmin()
-//             .auth()
-//             .getUserByEmail(normalizedEmail);
-//           uid = firebaseUser.uid;
-//           try {
-//             await UserDAL.getUser(uid, "saml acs retry");
-//             userExists = true;
-//           } catch (dbError) {
-//             if (dbError instanceof MonkeyError && dbError.status === 404) {
-//               // Create database entry for existing Firebase user
-//               const defaultName = emailRaw.split("@")[0];
-//               let username = defaultName;
-//               let counter = 1;
-
-//               while (!(await UserDAL.isNameAvailable(username as string , uid))) {
-//                 username = `${defaultName}${counter}`;
-//                 counter++;
-//               }
-
-//               await UserDAL.addUser(username as string, normalizedEmail, uid);
-//               void addImportantLog(
-//                 "user_created_saml_sync_retry",
-//                 `${username} ${emailRaw}`,
-//                 uid,
-//               );
-//             } else {
-//               throw dbError;
-//             }
-//           }
-//         } else {
-//           const errorMessage = getErrorMessage(error);
-//           throw new MonkeyError(
-//             500,
-//             "Failed to create Firebase user",
-//             errorMessage ?? "Unknown error",
-//           );
-//         }
-//       } else {
-//         throw error;
-//       }
-//     }
-//   }
-
-//   // Generate Firebase custom token
-//   // uid is guaranteed to be assigned at this point due to code flow above
-//   // (either in the first try block or in the if (!userExists) block)
-//   // const customToken = await FirebaseAdmin().auth().createCustomToken(uid);
-
-//   // return new MonkeyResponse("SAML authentication successful", {
-//   //   // token: customToken,
-//   // });
+//   const username = await generateAvailableUsername(emailRaw, uid);
+//   await UserDAL.addUser(username, normalizedEmail, uid);
+//   void addImportantLog(
+//     "user_created_saml_sync",
+//     `${username} ${emailRaw}`,
+//     uid,
+//   );
 // }
+
+async function findOrCreateUser(
+  normalizedEmail: string,
+  emailRaw: string,
+  // firstName: string,
+  // lastName: string,
+): Promise<string> {
+  // Generate deterministic UID from email
+  const uid = generateUidFromEmail(normalizedEmail);
+
+  // Check if user exists in database
+  try {
+    await UserDAL.getUser(uid, "saml acs check");
+    return uid;
+  } catch (error: unknown) {
+    if (error instanceof MonkeyError && error.status === 404) {
+      // User doesn't exist, create new user
+      const username = await generateAvailableUsername(emailRaw, uid);
+      await UserDAL.addUser(username, normalizedEmail, uid);
+      void addImportantLog("user_created_saml", `${username} ${emailRaw}`, uid);
+      return uid;
+    }
+    throw error;
+  }
+}
+
+export async function acs(
+  req: MonkeyRequest<undefined, AcsRequest>,
+): Promise<AcsResponse> {
+  const { SAMLResponse, RelayState } = req.body;
+
+  if (!SAMLResponse) {
+    throw new MonkeyError(400, "SAMLResponse is required");
+  }
+
+  // Validate SAML response
+  let profile: SamlUtils.SamlProfile;
+  try {
+    profile = await SamlUtils.validateSamlResponse(SAMLResponse, RelayState);
+  } catch (error: unknown) {
+    if (error instanceof MonkeyError) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new MonkeyError(401, "SAML validation failed", errorMessage);
+  }
+
+  // Extract user information from SAML profile
+  const emailRaw =
+    profile.email ??
+    profile.nameID ??
+    (profile[
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+    ] as string | undefined);
+  // const firstName =
+  //   profile.firstName ??
+  //   (profile["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"] as
+  //     | string
+  //     | undefined) ??
+  //   "";
+  // const lastName =
+  //   profile.lastName ??
+  //   (profile["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"] as
+  //     | string
+  //     | undefined) ??
+  //   "";
+
+  if (emailRaw === undefined || emailRaw === null || emailRaw === "") {
+    throw new MonkeyError(400, "Email not found in SAML response");
+  }
+
+  // Normalize email
+  const normalizedEmail = emailRaw.toLowerCase();
+
+  // Find or create user
+  const uid = await findOrCreateUser(
+    normalizedEmail,
+    emailRaw,
+    // firstName,
+    // lastName,
+  );
+
+  // Get user email for JWT token
+  const user = await UserDAL.getPartialUser(uid, "saml acs", ["email"]);
+  const userEmail = user.email ?? normalizedEmail;
+
+  // Generate JWT token with security standards
+  const token = AuthUtil.generateJwtToken(uid, userEmail, "1h");
+
+  return new MonkeyResponse("SAML authentication successful", {
+    token,
+  });
+}
 
 export async function createNewUser(
   req: MonkeyRequest<undefined, CreateUserRequest>,
@@ -305,58 +253,34 @@ export async function createNewUser(
   const { name, captcha } = req.body;
   const { email, uid } = req.ctx.decodedToken;
 
-  try {
-    await verifyCaptcha(captcha);
+  await verifyCaptcha(captcha);
 
-    if (email.endsWith("@tidal.lol") || email.endsWith("@selfbot.cc")) {
-      throw new MonkeyError(400, "Invalid domain");
-    }
-
-    const available = await UserDAL.isNameAvailable(name, uid);
-    if (!available) {
-      throw new MonkeyError(409, "Username unavailable");
-    }
-
-    const blocklisted = await BlocklistDal.contains({ name, email });
-    if (blocklisted) {
-      throw new MonkeyError(409, "Username or email blocked");
-    }
-
-    await UserDAL.addUser(name, email, uid);
-    void addImportantLog("user_created", `${name} ${email}`, uid);
-
-    return new MonkeyResponse("User created", null);
-  } catch (e) {
-    //user was created in firebase from the frontend, remove it
-    await firebaseDeleteUserIgnoreError(uid);
-    throw e;
+  if (email.endsWith("@tidal.lol") || email.endsWith("@selfbot.cc")) {
+    throw new MonkeyError(400, "Invalid domain");
   }
+
+  const available = await UserDAL.isNameAvailable(name, uid);
+  if (!available) {
+    throw new MonkeyError(409, "Username unavailable");
+  }
+
+  const blocklisted = await BlocklistDal.contains({ name, email });
+  if (blocklisted) {
+    throw new MonkeyError(409, "Username or email blocked");
+  }
+
+  await UserDAL.addUser(name, email, uid);
+  void addImportantLog("user_created", `${name} ${email}`, uid);
+
+  return new MonkeyResponse("User created", null);
 }
 
 export async function sendVerificationEmail(
   req: MonkeyRequest,
 ): Promise<MonkeyResponse> {
+  // With SAML authentication, emails are already verified by the IdP
+  // This endpoint is kept for API compatibility but always returns success
   const { email, uid } = req.ctx.decodedToken;
-  const isVerified = (
-    await FirebaseAdmin()
-      .auth()
-      .getUser(uid)
-      .catch((e: unknown) => {
-        throw new MonkeyError(
-          500, // this should never happen, but it does. it mightve been caused by auth token cache, will see if disabling cache fixes it
-          "Auth user not found, even though the token got decoded",
-          JSON.stringify({
-            uid,
-            email,
-            stack: e instanceof Error ? e.stack : JSON.stringify(e),
-          }),
-          uid,
-        );
-      })
-  ).emailVerified;
-  if (isVerified) {
-    throw new MonkeyError(400, "Email already verified");
-  }
 
   const userInfo = await UserDAL.getPartialUser(
     uid,
@@ -371,79 +295,33 @@ export async function sendVerificationEmail(
     );
   }
 
-  const { data: link, error } = await tryCatch(
-    FirebaseAdmin()
-      .auth()
-      .generateEmailVerificationLink(email, { url: getFrontendUrl() }),
-  );
-
-  if (error) {
-    if (isFirebaseError(error)) {
-      if (error.errorInfo.code === "auth/user-not-found") {
-        throw new MonkeyError(
-          500,
-          "Auth user not found when the user was found in the database. Contact support with this error message and your email",
-          JSON.stringify({
-            decodedTokenEmail: email,
-            userInfoEmail: userInfo.email,
-          }),
-          userInfo.uid,
-        );
-      } else if (error.errorInfo.code === "auth/too-many-requests") {
-        throw new MonkeyError(429, "Too many requests. Please try again later");
-      } else if (
-        error.errorInfo.code === "auth/internal-error" &&
-        error.errorInfo.message.toLowerCase().includes("too_many_attempts")
-      ) {
-        throw new MonkeyError(
-          429,
-          "Too many Firebase requests. Please try again later",
-        );
-      } else {
-        throw new MonkeyError(
-          500,
-          "Firebase failed to generate an email verification link: " +
-            error.errorInfo.message,
-          JSON.stringify(error),
-        );
-      }
-    } else {
-      const message = getErrorMessage(error);
-      if (message === undefined) {
-        throw new MonkeyError(
-          500,
-          "Failed to generate an email verification link. Unknown error occured",
-        );
-      } else {
-        if (message.toLowerCase().includes("too_many_attempts")) {
-          throw new MonkeyError(
-            429,
-            "Too many requests. Please try again later",
-          );
-        } else {
-          throw new MonkeyError(
-            500,
-            "Failed to generate an email verification link: " + message,
-            error.stack,
-          );
-        }
-      }
-    }
-  }
-
-  await emailQueue.sendVerificationEmail(email, userInfo.name, link);
-
-  return new MonkeyResponse("Email sent", null);
+  // SAML emails are pre-verified, so we just return success
+  return new MonkeyResponse("Email already verified via SAML", null);
 }
 
 export async function sendForgotPasswordEmail(
   req: MonkeyRequest<undefined, ForgotPasswordEmailRequest>,
 ): Promise<MonkeyResponse> {
+  // With SAML authentication, password resets are handled by the IdP
+  // This endpoint is kept for API compatibility but redirects users to use IdP
   const { email, captcha } = req.body;
   await verifyCaptcha(captcha);
-  await authSendForgotPasswordEmail(email);
+
+  // Verify the email exists in our database
+  const normalizedEmail = email.toLowerCase();
+  const uid = generateUidFromEmail(normalizedEmail);
+
+  try {
+    await UserDAL.getUser(uid, "forgot password check");
+  } catch (error) {
+    if (error instanceof MonkeyError && error.status === 404) {
+      // Don't reveal if email exists or not for security
+    }
+    // Still return success message even if user doesn't exist
+  }
+
   return new MonkeyResponse(
-    "Password reset request received. If the email is valid, you will receive an email shortly.",
+    "Password reset must be done through your organization's SAML Identity Provider. Please contact your administrator or use your organization's password reset portal.",
     null,
   );
 }
@@ -491,16 +369,8 @@ export async function deleteUser(req: MonkeyRequest): Promise<MonkeyResponse> {
     ConnectionsDal.deleteByUid(uid),
   ]);
 
-  try {
-    //delete user from firebase
-    await AuthUtil.deleteUser(uid);
-  } catch (e) {
-    if (isFirebaseError(e) && e.errorInfo.code === "auth/user-not-found") {
-      //user was already deleted, ok to ignore
-    } else {
-      throw e;
-    }
-  }
+  // Revoke all tokens for this user
+  await AuthUtil.revokeTokensByUid(uid);
 
   void addImportantLog(
     "user_deleted",
@@ -638,40 +508,36 @@ export async function checkName(
 export async function updateEmail(
   req: MonkeyRequest<undefined, UpdateEmailRequest>,
 ): Promise<MonkeyResponse> {
+  // With SAML authentication, email changes should be handled through the IdP
+  // This endpoint updates the email in our database, but the user must update
+  // their email in the SAML IdP for authentication to work with the new email
   const { uid } = req.ctx.decodedToken;
   let { newEmail, previousEmail } = req.body;
 
   newEmail = newEmail.toLowerCase();
   previousEmail = previousEmail.toLowerCase();
 
-  try {
-    await AuthUtil.updateUserEmail(uid, newEmail);
-    await UserDAL.updateEmail(uid, newEmail);
-  } catch (e) {
-    if (isFirebaseError(e)) {
-      if (e.code === "auth/email-already-exists") {
-        throw new MonkeyError(
-          409,
-          "The email address is already in use by another account",
-        );
-      } else if (e.code === "auth/invalid-email") {
-        throw new MonkeyError(400, "Invalid email address");
-      } else if (e.code === "auth/too-many-requests") {
-        throw new MonkeyError(429, "Too many requests. Please try again later");
-      } else if (e.code === "auth/user-not-found") {
-        throw new MonkeyError(
-          404,
-          "User not found in the auth system",
-          "update email",
-          uid,
-        );
-      } else if (e.code === "auth/invalid-user-token") {
-        throw new MonkeyError(401, "Invalid user token", "update email", uid);
+  // Check if new email is already in use
+  const newUid = generateUidFromEmail(newEmail);
+  if (newUid !== uid) {
+    // Check if a user with this email already exists
+    try {
+      await UserDAL.getUser(newUid, "check email availability");
+      throw new MonkeyError(
+        409,
+        "The email address is already in use by another account",
+      );
+    } catch (error) {
+      if (error instanceof MonkeyError && error.status === 404) {
+        // Email is available, continue
+      } else {
+        throw error;
       }
-    } else {
-      throw e;
     }
   }
+
+  await UserDAL.updateEmail(uid, newEmail);
+  await AuthUtil.revokeTokensByUid(uid);
 
   void addImportantLog(
     "user_email_updated",
@@ -679,19 +545,22 @@ export async function updateEmail(
     uid,
   );
 
-  return new MonkeyResponse("Email updated", null);
+  return new MonkeyResponse(
+    "Email updated. Please note: You must update your email in the SAML IdP for authentication to work with the new email.",
+    null,
+  );
 }
 
-export async function updatePassword(
-  req: MonkeyRequest<undefined, UpdatePasswordRequest>,
-): Promise<MonkeyResponse> {
-  const { uid } = req.ctx.decodedToken;
-  const { newPassword } = req.body;
-
-  await AuthUtil.updateUserPassword(uid, newPassword);
-
-  return new MonkeyResponse("Password updated", null);
-}
+// export async function updatePassword(
+//   req: MonkeyRequest<undefined, UpdatePasswordRequest>,
+// ): Promise<MonkeyResponse> {
+//   // With SAML authentication, passwords are managed by the IdP
+//   // This endpoint is kept for API compatibility but doesn't perform any action
+//   throw new MonkeyError(
+//     400,
+//     "Password changes must be done through the SAML Identity Provider (IdP). Please contact your administrator or use the IdP's password reset functionality.",
+//   );
+// }
 
 type RelevantUserInfo = Omit<
   UserDAL.DBUser,
@@ -733,30 +602,13 @@ export async function getUser(req: MonkeyRequest): Promise<GetUserResponse> {
 
   if (error) {
     if (error instanceof MonkeyError && error.status === 404) {
-      //if the user is in the auth system but not in the db, its possible that the user was created by bypassing captcha
-      //since there is no data in the database anyway, we can just delete the user from the auth system
-      //and ask them to sign up again
-      try {
-        await AuthUtil.deleteUser(uid);
-        throw new MonkeyError(
-          404,
-          "User not found in the database, but found in the auth system. We have deleted the ghost user from the auth system. Please sign up again.",
-          "get user",
-          uid,
-        );
-      } catch (e) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (e.code === "auth/user-not-found") {
-          throw new MonkeyError(
-            404,
-            "User not found in the database or the auth system. Please sign up again.",
-            "get user",
-            uid,
-          );
-        } else {
-          throw e;
-        }
-      }
+      // User not found in database - they need to authenticate via SAML first
+      throw new MonkeyError(
+        404,
+        "User not found in the database. Please authenticate via SAML to create your account.",
+        "get user",
+        uid,
+      );
     } else {
       throw error;
     }
@@ -1449,14 +1301,6 @@ export async function getTestActivity(
     "Test activity data retrieved",
     user.testActivity ?? null,
   );
-}
-
-async function firebaseDeleteUserIgnoreError(uid: string): Promise<void> {
-  try {
-    await AuthUtil.deleteUser(uid);
-  } catch (e) {
-    //ignore
-  }
 }
 
 export async function getCurrentTestActivity(
