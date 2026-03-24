@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { MonkeyResponse } from "../../utils/monkey-response";
 import * as UserDal from "../../dal/user";
 import FirebaseAdmin from "../../init/firebase-admin";
@@ -19,6 +20,7 @@ import { MonkeyRequest } from "../types";
 import { DBResult } from "../../utils/result";
 import { LbPersonalBests } from "../../utils/pb";
 import { Language } from "@monkeytype/schemas/languages";
+import { CountByYearAndDay } from "@monkeytype/schemas/users";
 
 const CREATE_RESULT_DEFAULT_OPTIONS = {
   firstTestTimestamp: DateUtils.startOfDay(new UTCDate(Date.now())).valueOf(),
@@ -281,9 +283,29 @@ function createArray<T>(size: number, builder: () => T): T[] {
   return new Array(size).fill(0).map(() => builder());
 }
 
+function buildTestActivityForYear(
+  days: { day: number; tests: number }[],
+  year: number,
+): Record<string, (number | null)[]> {
+  if (days.length === 0) {
+    return {};
+  }
+  const max = Math.max(...days.map((it) => it.day)) - 1;
+  const arr: (number | null)[] = new Array(max).fill(null);
+  for (const day of days) {
+    arr[day.day - 1] = day.tests;
+  }
+  return { [String(year)]: arr };
+}
+
 async function updateTestActicity(uid: string): Promise<void> {
-  await ResultDal.getResultCollection()
-    .aggregate(
+  type YearRow = {
+    _id: { uid: string; year: number };
+    days: { day: number; tests: number }[];
+  };
+
+  const yearRows = await ResultDal.getResultCollection()
+    .aggregate<YearRow>(
       [
         {
           $match: {
@@ -341,57 +363,25 @@ async function updateTestActicity(uid: string): Promise<void> {
             },
           },
         },
-        {
-          $replaceWith: {
-            uid: "$_id.uid",
-            days: {
-              $function: {
-                lang: "js",
-                args: ["$days", "$_id.year"],
-                body: `function (days, year) {
-                                var max = Math.max(
-                                    ...days.map((it) => it.day)
-                                )-1;
-                                var arr = new Array(max).fill(null);
-                                for (day of days) {
-                                    arr[day.day-1] = day.tests;
-                                }
-                                let result = {};
-                                result[year] = arr;
-                                return result;
-                            }`,
-              },
-            },
-          },
-        },
-        {
-          $group: {
-            _id: "$uid",
-            testActivity: {
-              $mergeObjects: "$days",
-            },
-          },
-        },
-        {
-          $addFields: {
-            uid: "$_id",
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-          },
-        },
-        {
-          $merge: {
-            into: "users",
-            on: "uid",
-            whenMatched: "merge",
-            whenNotMatched: "discard",
-          },
-        },
       ],
       { allowDiskUse: true },
     )
     .toArray();
+
+  if (yearRows.length === 0) {
+    return;
+  }
+
+  const testActivity: CountByYearAndDay = {};
+  for (const row of yearRows) {
+    Object.assign(
+      testActivity,
+      buildTestActivityForYear(row.days, row._id.year),
+    );
+  }
+
+  await UserDal.getUsersCollection().updateOne(
+    { uid },
+    { $set: { testActivity } },
+  );
 }

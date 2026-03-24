@@ -218,8 +218,21 @@ export async function update(
         },
       },
       {
+        $setWindowFields: {
+          sortBy: {
+            [`${key}.wpm`]: -1,
+            [`${key}.acc`]: -1,
+            [`${key}.timestamp`]: -1,
+          },
+          output: {
+            rank: { $documentNumber: {} },
+          },
+        },
+      },
+      {
         $project: {
           _id: 0,
+          rank: 1,
           [`${key}.wpm`]: 1,
           [`${key}.acc`]: 1,
           [`${key}.raw`]: 1,
@@ -244,22 +257,69 @@ export async function update(
             $ifNull: [`$${key}.consistency`, "$$REMOVE"],
           },
           calculated: {
-            $function: {
-              lang: "js",
-              args: [
-                "$premium.expirationTimestamp",
-                "$$NOW",
-                "$inventory.badges",
-              ],
-              body: `function(expiration, currentTime, badges) { 
-                        try {row_number+= 1;} catch (e) {row_number= 1;} 
-                        var badgeId = undefined;
-                        if(badges)for(let i=0; i<badges.length; i++){
-                            if(badges[i].selected){ badgeId = badges[i].id; break}
-                        }
-                        var isPremium = expiration !== undefined && (expiration === -1 || new Date(expiration)>currentTime) || undefined;
-                        return {rank:row_number,badgeId, isPremium};
-                      }`,
+            rank: "$rank",
+            badgeId: {
+              $let: {
+                vars: {
+                  selectedBadge: {
+                    $arrayElemAt: [
+                      {
+                        $filter: {
+                          input: { $ifNull: ["$inventory.badges", []] },
+                          as: "b",
+                          cond: { $eq: ["$$b.selected", true] },
+                        },
+                      },
+                      0,
+                    ],
+                  },
+                },
+                in: {
+                  $cond: {
+                    if: { $ne: ["$$selectedBadge", null] },
+                    // oxlint-disable-next-line no-thenable -- MongoDB $cond operator
+                    then: "$$selectedBadge.id",
+                    else: "$$REMOVE",
+                  },
+                },
+              },
+            },
+            isPremium: {
+              $switch: {
+                branches: [
+                  {
+                    case: {
+                      $or: [
+                        {
+                          $eq: [
+                            { $type: "$premium.expirationTimestamp" },
+                            "missing",
+                          ],
+                        },
+                        { $eq: ["$premium.expirationTimestamp", null] },
+                      ],
+                    },
+                    // oxlint-disable-next-line no-thenable -- MongoDB $switch branch
+                    then: "$$REMOVE",
+                  },
+                  {
+                    case: { $eq: ["$premium.expirationTimestamp", -1] },
+                    // oxlint-disable-next-line no-thenable -- MongoDB $switch branch
+                    then: true,
+                  },
+                  {
+                    case: {
+                      $gt: [
+                        { $toDate: "$premium.expirationTimestamp" },
+                        "$$NOW",
+                      ],
+                    },
+                    // oxlint-disable-next-line no-thenable -- MongoDB $switch branch
+                    then: true,
+                  },
+                ],
+                default: "$$REMOVE",
+              },
             },
           },
         },

@@ -5,6 +5,7 @@ import { Collection, Db } from "mongodb";
 import readlineSync from "readline-sync";
 import { DBUser } from "../src/dal/user";
 import { DBResult } from "../src/utils/result";
+import { CountByYearAndDay } from "@monkeytype/schemas/users";
 
 const batchSize = 50;
 
@@ -111,9 +112,29 @@ async function getUsersToMigrate(limit: number): Promise<string[]> {
   ).map((it) => it["uid"]);
 }
 
+function buildTestActivityForYear(
+  days: { day: number; tests: number }[],
+  year: number,
+): Record<string, (number | null)[]> {
+  if (days.length === 0) {
+    return {};
+  }
+  const max = Math.max(...days.map((it) => it.day)) - 1;
+  const arr: (number | null)[] = new Array(max).fill(null);
+  for (const day of days) {
+    arr[day.day - 1] = day.tests;
+  }
+  return { [String(year)]: arr };
+}
+
 async function migrateUsers(uids: string[]): Promise<void> {
-  await resultCollection
-    .aggregate(
+  type YearRow = {
+    _id: { uid: string; year: number };
+    days: { day: number; tests: number }[];
+  };
+
+  const yearRows = await resultCollection
+    .aggregate<YearRow>(
       [
         {
           $match: {
@@ -171,59 +192,32 @@ async function migrateUsers(uids: string[]): Promise<void> {
             },
           },
         },
-        {
-          $replaceWith: {
-            uid: "$_id.uid",
-            days: {
-              $function: {
-                lang: "js",
-                args: ["$days", "$_id.year"],
-                body: `function (days, year) {
-                                var max = Math.max(
-                                    ...days.map((it) => it.day)
-                                )-1;
-                                var arr = new Array(max).fill(null);
-                                for (day of days) {
-                                    arr[day.day-1] = day.tests;
-                                }
-                                let result = {};
-                                result[year] = arr;
-                                return result;
-                            }`,
-              },
-            },
-          },
-        },
-        {
-          $group: {
-            _id: "$uid",
-            testActivity: {
-              $mergeObjects: "$days",
-            },
-          },
-        },
-        {
-          $addFields: {
-            uid: "$_id",
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-          },
-        },
-        {
-          $merge: {
-            into: "users",
-            on: "uid",
-            whenMatched: "merge",
-            whenNotMatched: "discard",
-          },
-        },
       ],
       { allowDiskUse: true },
     )
     .toArray();
+
+  const byUid = new Map<string, CountByYearAndDay>();
+  for (const row of yearRows) {
+    const uid = row._id.uid;
+    const partial = buildTestActivityForYear(row.days, row._id.year);
+    const cur = byUid.get(uid) ?? {};
+    Object.assign(cur, partial);
+    byUid.set(uid, cur);
+  }
+
+  if (byUid.size === 0) {
+    return;
+  }
+
+  await userCollection.bulkWrite(
+    [...byUid.entries()].map(([uid, testActivity]) => ({
+      updateOne: {
+        filter: { uid },
+        update: { $set: { testActivity } },
+      },
+    })),
+  );
 }
 
 async function handleUsersWithNoResults(uids: string[]): Promise<void> {

@@ -1001,6 +1001,72 @@ export async function addToInbox(
   );
 }
 
+function applyInboxUpdate(
+  inbox: MonkeyMail[] | undefined,
+  xp: number | undefined,
+  inventory: UserInventory | null | undefined,
+  deletedIds: string[],
+  readIds: string[],
+): Pick<DBUser, "xp" | "inventory" | "inbox"> {
+  const inboxList = inbox ?? [];
+  const toBeDeleted = inboxList.filter((it) => deletedIds.includes(it.id));
+
+  const toBeRead = inboxList.filter(
+    (it) => readIds.includes(it.id) && !it.read,
+  );
+
+  const rewards: AllRewards[] = [...toBeRead, ...toBeDeleted]
+    .filter((it) => !it.read)
+    .reduce((arr: AllRewards[], current) => {
+      return arr.concat(current.rewards);
+    }, []);
+
+  const xpGain = rewards
+    .filter((it) => it.type === "xp")
+    .map((it) => it.item)
+    .reduce((s, a) => s + a, 0);
+
+  const badgesToClaim = rewards
+    .filter((it) => it.type === "badge")
+    .map((it) => it.item);
+
+  let inv = inventory;
+  if (inv === null)
+    inv = {
+      badges: [],
+    };
+  if (inv === undefined)
+    inv = {
+      badges: [],
+    };
+  if (inv.badges === null) inv.badges = [];
+
+  const uniqueBadgeIds = new Set<number>();
+  const newBadges: Badge[] = [];
+
+  for (const badge of [...inv.badges, ...badgesToClaim]) {
+    if (uniqueBadgeIds.has(badge.id)) continue;
+    uniqueBadgeIds.add(badge.id);
+    newBadges.push(badge);
+  }
+  inv.badges = newBadges;
+
+  const inboxUpdate = inboxList
+    .filter((it) => !deletedIds.includes(it.id))
+    .sort((a, b) => b.timestamp - a.timestamp);
+
+  toBeRead.forEach((it) => {
+    it.read = true;
+    it.rewards = [];
+  });
+
+  return {
+    xp: (xp ?? 0) + xpGain,
+    inbox: inboxUpdate,
+    inventory: inv,
+  };
+}
+
 export async function updateInbox(
   uid: string,
   mailToRead: string[],
@@ -1014,91 +1080,28 @@ export async function updateInbox(
     (it) => !deleteSet.includes(it),
   );
 
-  const update = await getUsersCollection().updateOne({ uid }, [
-    {
-      $addFields: {
-        tmp: {
-          $function: {
-            lang: "js",
-            args: ["$inbox", "$xp", "$inventory", deleteSet, readSet],
-            body: function (
-              inbox: MonkeyMail[],
-              xp: number,
-              inventory: UserInventory,
-              deletedIds: string[],
-              readIds: string[],
-            ): Pick<DBUser, "xp" | "inventory" | "inbox"> {
-              const toBeDeleted = inbox.filter((it) =>
-                deletedIds.includes(it.id),
-              );
+  const user = await getUsersCollection().findOne({ uid });
+  if (user === null)
+    throw new MonkeyError(404, "User not found", "update inbox");
 
-              const toBeRead = inbox.filter(
-                (it) => readIds.includes(it.id) && !it.read,
-              );
+  const tmp = applyInboxUpdate(
+    user.inbox,
+    user.xp,
+    user.inventory,
+    deleteSet,
+    readSet,
+  );
 
-              //flatMap rewards
-              const rewards: AllRewards[] = [...toBeRead, ...toBeDeleted]
-                .filter((it) => !it.read)
-
-                .reduce((arr: AllRewards[], current) => {
-                  return arr.concat(current.rewards);
-                }, []);
-
-              const xpGain = rewards
-                .filter((it) => it.type === "xp")
-                .map((it) => it.item)
-                .reduce((s, a) => s + a, 0);
-
-              const badgesToClaim = rewards
-                .filter((it) => it.type === "badge")
-                .map((it) => it.item);
-
-              if (inventory === null)
-                inventory = {
-                  badges: [],
-                };
-              if (inventory.badges === null) inventory.badges = [];
-
-              const uniqueBadgeIds = new Set();
-              const newBadges: Badge[] = [];
-
-              for (const badge of [...inventory.badges, ...badgesToClaim]) {
-                if (uniqueBadgeIds.has(badge.id)) continue;
-                uniqueBadgeIds.add(badge.id);
-                newBadges.push(badge);
-              }
-              inventory.badges = newBadges;
-
-              //remove deleted mail from inbox, sort by timestamp descending
-              const inboxUpdate = inbox
-                .filter((it) => !deletedIds.includes(it.id))
-                .sort((a, b) => b.timestamp - a.timestamp);
-
-              //mark read mail as read, remove rewards
-              toBeRead.forEach((it) => {
-                it.read = true;
-                it.rewards = [];
-              });
-
-              return {
-                xp: xp + xpGain,
-                inbox: inboxUpdate,
-                inventory: inventory,
-              };
-            }.toString(),
-          },
-        },
-      },
-    },
+  const update = await getUsersCollection().updateOne(
+    { uid },
     {
       $set: {
-        xp: "$tmp.xp",
-        inbox: "$tmp.inbox",
-        inventory: "$tmp.inventory",
+        xp: tmp.xp,
+        inbox: tmp.inbox,
+        inventory: tmp.inventory,
       },
     },
-    { $unset: "tmp" },
-  ]);
+  );
 
   if (update.matchedCount !== 1)
     throw new MonkeyError(404, "User not found", "update inbox");
