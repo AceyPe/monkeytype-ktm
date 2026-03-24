@@ -87,10 +87,10 @@ export const UpdateEmailRequestSchema = z.object({
 });
 export type UpdateEmailRequest = z.infer<typeof UpdateEmailRequestSchema>;
 
-export const UpdatePasswordRequestSchema = z.object({
-  newPassword: z.string().min(6),
-});
-export type UpdatePasswordRequest = z.infer<typeof UpdatePasswordRequestSchema>;
+// export const UpdatePasswordRequestSchema = z.object({
+//   newPassword: z.string().min(6),
+// });
+// export type UpdatePasswordRequest = z.infer<typeof UpdatePasswordRequestSchema>;
 
 export const GetPersonalBestsQuerySchema = z.object({
   mode: ModeSchema,

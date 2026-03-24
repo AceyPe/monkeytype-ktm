@@ -22,7 +22,7 @@ import {
 } from "firebase/auth";
 import {
   createErrorMessage,
-  isDevEnvironment,
+  // isDevEnvironment,
   reloadAfter,
 } from "../utils/misc";
 import * as CustomTextState from "../states/custom-text-name";
@@ -38,19 +38,19 @@ import {
 import { ShowOptions } from "../utils/animated-modal";
 import { GenerateDataRequest } from "@monkeytype/contracts/dev";
 import {
-  PasswordSchema,
+  // PasswordSchema,
   UserEmailSchema,
   UserNameSchema,
 } from "@monkeytype/schemas/users";
 import { goToPage } from "../pages/leaderboards";
 import FileStorage from "../utils/file-storage";
-import { z } from "zod";
+// import { z } from "zod";
 import { remoteValidation } from "../utils/remote-validation";
 
 type PopupKey =
   | "updateEmail"
   | "updateName"
-  | "updatePassword"
+  // | "updatePassword"
   | "removeGoogleAuth"
   | "removeGithubAuth"
   | "removePasswordAuth"
@@ -75,7 +75,7 @@ type PopupKey =
 const list: Record<PopupKey, SimpleModal | undefined> = {
   updateEmail: undefined,
   updateName: undefined,
-  updatePassword: undefined,
+  // updatePassword: undefined,
   removeGoogleAuth: undefined,
   removeGithubAuth: undefined,
   removePasswordAuth: undefined,
@@ -538,86 +538,86 @@ list.updateName = new SimpleModal({
   },
 });
 
-list.updatePassword = new SimpleModal({
-  id: "updatePassword",
-  title: "Update password",
-  inputs: [
-    {
-      placeholder: "current password",
-      type: "password",
-      initVal: "",
-    },
-    {
-      placeholder: "new password",
-      type: "password",
-      initVal: "",
-      validation: {
-        schema: isDevEnvironment() ? z.string().min(6) : PasswordSchema,
-      },
-    },
-    {
-      placeholder: "confirm new password",
-      type: "password",
-      initVal: "",
-    },
-  ],
-  buttonText: "update",
-  onlineOnly: true,
-  execFn: async (
-    _thisPopup,
-    previousPass,
-    newPassword,
-    newPassConfirm,
-  ): Promise<ExecReturn> => {
-    if (newPassword !== newPassConfirm) {
-      return {
-        status: 0,
-        message: "New passwords don't match",
-      };
-    }
+// list.updatePassword = new SimpleModal({
+//   id: "updatePassword",
+//   title: "Update password",
+//   inputs: [
+//     {
+//       placeholder: "current password",
+//       type: "password",
+//       initVal: "",
+//     },
+//     {
+//       placeholder: "new password",
+//       type: "password",
+//       initVal: "",
+//       validation: {
+//         schema: isDevEnvironment() ? z.string().min(6) : PasswordSchema,
+//       },
+//     },
+//     {
+//       placeholder: "confirm new password",
+//       type: "password",
+//       initVal: "",
+//     },
+//   ],
+//   buttonText: "update",
+//   onlineOnly: true,
+//   execFn: async (
+//     _thisPopup,
+//     previousPass,
+//     newPassword,
+//     newPassConfirm,
+//   ): Promise<ExecReturn> => {
+//     if (newPassword !== newPassConfirm) {
+//       return {
+//         status: 0,
+//         message: "New passwords don't match",
+//       };
+//     }
 
-    if (newPassword === previousPass) {
-      return {
-        status: 0,
-        message: "New password must be different from previous password",
-      };
-    }
+//     if (newPassword === previousPass) {
+//       return {
+//         status: 0,
+//         message: "New password must be different from previous password",
+//       };
+//     }
 
-    const reauth = await reauthenticate({ password: previousPass });
-    if (reauth.status !== 1) {
-      return {
-        status: reauth.status,
-        message: reauth.message,
-      };
-    }
+//     const reauth = await reauthenticate({ password: previousPass });
+//     if (reauth.status !== 1) {
+//       return {
+//         status: reauth.status,
+//         message: reauth.message,
+//       };
+//     }
 
-    const response = await Ape.users.updatePassword({
-      body: { newPassword },
-    });
+//     // const response = await Ape.users.updatePassword({
+//     //   body: { newPassword },
+//     // });
 
-    if (response.status !== 200) {
-      return {
-        status: -1,
-        message: "Failed to update password: " + response.body.message,
-      };
-    }
+//     // if (response.status !== 200) {
+//     //   return {
+//     //     status: -1,
+//     //     message: "Failed to update password: " + response.body.message,
+//     //   };
+//     // }
 
-    AccountController.signOut();
+//     AccountController.signOut();
 
-    return {
-      status: 1,
-      message: "Password updated",
-    };
-  },
-  beforeInitFn: (thisPopup): void => {
-    if (!isAuthenticated()) return;
-    if (!isUsingPasswordAuthentication()) {
-      thisPopup.inputs = [];
-      thisPopup.buttonText = "";
-      thisPopup.text = "Password authentication is not enabled";
-    }
-  },
-});
+//     return {
+//       status: 1,
+//       message: "Password updated",
+//     };
+//   },
+//   beforeInitFn: (thisPopup): void => {
+//     if (!isAuthenticated()) return;
+//     if (!isUsingPasswordAuthentication()) {
+//       thisPopup.inputs = [];
+//       thisPopup.buttonText = "";
+//       thisPopup.text = "Password authentication is not enabled";
+//     }
+//   },
+// });
 
 list.addPasswordAuth = new SimpleModal({
   id: "addPasswordAuth",
@@ -1367,9 +1367,9 @@ $(".pageAccountSettings").on("click", "#emailPasswordAuth", () => {
   showPopup("updateEmail");
 });
 
-$(".pageAccountSettings").on("click", "#passPasswordAuth", () => {
-  showPopup("updatePassword");
-});
+// $(".pageAccountSettings").on("click", "#passPasswordAuth", () => {
+//   showPopup("updatePassword");
+// });
 
 $(".pageAccountSettings").on("click", "#deleteAccount", () => {
   showPopup("deleteAccount");
