@@ -33,6 +33,108 @@ export const getCollection = (key: {
 }): Collection<DBLeaderboardEntry> =>
   db.collection<DBLeaderboardEntry>(getCollectionName(key));
 
+/** Single scalar for $setWindowFields + $documentNumber on Atlas (no array/tuple sort keys). */
+function lbWindowSortKeyExpr(lbKey: string): Document {
+  const wpm = `$${lbKey}.wpm`;
+  const acc = `$${lbKey}.acc`;
+  const ts = `$${lbKey}.timestamp`;
+  const pad8 = "00000000";
+  const pad16 = "0000000000000000";
+  return {
+    $let: {
+      vars: {
+        invWpm: {
+          $subtract: [
+            99999999,
+            {
+              $min: [99999999, { $round: [{ $multiply: [wpm, 10000] }] }],
+            },
+          ],
+        },
+        invAcc: {
+          $subtract: [
+            99999999,
+            {
+              $min: [99999999, { $round: [{ $multiply: [acc, 10000] }] }],
+            },
+          ],
+        },
+        invTs: {
+          // 9e15 fits Number.MAX_SAFE_INTEGER; ts is ms (~1e12) so inverted stays positive.
+          $subtract: [9000000000000000, ts],
+        },
+      },
+      in: {
+        $concat: [
+          {
+            $substrCP: [
+              { $concat: [pad8, { $toString: "$$invWpm" }] },
+              {
+                $max: [
+                  0,
+                  {
+                    $subtract: [
+                      {
+                        $strLenCP: {
+                          $concat: [pad8, { $toString: "$$invWpm" }],
+                        },
+                      },
+                      8,
+                    ],
+                  },
+                ],
+              },
+              8,
+            ],
+          },
+          {
+            $substrCP: [
+              { $concat: [pad8, { $toString: "$$invAcc" }] },
+              {
+                $max: [
+                  0,
+                  {
+                    $subtract: [
+                      {
+                        $strLenCP: {
+                          $concat: [pad8, { $toString: "$$invAcc" }],
+                        },
+                      },
+                      8,
+                    ],
+                  },
+                ],
+              },
+              8,
+            ],
+          },
+          {
+            $substrCP: [
+              { $concat: [pad16, { $toString: "$$invTs" }] },
+              {
+                $max: [
+                  0,
+                  {
+                    $subtract: [
+                      {
+                        $strLenCP: {
+                          $concat: [pad16, { $toString: "$$invTs" }],
+                        },
+                      },
+                      16,
+                    ],
+                  },
+                ],
+              },
+              16,
+            ],
+          },
+        ],
+      },
+    },
+  };
+}
+
 export async function get(
   mode: string,
   mode2: string,
@@ -217,15 +319,12 @@ export async function update(
           [`${key}.timestamp`]: -1,
         },
       },
-      // Atlas requires $documentNumber sortBy to have exactly one key; a tuple
-      // sorts lexicographically and matches (wpm↓, acc↓, timestamp↓).
+      // Atlas: $documentNumber needs one scalar sort key (arrays are rejected).
+      // Fixed-width inverted fields concatenate to a string that sorts like
+      // (wpm↓, acc↓, timestamp↓).
       {
         $addFields: {
-          _lbRankSort: [
-            { $multiply: [-1, `$${key}.wpm`] },
-            { $multiply: [-1, `$${key}.acc`] },
-            { $multiply: [-1, `$${key}.timestamp`] },
-          ],
+          _lbRankSort: lbWindowSortKeyExpr(key),
         },
       },
       {
