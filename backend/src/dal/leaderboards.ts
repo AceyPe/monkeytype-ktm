@@ -217,13 +217,20 @@ export async function update(
           [`${key}.timestamp`]: -1,
         },
       },
+      // Atlas requires $documentNumber sortBy to have exactly one key; a tuple
+      // sorts lexicographically and matches (wpm↓, acc↓, timestamp↓).
+      {
+        $addFields: {
+          _lbRankSort: [
+            { $multiply: [-1, `$${key}.wpm`] },
+            { $multiply: [-1, `$${key}.acc`] },
+            { $multiply: [-1, `$${key}.timestamp`] },
+          ],
+        },
+      },
       {
         $setWindowFields: {
-          sortBy: {
-            [`${key}.wpm`]: -1,
-            [`${key}.acc`]: -1,
-            [`${key}.timestamp`]: -1,
-          },
+          sortBy: { _lbRankSort: 1 },
           output: {
             rank: { $documentNumber: {} },
           },
