@@ -1,0 +1,45 @@
+---
+# SSH connection vars are play vars (after vars_files) so ansible_host resolves from deploy_host.
+- name: Start backend with PM2
+  hosts: deploy
+  gather_facts: false
+  vars_files:
+    - ../group_vars/all/deploy.secrets.yml
+  vars:
+    ansible_host: "{{ deploy_host }}"
+    ansible_user: "{{ deploy_user }}"
+    ansible_ssh_private_key_file: "{{ deploy_ssh_key_path | expanduser }}"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=accept-new"
+  tasks:
+    # Uses shell (not command) so ~/.bashrc / nvm are loaded — non-interactive SSH often has no pm2 in PATH.
+    # If the app name is already registered in PM2, restarts instead of duplicate pm2 start.
+    - name: PM2 start or restart named process
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if [ -f "$HOME/.bashrc" ]; then . "$HOME/.bashrc"; fi
+        if [ -f "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh"; fi
+        PM2={{ pm2_executable | default('pm2') | quote }}
+        SERVER_JS="{{ deploy_remote_base }}/webapp/backend/dist/server.js"
+        if "$PM2" describe "{{ pm2_app_name }}" >/dev/null 2>&1; then
+          "$PM2" restart "{{ pm2_app_name }}"
+        else
+          "$PM2" start "$SERVER_JS" --name "{{ pm2_app_name }}"
+        fi
+      args:
+        chdir: "{{ deploy_remote_base }}"
+        executable: /bin/bash
+      changed_when: true
+
+    # Single-instance (--name) and cluster (-i max) are usually mutually exclusive; enable only if you use cluster mode.
+    - name: PM2 start cluster (max instances)
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if [ -f "$HOME/.bashrc" ]; then . "$HOME/.bashrc"; fi
+        if [ -f "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh"; fi
+        PM2={{ pm2_executable | default('pm2') | quote }}
+        "$PM2" start "{{ deploy_remote_base }}/webapp/backend/dist/server.js" -i max
+      args:
+        chdir: "{{ deploy_remote_base }}"
+        executable: /bin/bash
+      when: pm2_start_cluster | default(false) | bool
+      changed_when: true

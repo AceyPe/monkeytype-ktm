@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "ansible-deliver": "ansible-playbook ./pipeline/playbooks/sync-codebase.yml",
+    "ansible-run": "ansible-playbook ./pipeline/playbooks/start-server.yml",
+    "ansible-deliver-and-run": "ansible-playbook ./pipeline/playbooks/deploy.yml",
     "preinstall": "npx only-allow pnpm",
     "full-check": "turbo lint ts-check build test integration-test check-assets --force",
     "prepare": "husky install",

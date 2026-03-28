@@ -1,0 +1,32 @@
+---
+# Sync project tree to the VM with rsync (excludes match your shell one-liner).
+- name: Sync codebase to deployment host
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../group_vars/all/deploy.secrets.yml
+  tasks:
+    - name: Ensure local project path exists
+      ansible.builtin.stat:
+        path: "{{ deploy_local_path }}"
+      register: _local_project
+
+    - name: Fail when deploy_local_path is missing
+      ansible.builtin.fail:
+        msg: "Create group_vars/all/deploy.secrets.yml from deploy.secrets.yml.example (see pipeline/)."
+      when: not _local_project.stat.exists
+
+    - name: Rsync codebase to VM
+      ansible.builtin.command:
+        argv:
+          - rsync
+          - -avz
+          - "--exclude=node_modules"
+          - "--exclude=.git"
+          - "--exclude=frontend"
+          - "-e"
+          - "ssh -i {{ deploy_ssh_key_path | expanduser }} -o StrictHostKeyChecking=accept-new"
+          - "{{ deploy_local_path | regex_replace('/$', '') }}/"
+          - "{{ deploy_user }}@{{ deploy_host }}:{{ deploy_remote_path | regex_replace('/$', '') }}/"
+      changed_when: true

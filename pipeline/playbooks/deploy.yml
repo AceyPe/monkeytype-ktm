@@ -1,0 +1,5 @@
+---
+# Full deploy: rsync codebase, then PM2 start/restart on the host.
+# Run from pipeline/: ansible-playbook playbooks/deploy.yml
+- import_playbook: sync-codebase.yml
+- import_playbook: start-server.yml
