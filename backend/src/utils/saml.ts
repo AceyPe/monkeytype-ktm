@@ -3,6 +3,7 @@ import { Strategy as SamlStrategy } from "passport-saml";
 import * as RedisClient from "../init/redis";
 import { randomBytes } from "crypto";
 import MonkeyError from "./error";
+import Logger from "./logger";
 
 /**
  * IEEE and many IdPs reject HTTP-Redirect AuthnRequests to the SSO URL with:
@@ -10,11 +11,11 @@ import MonkeyError from "./error";
  * HTTP-POST (auto-submit form) avoids that. Set SAML_AUTHN_REQUEST_BINDING=HTTP-Redirect to use redirect.
  */
 const SAML_AUTHN_REQUEST_BINDING =
-  process.env["SAML_AUTHN_REQUEST_BINDING"] ?? "HTTP-POST";
+  process.env["SAML_AUTHN_REQUEST_BINDING"] ?? "";
 const SAML_PUBLIC_API_URL = process.env["SAML_PUBLIC_API_URL"];
-const FRONTEND_BASE_URL = (
-  process.env["FRONTEND_URL"] ?? "https://ieeektm.org"
-).replace(/\/$/, "");
+// const FRONTEND_BASE_URL = (
+//   process.env["FRONTEND_URL"] ?? "https://ieeektm.org"
+// ).replace(/\/$/, "");
 
 // SAML configuration from https://www.samltest.dev/
 // SSO URL is the endpoint where users are redirected for authentication
@@ -26,12 +27,12 @@ ${process.env["SAML_CERT"]}
 -----END CERTIFICATE-----`;
 
 const getAcsUrl = (): string => {
-  return `${FRONTEND_BASE_URL}/users/acs`;
+  return `https://api.ieeektm.org/users/acs`;
 };
 
 // Service Provider (SP) Entity ID - our application's identifier
 const getEntityId = (): string => {
-  return `${FRONTEND_BASE_URL}/users/login`;
+  return `https://ieeektm.org`;
 };
 
 let samlStrategyInstance: SamlStrategy | null = null;
@@ -193,6 +194,117 @@ export type SamlProfile = {
   [key: string]: unknown;
 };
 
+const SAML_LOG_XML_STATUS_MAX = 8000;
+
+/** Non-PII fields from decoded SAMLResponse XML for troubleshooting (no assertion body). */
+function extractSamlResponseDebugInfo(
+  samlResponse: string,
+): Record<string, string> | null {
+  try {
+    const xml = Buffer.from(samlResponse, "base64").toString("utf8");
+    if (xml.length === 0 || xml.length > 2_000_000) {
+      return null;
+    }
+    const pickAttr = (re: RegExp): string | undefined => {
+      const m = xml.match(re);
+      return m?.[1];
+    };
+    const issuerEl = xml.match(/<(?:[\w-]+:)?Issuer(?:\s[^>]*)?>([^<]*)</);
+    const statusCode = xml.match(
+      /<(?:[\w-]+:)?StatusCode[^>]*\sValue="([^"]*)"[^/]*\/?>/,
+    );
+    const nestedStatus = xml.match(
+      /<(?:[\w-]+:)?StatusCode[^>]*>[\s\S]*?<(?:[\w-]+:)?StatusCode[^>]*\sValue="([^"]*)"[^/]*\/?>/,
+    );
+    const statusMsg = xml.match(/<(?:[\w-]+:)?StatusMessage[^>]*>([^<]*)</);
+    return {
+      decodedLength: String(xml.length),
+      destination: pickAttr(/\bDestination="([^"]*)"/) ?? "",
+      inResponseTo: pickAttr(/\bInResponseTo="([^"]*)"/) ?? "",
+      responseId: pickAttr(/\bID="([^"]*)"/) ?? "",
+      issuer: (issuerEl?.[1] ?? "").trim(),
+      topLevelStatusCode: (statusCode?.[1] ?? "").trim(),
+      nestedStatusCode: (nestedStatus?.[1] ?? "").trim(),
+      statusMessage: (statusMsg?.[1] ?? "").trim(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function hasXmlStatus(error: unknown): error is { xmlStatus: string } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "xmlStatus" in error &&
+    typeof (error as { xmlStatus: unknown }).xmlStatus === "string"
+  );
+}
+
+/**
+ * passport-saml throws when the IdP returns a SAML Status with top-level code
+ * `urn:oasis:names:tc:SAML:2.0:status:Responder` and no Assertion — i.e. the
+ * failure happened on the identity provider (e.g. IEEE "Authn Adapter" runtime
+ * errors), not signature/Audience validation on our side.
+ */
+function isSamlIdpResponderError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.startsWith("SAML provider returned Responder error:")
+  );
+}
+
+function serializeSamlValidationError(error: unknown): Record<string, unknown> {
+  const base = {} as Record<string, unknown>;
+  if (error instanceof Error) {
+    base["name"] = error.name;
+    base["message"] = error.message;
+    if (error.stack !== undefined && error.stack !== "") {
+      base["stack"] = error.stack;
+    }
+    if ("cause" in error && error.cause !== undefined) {
+      base["cause"] = serializeSamlValidationError(error.cause);
+    }
+  } else {
+    base["value"] = String(error);
+  }
+  if (hasXmlStatus(error)) {
+    const xs = error.xmlStatus;
+    base["xmlStatus"] =
+      xs.length > SAML_LOG_XML_STATUS_MAX
+        ? `${xs.slice(0, SAML_LOG_XML_STATUS_MAX)}…`
+        : xs;
+  }
+  return base;
+}
+
+function buildSamlValidationFailureDetail(
+  error: unknown,
+  samlResponse: string,
+  relayState: string | undefined,
+): string {
+  const parts: string[] = [];
+  if (error instanceof Error) {
+    parts.push(error.message);
+    if (hasXmlStatus(error)) {
+      parts.push(`xmlStatus: ${error.xmlStatus}`);
+    }
+    if (error.stack !== undefined && error.stack !== "") {
+      parts.push(error.stack);
+    }
+  } else {
+    parts.push(String(error));
+  }
+  const meta = extractSamlResponseDebugInfo(samlResponse);
+  if (meta !== null) {
+    parts.push(`samlResponseMeta: ${JSON.stringify(meta)}`);
+  }
+  if (relayState !== undefined && relayState !== "") {
+    parts.push(`relayStateLength: ${String(relayState.length)}`);
+  }
+  return parts.join("\n");
+}
+
 export async function validateSamlResponse(
   samlResponse: string,
   relayState?: string,
@@ -235,10 +347,32 @@ export async function validateSamlResponse(
     if (error instanceof MonkeyError) {
       throw error;
     }
+    const logPayload = {
+      ...serializeSamlValidationError(error),
+      samlResponseMeta: extractSamlResponseDebugInfo(samlResponse),
+      relayStatePresent: relayState !== undefined && relayState !== "",
+      relayStateLength:
+        relayState !== undefined ? String(relayState.length) : undefined,
+      sp: {
+        issuer: getEntityId(),
+        callbackUrl: getAcsUrl(),
+        idpIssuer: MOCK_SAML_ENTITY_ID,
+        entryPoint: MOCK_SAML_SSO_URL,
+      },
+    };
+    if (isSamlIdpResponderError(error)) {
+      logPayload["idpResponderFailure"] = true;
+    }
+    Logger.error(
+      `SAML validatePostResponseAsync failed: ${JSON.stringify(logPayload)}`,
+    );
+    const userMessage = isSamlIdpResponderError(error)
+      ? "The identity provider returned an error and could not complete sign-in. Please try again later."
+      : "SAML validation failed";
     throw new MonkeyError(
       401,
-      "SAML validation failed",
-      error instanceof Error ? error.message : String(error),
+      userMessage,
+      buildSamlValidationFailureDetail(error, samlResponse, relayState),
     );
   }
 }
