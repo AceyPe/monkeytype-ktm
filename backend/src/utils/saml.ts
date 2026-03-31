@@ -1,51 +1,74 @@
+import type { IncomingHttpHeaders } from "http";
 import { Strategy as SamlStrategy } from "passport-saml";
-import { getFrontendUrl, isDevEnvironment } from "./misc";
 import * as RedisClient from "../init/redis";
 import { randomBytes } from "crypto";
 import MonkeyError from "./error";
 
+/**
+ * IEEE and many IdPs reject HTTP-Redirect AuthnRequests to the SSO URL with:
+ * "Request contains insufficient information to determine the protocol binding".
+ * HTTP-POST (auto-submit form) avoids that. Set SAML_AUTHN_REQUEST_BINDING=HTTP-Redirect to use redirect.
+ */
+const SAML_AUTHN_REQUEST_BINDING =
+  process.env["SAML_AUTHN_REQUEST_BINDING"] ?? "HTTP-POST";
+const SAML_PUBLIC_API_URL = process.env["SAML_PUBLIC_API_URL"];
+const FRONTEND_BASE_URL = (
+  process.env["FRONTEND_URL"] ?? "https://ieeektm.org"
+).replace(/\/$/, "");
+
 // SAML configuration from https://www.samltest.dev/
 // SSO URL is the endpoint where users are redirected for authentication
-const MOCK_SAML_SSO_URL =
-  "https://www.samltest.dev/idp/profile/saml2/redirect/sso";
+const MOCK_SAML_SSO_URL = process.env["SAML_SSO_URL"];
 // Entity ID is the IdP's identifier
-const MOCK_SAML_ENTITY_ID = "https://www.samltest.dev/idp";
+const MOCK_SAML_ENTITY_ID = process.env["SAML_ENTITY_ID"];
 const MOCK_SAML_CERT = `-----BEGIN CERTIFICATE-----
-MIIDBzCCAe+gAwIBAgIUCLBK4f75EXEe4gyroYnVaqLoSp4wDQYJKoZIhvcNAQEL
-BQAwEzERMA8GA1UEAwwIZHVtbXlpZHAwHhcNMjQwNTEzMjE1NDE2WhcNMzQwNTEx
-MjE1NDE2WjATMREwDwYDVQQDDAhkdW1teWlkcDCCASIwDQYJKoZIhvcNAQEBBQAD
-ggEPADCCAQoCggEBAKhmgQmWb8NvGhz952XY4SlJlpWIK72RilhOZS9frDYhqWVJ
-HsGH9Z7sSzrM/0+YvCyEWuZV9gpMeIaHZxEPDqW3RJ7KG51fn/s/qFvwctf+CZDj
-yfGDzYs+XIgf7p56U48EmYeWpB/aUW64gSbnPqrtWmVFBisOfIx5aY3NubtTsn+g
-0XbdX0L57+NgSvPQHXh/GPXA7xCIWm54G5kqjozxbKEFA0DS3yb6oHRQWHqIAM/7
-mJMdUVZNIV1q7c2JIgAl23uDWq+2KTE2R5liP/KjvjwKonVKtTqGqX6ei25rsTHO
-aDpBH/LdQK2txgsm7R7+IThWNvUI0TttrmwBqyMCAwEAAaNTMFEwHQYDVR0OBBYE
-FD142gxIAJMhpgMkgpzmRNoW9XbEMB8GA1UdIwQYMBaAFD142gxIAJMhpgMkgpzm
-RNoW9XbEMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBADQd6k6z
-FIc20GfGHY5C2MFwyGOmP5/UG/JiTq7Zky28G6D0NA0je+GztzXx7VYDfCfHxLcm
-2k5t9nYhb9kVawiLUUDVF6s+yZUXA4gUA3KoTWh1/oRxR3ggW7dKYm9fsNOdQAbx
-UUkzp7HLZ45ZlpKUS0hO7es+fPyF5KVw0g0SrtQWwWucnQMAQE9m+B0aOf+92y7J
-QkdgdR8Gd/XZ4NZfoOnKV7A1utT4rWxYCgICeRTHx9tly5OhPW4hQr5qOpngcsJ9
-vhr86IjznQXhfj3hql5lA3VbHW04ro37ROIkh2bShDq5dwJJHpYCGrF3MQv8S3m+
-jzGhYL6m9gFTm/8=
+${process.env["SAML_CERT"]}
 -----END CERTIFICATE-----`;
 
 const getAcsUrl = (): string => {
-  const baseUrl = isDevEnvironment()
-    ? "http://localhost:5005"
-    : getFrontendUrl().replace(/\/$/, "");
-  return `${baseUrl}/users/acs`;
+  return `${FRONTEND_BASE_URL}/users/acs`;
 };
 
 // Service Provider (SP) Entity ID - our application's identifier
 const getEntityId = (): string => {
-  const baseUrl = isDevEnvironment()
-    ? "http://localhost:5005"
-    : getFrontendUrl().replace(/\/$/, "");
-  return `${baseUrl}/users/login`;
+  return `${FRONTEND_BASE_URL}/users/login`;
 };
 
 let samlStrategyInstance: SamlStrategy | null = null;
+
+export function usesAuthnRequestHttpPostBinding(): boolean {
+  return SAML_AUTHN_REQUEST_BINDING === "HTTP-POST";
+}
+
+export function getSamlRequestHostFromHeaders(
+  headers: IncomingHttpHeaders,
+): string | undefined {
+  const forwarded = headers["x-forwarded-host"];
+  if (typeof forwarded === "string" && forwarded !== "") {
+    return forwarded.split(",")[0]?.trim();
+  }
+  return headers.host;
+}
+
+/** Public origin of the API (for SAML POST bridge URL), e.g. https://api.example.org */
+export function getPublicApiBaseUrlFromExpressRequest(req: {
+  headers: IncomingHttpHeaders;
+  protocol?: string;
+  secure?: boolean;
+}): string {
+  if (SAML_PUBLIC_API_URL !== undefined && SAML_PUBLIC_API_URL !== "") {
+    return SAML_PUBLIC_API_URL.replace(/\/$/, "");
+  }
+  const xfProto = req.headers["x-forwarded-proto"];
+  const proto =
+    typeof xfProto === "string" && xfProto !== ""
+      ? xfProto.split(",")[0]?.trim()
+      : req.secure === true
+        ? "https"
+        : (req.protocol ?? "http");
+  const host = getSamlRequestHostFromHeaders(req.headers) ?? "localhost";
+  return `${proto}://${host}`;
+}
 
 export function getSamlStrategy(): SamlStrategy {
   if (!samlStrategyInstance) {
@@ -60,6 +83,9 @@ export function getSamlStrategy(): SamlStrategy {
           "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
         signatureAlgorithm: "sha256",
         acceptedClockSkewMs: 5000,
+        authnRequestBinding: usesAuthnRequestHttpPostBinding()
+          ? "HTTP-POST"
+          : "HTTP-Redirect",
       },
       () => {
         // This callback is not used when manually processing SAML
@@ -91,12 +117,71 @@ export async function validateSamlRequestId(
   return exists === "1";
 }
 
-export function getSamlAuthUrl(): string {
-  // const strategy = getSamlStrategy();
-  // Generate SAML AuthnRequest and return the redirect URL
-  // passport-saml's authenticate method generates the request
-  // We'll use the entry point directly since mocksaml.com handles the redirect
-  return MOCK_SAML_SSO_URL;
+/**
+ * Build the IdP redirect URL including a SAML AuthnRequest (HTTP-Redirect binding).
+ * Returning only {@link MOCK_SAML_SSO_URL} without SAMLRequest makes the IdP return
+ * "insufficient information to determine the protocol binding" — same as pasting the SSO URL in the bar.
+ */
+export async function getSamlAuthUrlAsync(
+  hostHeader?: string,
+): Promise<string> {
+  const strategy = getSamlStrategy();
+  type NodeSamlLike = {
+    getAuthorizeUrlAsync: (
+      relayState: string | undefined,
+      host: string | undefined,
+      options: { additionalParams?: Record<string, string> } | undefined,
+    ) => Promise<string>;
+  };
+  const saml = (strategy as unknown as { _saml: NodeSamlLike | null })._saml;
+  if (saml === null || saml === undefined) {
+    throw new MonkeyError(500, "SAML strategy not initialized");
+  }
+  return saml.getAuthorizeUrlAsync(undefined, hostHeader, undefined);
+}
+
+type NodeSamlInternal = {
+  getAuthorizeUrlAsync: (
+    relayState: string | undefined,
+    host: string | undefined,
+    options: { additionalParams?: Record<string, string> } | undefined,
+  ) => Promise<string>;
+  getAuthorizeFormAsync: (
+    relayState: string | undefined,
+    host: string | undefined,
+  ) => Promise<string>;
+};
+
+function getNodeSaml(): NodeSamlInternal {
+  const strategy = getSamlStrategy();
+  const saml = (strategy as unknown as { _saml: NodeSamlInternal | null })
+    ._saml;
+  if (saml === null || saml === undefined) {
+    throw new MonkeyError(500, "SAML strategy not initialized");
+  }
+  return saml;
+}
+
+/** HTML page that POSTs SAMLAuthnRequest to the IdP (HTTP-POST binding). */
+export async function getSamlAuthorizeFormHtmlAsync(
+  hostHeader?: string,
+): Promise<string> {
+  return getNodeSaml().getAuthorizeFormAsync(undefined, hostHeader);
+}
+
+/**
+ * URL the browser should open to start SAML: IdP redirect URL, or our POST-bridge page
+ * when {@link usesAuthnRequestHttpPostBinding} is true.
+ */
+export async function getSamlInitiateNavigateUrl(
+  publicApiBaseUrl: string,
+  hostHeader?: string,
+): Promise<string> {
+  const base = publicApiBaseUrl.replace(/\/$/, "");
+  if (usesAuthnRequestHttpPostBinding()) {
+    return `${base}/users/saml-sso`;
+  }
+  return getSamlAuthUrlAsync(hostHeader);
 }
 
 export type SamlProfile = {

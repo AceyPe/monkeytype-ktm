@@ -37,6 +37,7 @@ import { rateLimitRequest } from "../../middlewares/rate-limit";
 import { verifyPermissions } from "../../middlewares/permission";
 import { verifyRequiredConfiguration } from "../../middlewares/configuration";
 import { ExpressRequestWithContext } from "../types";
+import * as SamlUtils from "../../utils/saml";
 
 const pathOverride = process.env["API_PATH_OVERRIDE"];
 const BASE_ROUTE = pathOverride !== undefined ? `/${pathOverride}` : "";
@@ -188,6 +189,17 @@ function applyApiRoutes(app: Application): void {
         version,
       }),
     );
+  });
+
+  app.get(`${BASE_ROUTE}/users/saml-sso`, async (req, res, next) => {
+    try {
+      const host = SamlUtils.getSamlRequestHostFromHeaders(req.headers);
+      const html = await SamlUtils.getSamlAuthorizeFormHtmlAsync(host);
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.send(html);
+    } catch (error) {
+      next(error);
+    }
   });
 
   for (const [route, router] of Object.entries(API_ROUTE_MAP)) {

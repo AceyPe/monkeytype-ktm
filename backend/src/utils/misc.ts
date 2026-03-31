@@ -194,10 +194,11 @@ export function isDevEnvironment(): boolean {
 
 export function getFrontendUrl(): string {
   return isDevEnvironment()
-    ? "http://localhost:3000"
+    ? // ? "http://localhost:3000"
+      "https://ieeektm.org"
     : process.env["FRONTEND_URL"] !== undefined
       ? process.env["FRONTEND_URL"]
-      : "https://monkeytype.com";
+      : "https://ieeektm.org";
 }
 
 /**

@@ -1,6 +1,5 @@
 import * as UserDAL from "../../dal/user";
-import MonkeyError from // getErrorMessage,
-"../../utils/error";
+import MonkeyError from "../../utils/error"; // getErrorMessage,
 import { MonkeyResponse } from "../../utils/monkey-response";
 import * as DiscordUtils from "../../utils/discord";
 import {
@@ -109,10 +108,12 @@ async function verifyCaptcha(captcha: string): Promise<void> {
 }
 
 export async function samlInitiate(
-  _req: MonkeyRequest,
+  req: MonkeyRequest,
 ): Promise<SamlInitiateResponse> {
   await SamlUtils.generateSamlRequestId();
-  const url = SamlUtils.getSamlAuthUrl();
+  const host = SamlUtils.getSamlRequestHostFromHeaders(req.raw.headers);
+  const publicBase = SamlUtils.getPublicApiBaseUrlFromExpressRequest(req.raw);
+  const url = await SamlUtils.getSamlInitiateNavigateUrl(publicBase, host);
   return new MonkeyResponse("SAML SSO URL generated", { url });
 }
 
