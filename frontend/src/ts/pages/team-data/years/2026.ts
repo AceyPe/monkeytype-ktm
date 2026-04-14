@@ -7,7 +7,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Ahmed Ayman",
         title: "Chair",
-        imagePath: "/images/team/2026/Ahmed-Ayman.png",
+        imagePath: "/images/team/2026/Ahmed-Ayman.webp",
         linkedin: "https://www.linkedin.com/in/ahmed-abouelnour/",
         region: "R8",
         section: "Egypt Section",
@@ -15,7 +15,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Subodha Charles",
         title: "MGA SAC Chair",
-        imagePath: "/images/team/2026/Subodha-Charles.jpg",
+        imagePath: "/images/team/2026/Subodha-Charles.webp",
         linkedin: "https://www.linkedin.com/in/subodha-charles/",
         region: "R10",
         section: "Sri Lanka Section",
@@ -36,7 +36,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Mohamed Khanfour",
         title: "Software Engineer",
-        imagePath: "/images/team/2026/Mohamed-Khanfour.jpg",
+        imagePath: "/images/team/2026/Mohamed-Khanfour.webp",
         linkedin: "https://www.linkedin.com/in/mohamedaymn/",
         region: "R8",
         section: "Egypt Section",
@@ -44,7 +44,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Yahya EL Adawy",
         title: "Software & Cybersecurity Engineer",
-        imagePath: "/images/team/2026/Yahya-EL-Adawy.jpg",
+        imagePath: "/images/team/2026/Yahya-EL-Adawy.webp",
         linkedin: "https://www.linkedin.com/in/yahyaeladawy/",
         region: "R8",
         section: "Egypt Section",
@@ -52,7 +52,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Yehya Mohey",
         title: "Cybersecurity Engineer",
-        imagePath: "/images/team/2026/Yehya-Mohey.png",
+        imagePath: "/images/team/2026/Yehya-Mohey.webp",
         linkedin: "https://www.linkedin.com/in/yehyamohey444/",
         region: "R8",
         section: "Egypt Section",
@@ -60,7 +60,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Menna Hany",
         title: "Cybersecurity Engineer",
-        imagePath: "/images/team/2026/Menna-Hany.jpg",
+        imagePath: "/images/team/2026/Menna-Hany.webp",
         linkedin: "https://www.linkedin.com/in/menntullah-hany-0b7627174/",
         region: "R8",
         section: "Egypt Section",
@@ -73,7 +73,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Mohamed Zouari",
         title: "Graphic Designer",
-        imagePath: "/images/team/2026/Mohamed-Zouari.jpg",
+        imagePath: "/images/team/2026/Mohamed-Zouari.webp",
         linkedin: "https://www.linkedin.com/in/mohamedzouari202/",
         region: "R8",
         section: "Tunisia Section",
@@ -81,7 +81,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Devarsh Namboothiri",
         title: "Graphic Designer",
-        imagePath: "/images/team/2026/Devarsh-Namboothiri.jpg",
+        imagePath: "/images/team/2026/Devarsh-Namboothiri.webp",
         linkedin: "https://www.linkedin.com/in/devarsh-r",
         region: "R10",
         section: "Kochi Subsection",
@@ -89,7 +89,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Rashad Elkhudari",
         title: "Graphic Designer",
-        imagePath: "/images/team/2026/Rashad-Elkhudari.jpg",
+        imagePath: "/images/team/2026/Rashad-Elkhudari.webp",
         linkedin:
           "https://www.linkedin.com/in/rashad-alkhodary?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app",
         region: "R8",
@@ -103,7 +103,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Anoud Abdusalam",
         title: "Content Writing Lead",
-        imagePath: "/images/team/2026/Anoud-Abdusalam.jpg",
+        imagePath: "/images/team/2026/Anoud-Abdusalam.webp",
         linkedin: "https://www.linkedin.com/in/anoud-abdusalam-065aa1197/",
         region: "R8",
         section: "Palestine Subsection",
@@ -111,7 +111,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Melina Gonzalez",
         title: "Content Writer",
-        imagePath: "/images/team/2026/Melina-Gonzalez.jpg",
+        imagePath: "/images/team/2026/Melina-Gonzalez.webp",
         linkedin: "https://www.linkedin.com/in/melina-paula-gonzalez",
         region: "R9",
         section: "Argentina Section",
@@ -119,7 +119,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Tharusha Hemapala",
         title: "Content Writer",
-        imagePath: "/images/team/2026/Tharusha-Hemapala.jpg",
+        imagePath: "/images/team/2026/Tharusha-Hemapala.webp",
         linkedin: "https://www.linkedin.com/in/tharusha-hemapala",
         region: "R10",
         section: "Sri Lanka Section",
@@ -132,7 +132,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Rakshit Jain",
         title: "Ambassador Lead",
-        imagePath: "/images/team/2026/Rakshit-Jain.png",
+        imagePath: "/images/team/2026/Rakshit-Jain.webp",
         linkedin: "https://www.linkedin.com/in/rakshit-a-n-jain/",
         region: "R10",
         section: "Pune Section",
@@ -140,7 +140,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Varghese Babu",
         title: "Ambassadors Co-Lead",
-        imagePath: "/images/team/2026/Varghese-Babu.jpg",
+        imagePath: "/images/team/2026/Varghese-Babu.webp",
         linkedin: "https://www.linkedin.com/in/varghese-babu",
         region: "R10",
         section: "Kerala Section",
@@ -148,7 +148,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Banshari Patel",
         title: "Ambassadors Co-Lead",
-        imagePath: "/images/team/2026/Banshari-Patel.jpg",
+        imagePath: "/images/team/2026/Banshari-Patel.webp",
         linkedin: "https://www.linkedin.com/in/banshari-patel-b699542b5/",
         region: "R10",
         section: "Gujarat Section",
@@ -161,7 +161,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Lina Labidi",
         title: "Marketing Lead",
-        imagePath: "/images/team/2026/Lina-Labidi.jpg",
+        imagePath: "/images/team/2026/Lina-Labidi.webp",
         linkedin: "https://www.linkedin.com/in/lina-labidi9",
         region: "R8",
         section: "Tunisia Section",
@@ -177,7 +177,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Nagulan R",
         title: "Marketing Specialist",
-        imagePath: "/images/team/2026/Nagulan-R.jpg",
+        imagePath: "/images/team/2026/Nagulan-R.webp",
         linkedin: "https://www.linkedin.com/in/nagulan-r-566594234/",
         region: "R10",
         section: "Madras Section",
@@ -185,7 +185,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Bahaeddine Hammou",
         title: "Marketing Specialist",
-        imagePath: "/images/team/2026/Bahaeddine-Hammou.jpg",
+        imagePath: "/images/team/2026/Bahaeddine-Hammou.webp",
         linkedin: "https://www.linkedin.com/in/baha-eddine-hammou/",
         region: "R8",
         section: "Tunisia Section",
