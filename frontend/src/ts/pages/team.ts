@@ -1,6 +1,22 @@
 import Page from "./page";
 import * as Skeleton from "../utils/skeleton";
-import { teamData, type TeamSection } from "./team-data";
+import { teamData, type TeamMember, type TeamSection } from "./team-data";
+
+function formatRegionSection(member: TeamMember): string {
+  const { region, section } = member;
+  const hasRegion = region !== undefined && region !== "";
+  const hasSection = section !== undefined && section !== "";
+  if (hasRegion && hasSection) {
+    return `${region} - ${section}`;
+  }
+  if (hasRegion) {
+    return region;
+  }
+  if (hasSection) {
+    return section;
+  }
+  return "";
+}
 
 function renderTeamContent(year: string): void {
   const frame = document.querySelector(".pageTeam .frame");
@@ -41,10 +57,7 @@ function renderTeamContent(year: string): void {
         img.loading = "lazy";
         imageDiv.appendChild(img);
 
-        const position = document.createElement("h3");
-        position.textContent = member.title || "";
-
-        const name = document.createElement("span");
+        const name = document.createElement("h3");
         name.textContent = member.name || "";
 
         const linkedinIcon = document.createElement("i");
@@ -57,8 +70,21 @@ function renderTeamContent(year: string): void {
         }
 
         card.appendChild(imageDiv);
-        card.appendChild(position);
         card.appendChild(name);
+
+        if (member.title) {
+          const position = document.createElement("span");
+          position.textContent = member.title;
+          card.appendChild(position);
+        }
+
+        const regionSectionText = formatRegionSection(member);
+        if (regionSectionText) {
+          const regionSection = document.createElement("span");
+          regionSection.textContent = regionSectionText;
+          card.appendChild(regionSection);
+        }
+
         card.appendChild(linkedinIcon);
 
         container.appendChild(card);

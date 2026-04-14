@@ -1,4 +1,4 @@
-import { TeamSection } from "..";
+import type { TeamSection } from "../types";
 
 export const year2022: TeamSection[] = [
   {
