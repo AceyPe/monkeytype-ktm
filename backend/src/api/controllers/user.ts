@@ -93,6 +93,7 @@ import { tryCatch } from "@monkeytype/util/trycatch";
 import * as ConnectionsDal from "../../dal/connections";
 import { PersonalBest } from "@monkeytype/schemas/shared";
 import * as SamlUtils from "../../utils/saml";
+import Logger from "../../utils/logger";
 
 async function verifyCaptcha(captcha: string): Promise<void> {
   const { data: verified, error } = await tryCatch(verify(captcha));
@@ -115,6 +116,18 @@ export async function samlInitiate(
   const publicBase = SamlUtils.getPublicApiBaseUrlFromExpressRequest(req.raw);
   const url = await SamlUtils.getSamlInitiateNavigateUrl(publicBase, host);
   return new MonkeyResponse("SAML SSO URL generated", { url });
+}
+
+const SAML_IDP_DEBUG_SEPARATOR = "*****************************";
+
+function logSamlIdpDebugPayload(label: string, payload: unknown): void {
+  for (let i = 0; i < 6; i++) {
+    Logger.info(SAML_IDP_DEBUG_SEPARATOR);
+  }
+  Logger.info(`[SAML IdP Debug] ${label}`);
+  Logger.info(
+    `[SAML IdP Debug] ${JSON.stringify(payload, null, 2) ?? String(payload)}`,
+  );
 }
 
 /**
@@ -192,7 +205,9 @@ export async function acs(
   // Validate SAML response
   let profile: SamlUtils.SamlProfile;
   try {
+    logSamlIdpDebugPayload("Raw ACS body from IdP", req.body);
     profile = await SamlUtils.validateSamlResponse(SAMLResponse, RelayState);
+    logSamlIdpDebugPayload("Validated profile returned from IdP", profile);
   } catch (error: unknown) {
     if (error instanceof MonkeyError) {
       throw error;
