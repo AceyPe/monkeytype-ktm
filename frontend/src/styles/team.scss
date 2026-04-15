@@ -249,10 +249,10 @@
           max-width: calc((100% - 1rem) / 2);
         }
 
-        &:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
+        // &:hover {
+        //   transform: translateY(-4px);
+        //   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        // }
 
         .cardLinkedinBadge {
           position: absolute;
@@ -294,7 +294,14 @@
             height: 100%;
             object-fit: cover;
             object-position: center;
+            transform: scale(1);
+            transition: transform 0.3s ease-in-out;
           }
+        }
+
+        &:hover .cardImage img,
+        &:focus-visible .cardImage img {
+          transform: scale(1.09);
         }
 
         .cardInfo {

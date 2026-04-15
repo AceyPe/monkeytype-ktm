@@ -145,14 +145,14 @@ export const year2026: TeamSection[] = [
         region: "R10",
         section: "Kerala Section",
       },
-      {
-        name: "Banshari Patel",
-        title: "Ambassadors Co-Lead",
-        imagePath: "/images/team/2026/Banshari-Patel.webp",
-        linkedin: "https://www.linkedin.com/in/banshari-patel-b699542b5/",
-        region: "R10",
-        section: "Gujarat Section",
-      },
+      // {
+      //   name: "Banshari Patel",
+      //   title: "Ambassadors Co-Lead",
+      //   imagePath: "/images/team/2026/Banshari-Patel.webp",
+      //   linkedin: "https://www.linkedin.com/in/banshari-patel-b699542b5/",
+      //   region: "R10",
+      //   section: "Gujarat Section",
+      // },
     ],
   },
   {
