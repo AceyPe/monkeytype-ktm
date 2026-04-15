@@ -170,6 +170,33 @@ body {
   background: var(--bg-color);
 }
 
+.typewriter-text {
+  --typewriter-cursor-color: currentColor;
+  display: inline-block;
+  position: relative;
+  min-width: var(--typewriter-reserved-width, 0);
+}
+
+.typewriter-text--cursor::after {
+  content: "|";
+  display: inline-block;
+  margin-left: 0.08em;
+  color: var(--typewriter-cursor-color);
+  animation: typewriterCursorBlink 0.9s steps(1, end) infinite;
+}
+
+@keyframes typewriterCursorBlink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
 .customBackground {
   content: "";
   width: 100vw;

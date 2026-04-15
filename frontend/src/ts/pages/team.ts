@@ -1,6 +1,9 @@
 import Page from "./page";
 import * as Skeleton from "../utils/skeleton";
 import { teamData, type TeamMember, type TeamSection } from "./team-data";
+import { startTypewriter, type StopTypewriter } from "../utils/typewriter";
+
+let stopSloganTyping: StopTypewriter | null = null;
 
 function formatRegionSection(member: TeamMember): string {
   const { region, section } = member;
@@ -140,6 +143,16 @@ function initTeamPage(): void {
   const page = document.querySelector(".pageTeam");
   if (!page) return;
 
+  const slogan = page.querySelector(".hero-section .slogan");
+  if (slogan instanceof HTMLElement) {
+    stopSloganTyping?.();
+    stopSloganTyping = startTypewriter(slogan, {
+      phrases: ["The minds behind the mission", "hello world"],
+      pauseAfterTypeMs: 1000,
+      loop: true,
+    });
+  }
+
   // Set up button click handlers
   const buttons = page.querySelectorAll(".bigtitle button");
   buttons.forEach((button) => {
@@ -165,6 +178,8 @@ export const page = new Page({
   path: "/team",
   afterHide: async (): Promise<void> => {
     // reset();
+    stopSloganTyping?.();
+    stopSloganTyping = null;
     Skeleton.remove("pageTeam");
   },
   beforeShow: async (): Promise<void> => {
