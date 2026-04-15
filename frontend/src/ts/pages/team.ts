@@ -47,45 +47,50 @@ function renderTeamContent(year: string): void {
 
       // Render cards for each team member
       section.items.forEach((member) => {
-        const card = document.createElement("div");
+        const hasLinkedin = member.linkedin.trim().length > 0;
+        const card: HTMLAnchorElement | HTMLDivElement = hasLinkedin
+          ? document.createElement("a")
+          : document.createElement("div");
         card.className = "card";
+        if (hasLinkedin) {
+          card.href = member.linkedin;
+          card.target = "_blank";
+          card.rel = "noopener noreferrer";
+          card.setAttribute("aria-label", `${member.name} LinkedIn profile`);
+        }
 
         const imageDiv = document.createElement("div");
+        imageDiv.className = "cardImage";
         const img = document.createElement("img");
         img.src = member.imagePath || "/images/team_page.webp";
         img.alt = member.name || "Team Member";
         img.loading = "lazy";
         imageDiv.appendChild(img);
 
+        const cardInfo = document.createElement("div");
+        cardInfo.className = "cardInfo";
+
         const name = document.createElement("h3");
         name.textContent = member.name || "";
-
-        const linkedinIcon = document.createElement("i");
-        linkedinIcon.className = "fab fa-linkedin-in circle-icon";
-        if (member.linkedin) {
-          linkedinIcon.style.cursor = "pointer";
-          linkedinIcon.addEventListener("click", () => {
-            window.open(member.linkedin, "_blank");
-          });
-        }
-
-        card.appendChild(imageDiv);
-        card.appendChild(name);
+        cardInfo.appendChild(name);
 
         if (member.title) {
           const position = document.createElement("span");
+          position.className = "position";
           position.textContent = member.title;
-          card.appendChild(position);
+          cardInfo.appendChild(position);
         }
 
         const regionSectionText = formatRegionSection(member);
         if (regionSectionText) {
           const regionSection = document.createElement("span");
+          regionSection.className = "regionSection";
           regionSection.textContent = regionSectionText;
-          card.appendChild(regionSection);
+          cardInfo.appendChild(regionSection);
         }
 
-        card.appendChild(linkedinIcon);
+        card.appendChild(imageDiv);
+        card.appendChild(cardInfo);
 
         container.appendChild(card);
       });
