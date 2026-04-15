@@ -127,35 +127,6 @@ export const year2026: TeamSection[] = [
     ],
   },
   {
-    title: "Ambassadors Program",
-    items: [
-      {
-        name: "Rakshit Jain",
-        title: "Ambassador Lead",
-        imagePath: "/images/team/2026/Rakshit-Jain.webp",
-        linkedin: "https://www.linkedin.com/in/rakshit-a-n-jain/",
-        region: "R10",
-        section: "Pune Section",
-      },
-      {
-        name: "Varghese Babu",
-        title: "Ambassadors Co-Lead",
-        imagePath: "/images/team/2026/Varghese-Babu.webp",
-        linkedin: "https://www.linkedin.com/in/varghese-babu",
-        region: "R10",
-        section: "Kerala Section",
-      },
-      // {
-      //   name: "Banshari Patel",
-      //   title: "Ambassadors Co-Lead",
-      //   imagePath: "/images/team/2026/Banshari-Patel.webp",
-      //   linkedin: "https://www.linkedin.com/in/banshari-patel-b699542b5/",
-      //   region: "R10",
-      //   section: "Gujarat Section",
-      // },
-    ],
-  },
-  {
     title: "Marketing",
     items: [
       {
@@ -190,6 +161,35 @@ export const year2026: TeamSection[] = [
         region: "R8",
         section: "Tunisia Section",
       },
+    ],
+  },
+  {
+    title: "Ambassadors Program",
+    items: [
+      {
+        name: "Rakshit Jain",
+        title: "Ambassadors Lead",
+        imagePath: "/images/team/2026/Rakshit-Jain.webp",
+        linkedin: "https://www.linkedin.com/in/rakshit-a-n-jain/",
+        region: "R10",
+        section: "Pune Section",
+      },
+      {
+        name: "Varghese Babu",
+        title: "Ambassadors Co-Lead",
+        imagePath: "/images/team/2026/Varghese-Babu.webp",
+        linkedin: "https://www.linkedin.com/in/varghese-babu",
+        region: "R10",
+        section: "Kerala Section",
+      },
+      // {
+      //   name: "Banshari Patel",
+      //   title: "Ambassadors Co-Lead",
+      //   imagePath: "/images/team/2026/Banshari-Patel.webp",
+      //   linkedin: "https://www.linkedin.com/in/banshari-patel-b699542b5/",
+      //   region: "R10",
+      //   section: "Gujarat Section",
+      // },
     ],
   },
 ];
