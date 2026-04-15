@@ -7,9 +7,12 @@ import Page from "./page";
 // import * as ConnectionState from "../states/connection";
 // import { intervalToDuration } from "date-fns/intervalToDuration";
 import * as Skeleton from "../utils/skeleton";
+import { startTypewriter, type StopTypewriter } from "../utils/typewriter";
 // import { TypingStats, SpeedHistogram } from "@monkeytype/schemas/public";
 // import { getNumberWithMagnitude, numberWithSpaces } from "../utils/numbers";
 // import { tryCatch } from "@monkeytype/util/trycatch";
+
+let stopSloganTyping: StopTypewriter | null = null;
 
 // function reset(): void {
 //   $(".pageAbout .contributors").empty();
@@ -138,6 +141,18 @@ function initFaqAccordion(): void {
     });
 }
 
+function initHeroSloganTypewriter(): void {
+  const slogan = document.querySelector(".pageAbout .hero-section .slogan");
+  if (!(slogan instanceof HTMLElement)) return;
+
+  stopSloganTyping?.();
+  stopSloganTyping = startTypewriter(slogan, {
+    phrases: ["Type. Compete. Repeat."],
+    pauseAfterTypeMs: 1000,
+    loop: true,
+  });
+}
+
 // async function fill(): Promise<void> {
 // const { data: supporters, error: supportersError } = await tryCatch(
 //   JSONData.getSupportersList(),
@@ -218,11 +233,14 @@ export const page = new Page({
   path: "/about",
   afterHide: async (): Promise<void> => {
     // reset();
+    stopSloganTyping?.();
+    stopSloganTyping = null;
     Skeleton.remove("pageAbout");
   },
   beforeShow: async (): Promise<void> => {
     Skeleton.append("pageAbout", "main");
     // void fill();
+    initHeroSloganTypewriter();
     initFaqAccordion();
   },
 });
