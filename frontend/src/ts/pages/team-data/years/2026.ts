@@ -23,7 +23,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Robert Sacks",
         title: "Staff Support",
-        imagePath: "",
+        imagePath: "/images/team/2026/Robert-Sacks.webp",
         linkedin: "https://www.linkedin.com/in/robert-sacks-9475a4310/",
         region: "R2",
         section: "Princeton-Central Jersey Section",
