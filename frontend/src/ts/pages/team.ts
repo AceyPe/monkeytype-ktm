@@ -147,7 +147,10 @@ function initTeamPage(): void {
   if (slogan instanceof HTMLElement) {
     stopSloganTyping?.();
     stopSloganTyping = startTypewriter(slogan, {
-      phrases: ["The minds behind the mission", "hello world"],
+      phrases: [
+        "The minds behind the mission",
+        "The volunteers behind the keys",
+      ],
       pauseAfterTypeMs: 1000,
       loop: true,
     });
