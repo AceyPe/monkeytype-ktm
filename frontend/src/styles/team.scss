@@ -254,6 +254,32 @@
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
+        .cardLinkedinBadge {
+          position: absolute;
+          top: 0.7rem;
+          right: 0.7rem;
+          z-index: 2;
+          width: 2rem;
+          height: 2rem;
+          display: grid;
+          place-items: center;
+          border-radius: 999px;
+          background: rgba(0, 0, 0, 0.28);
+          color: #fff;
+          opacity: 0;
+          transform: translateY(-6px);
+          transition:
+            opacity 0.22s ease,
+            transform 0.22s ease;
+          pointer-events: none;
+        }
+
+        &:hover .cardLinkedinBadge,
+        &:focus-visible .cardLinkedinBadge {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
         .cardImage {
           width: 100%;
           aspect-ratio: 1;

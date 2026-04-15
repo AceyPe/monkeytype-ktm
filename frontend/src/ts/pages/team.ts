@@ -66,6 +66,16 @@ function renderTeamContent(year: string): void {
         img.alt = member.name || "Team Member";
         img.loading = "lazy";
         imageDiv.appendChild(img);
+        if (hasLinkedin) {
+          const linkedinBadge = document.createElement("div");
+          linkedinBadge.className = "cardLinkedinBadge";
+          linkedinBadge.setAttribute("aria-hidden", "true");
+
+          const linkedinIcon = document.createElement("i");
+          linkedinIcon.className = "fab fa-linkedin-in";
+          linkedinBadge.appendChild(linkedinIcon);
+          card.appendChild(linkedinBadge);
+        }
 
         const cardInfo = document.createElement("div");
         cardInfo.className = "cardInfo";
