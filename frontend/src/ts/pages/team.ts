@@ -52,7 +52,7 @@ function renderTeamContent(year: string): void {
           ? document.createElement("a")
           : document.createElement("div");
         card.className = "card";
-        if (hasLinkedin) {
+        if (card instanceof HTMLAnchorElement) {
           card.href = member.linkedin;
           card.target = "_blank";
           card.rel = "noopener noreferrer";
