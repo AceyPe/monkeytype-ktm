@@ -103,7 +103,7 @@ export const year2025: TeamSection[] = [
       {
         name: "Hisham Ahmed",
         title: "Media Head",
-        imagePath: "",
+        imagePath: "/images/team/2025/Hisham-Ahmed.webp",
         linkedin: "https://www.linkedin.com/in/hisham-ahmed-le-extraordinaire",
       },
       {
@@ -121,7 +121,7 @@ export const year2025: TeamSection[] = [
       {
         name: "Mariam Hassan",
         title: "Registration",
-        imagePath: "",
+        imagePath: "/images/team/2025/Mariam-Hassan.webp",
         linkedin: "https://www.linkedin.com/in/mariam07",
       },
     ],

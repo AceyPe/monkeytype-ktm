@@ -42,7 +42,7 @@ export const year2022: TeamSection[] = [
       {
         name: "Nada Khedr",
         title: "Documentation Head",
-        imagePath: "",
+        imagePath: "/images/team/2022/Nada-Khedr.webp",
         linkedin: "https://www.linkedin.com/in/nada-khedr/",
       },
       {
