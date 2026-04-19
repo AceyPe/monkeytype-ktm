@@ -71,143 +71,146 @@ export function getSignupData(): SignupData | false {
 
 const nameInputEl = document.querySelector(
   ".page.pageLogin .register.side input.usernameInput",
-) as HTMLInputElement;
-new ValidatedHtmlInputElement(nameInputEl, {
-  schema: UserNameSchema,
-  isValid: remoteValidation(
-    async (name) => Ape.users.getNameAvailability({ params: { name } }),
-    { check: (data) => data.available || "Name not available" },
-  ),
-  debounceDelay: 1000,
-  callback: (result) => {
-    registerForm.name =
-      result.status === "success" ? nameInputEl.value : undefined;
-    updateSignupButton();
-  },
-});
+) as HTMLInputElement | null;
 
 let disposableEmailModule: typeof import("disposable-email-domains-js") | null =
   null;
 let moduleLoadAttempted = false;
 
-const emailInputEl = new ValidatedHtmlInputElement(
-  document.querySelector(
-    ".page.pageLogin .register.side input.emailInput",
-  ) as HTMLInputElement,
-  {
-    schema: UserEmailSchema,
-    isValid: async (email: string) => {
-      const educationRegex =
-        /@.*(student|education|school|\.edu$|\.edu\.|\.ac\.|\.sch\.)/i;
-      if (educationRegex.test(email)) {
-        return {
-          warning:
-            "Some education emails will fail to receive our messages, or disable the account as soon as you graduate. Consider using a personal email address.",
-        };
-      }
+if (nameInputEl !== null) {
+  new ValidatedHtmlInputElement(nameInputEl, {
+    schema: UserNameSchema,
+    isValid: remoteValidation(
+      async (name) => Ape.users.getNameAvailability({ params: { name } }),
+      { check: (data) => data.available || "Name not available" },
+    ),
+    debounceDelay: 1000,
+    callback: (result) => {
+      registerForm.name =
+        result.status === "success" ? nameInputEl.value : undefined;
+      updateSignupButton();
+    },
+  });
 
-      const emailHasTypo = TypoList.some((typo) => {
-        return email.endsWith(typo);
-      });
-      if (emailHasTypo) {
-        return {
-          warning: "Please check your email address, it may contain a typo.",
-        };
-      }
-
-      if (
-        disposableEmailModule &&
-        disposableEmailModule.isDisposableEmail !== undefined
-      ) {
-        try {
-          if (disposableEmailModule.isDisposableEmail(email)) {
-            return {
-              warning:
-                "Using a temporary email may cause issues with logging in, password resets and support. Consider using a permanent email address. Don't worry, we don't send spam.",
-            };
-          }
-        } catch (e) {
-          // Silent failure
+  const emailInputEl = new ValidatedHtmlInputElement(
+    document.querySelector(
+      ".page.pageLogin .register.side input.emailInput",
+    ) as HTMLInputElement,
+    {
+      schema: UserEmailSchema,
+      isValid: async (email: string) => {
+        const educationRegex =
+          /@.*(student|education|school|\.edu$|\.edu\.|\.ac\.|\.sch\.)/i;
+        if (educationRegex.test(email)) {
+          return {
+            warning:
+              "Some education emails will fail to receive our messages, or disable the account as soon as you graduate. Consider using a personal email address.",
+          };
         }
-      }
 
-      return true;
+        const emailHasTypo = TypoList.some((typo) => {
+          return email.endsWith(typo);
+        });
+        if (emailHasTypo) {
+          return {
+            warning: "Please check your email address, it may contain a typo.",
+          };
+        }
+
+        if (
+          disposableEmailModule &&
+          disposableEmailModule.isDisposableEmail !== undefined
+        ) {
+          try {
+            if (disposableEmailModule.isDisposableEmail(email)) {
+              return {
+                warning:
+                  "Using a temporary email may cause issues with logging in, password resets and support. Consider using a permanent email address. Don't worry, we don't send spam.",
+              };
+            }
+          } catch (e) {
+            // Silent failure
+          }
+        }
+
+        return true;
+      },
+      debounceDelay: 0,
+      callback: (result) => {
+        if (result.status === "success") {
+          //re-validate the verify email
+          emailVerifyInputEl.dispatchEvent(new Event("input"));
+        }
+      },
+    },
+  );
+
+  emailInputEl.native.addEventListener("focus", async () => {
+    if (!moduleLoadAttempted) {
+      moduleLoadAttempted = true;
+      try {
+        disposableEmailModule = await import("disposable-email-domains-js");
+      } catch (e) {
+        // Silent failure
+      }
+    }
+  });
+
+  const emailVerifyInputEl = document.querySelector(
+    ".page.pageLogin .register.side input.verifyEmailInput",
+  ) as HTMLInputElement;
+  new ValidatedHtmlInputElement(emailVerifyInputEl, {
+    isValid: async (emailVerify: string) => {
+      return emailInputEl.getValue() === emailVerify
+        ? true
+        : "verify email not matching email";
     },
     debounceDelay: 0,
     callback: (result) => {
-      if (result.status === "success") {
-        //re-validate the verify email
-        emailVerifyInputEl.dispatchEvent(new Event("input"));
-      }
+      registerForm.email =
+        emailInputEl.getValidationResult().status === "success" &&
+        result.status === "success"
+          ? emailInputEl.getValue()
+          : undefined;
+      updateSignupButton();
     },
-  },
-);
+  });
 
-emailInputEl.native.addEventListener("focus", async () => {
-  if (!moduleLoadAttempted) {
-    moduleLoadAttempted = true;
-    try {
-      disposableEmailModule = await import("disposable-email-domains-js");
-    } catch (e) {
-      // Silent failure
-    }
-  }
-});
+  const passwordInputEl = new ValidatedHtmlInputElement(
+    document.querySelector(
+      ".page.pageLogin .register.side .passwordInput",
+    ) as HTMLInputElement,
+    {
+      schema: isDevEnvironment() ? z.string().min(6) : PasswordSchema,
+      callback: (result) => {
+        if (result.status === "success") {
+          //re-validate the verify password
+          passwordVerifyInputEl.dispatchEvent(new Event("input"));
+        }
+      },
+    },
+  );
 
-const emailVerifyInputEl = document.querySelector(
-  ".page.pageLogin .register.side input.verifyEmailInput",
-) as HTMLInputElement;
-new ValidatedHtmlInputElement(emailVerifyInputEl, {
-  isValid: async (emailVerify: string) => {
-    return emailInputEl.getValue() === emailVerify
-      ? true
-      : "verify email not matching email";
-  },
-  debounceDelay: 0,
-  callback: (result) => {
-    registerForm.email =
-      emailInputEl.getValidationResult().status === "success" &&
-      result.status === "success"
-        ? emailInputEl.getValue()
-        : undefined;
-    updateSignupButton();
-  },
-});
-
-const passwordInputEl = new ValidatedHtmlInputElement(
-  document.querySelector(
-    ".page.pageLogin .register.side .passwordInput",
-  ) as HTMLInputElement,
-  {
-    schema: isDevEnvironment() ? z.string().min(6) : PasswordSchema,
+  const passwordVerifyInputEl = document.querySelector(
+    ".page.pageLogin .register.side .verifyPasswordInput",
+  ) as HTMLInputElement;
+  new ValidatedHtmlInputElement(passwordVerifyInputEl, {
+    isValid: async (passwordVerify: string) => {
+      return passwordInputEl.getValue() === passwordVerify
+        ? true
+        : "verify password not matching password";
+    },
+    debounceDelay: 0,
     callback: (result) => {
-      if (result.status === "success") {
-        //re-validate the verify password
-        passwordVerifyInputEl.dispatchEvent(new Event("input"));
-      }
+      registerForm.password =
+        passwordInputEl.getValidationResult().status === "success" &&
+        result.status === "success"
+          ? passwordInputEl.getValue()
+          : undefined;
+      updateSignupButton();
     },
-  },
-);
-
-const passwordVerifyInputEl = document.querySelector(
-  ".page.pageLogin .register.side .verifyPasswordInput",
-) as HTMLInputElement;
-new ValidatedHtmlInputElement(passwordVerifyInputEl, {
-  isValid: async (passwordVerify: string) => {
-    return passwordInputEl.getValue() === passwordVerify
-      ? true
-      : "verify password not matching password";
-  },
-  debounceDelay: 0,
-  callback: (result) => {
-    registerForm.password =
-      passwordInputEl.getValidationResult().status === "success" &&
-      result.status === "success"
-        ? passwordInputEl.getValue()
-        : undefined;
-    updateSignupButton();
-  },
-});
+  });
+}
 
 export const page = new Page({
   id: "login",

@@ -30,11 +30,7 @@ import { getActiveFunboxesWithFunction } from "./test/funbox/list";
 import * as Sentry from "./sentry";
 import { tryCatch } from "@monkeytype/util/trycatch";
 import * as AuthEvent from "./observables/auth-event";
-// eslint-disable-next-line import/no-unresolved
-import { envConfig } from "virtual:env-config";
-
-/** SAML initiate uses this host instead of `backendUrl` (temporary). */
-const SAML_SSO_INITIATE_URL = "https://api.ieeektm.org/users/login";
+import { startSamlSignIn } from "./utils/saml-sso";
 
 export const gmailProvider = new GoogleAuthProvider();
 export const githubProvider = new GithubAuthProvider();
@@ -279,65 +275,6 @@ async function signInWithGitHub(): Promise<void> {
   return signInWithProvider(githubProvider);
 }
 
-async function signInWithSso(): Promise<void> {
-  if (!ConnectionState.get()) {
-    Notifications.add("You are offline", 0, {
-      duration: 2,
-    });
-    return;
-  }
-
-  LoginPage.showPreloader();
-  LoginPage.disableInputs();
-  LoginPage.disableSignUpButton();
-
-  const { data: response, error } = await tryCatch(
-    (async (): Promise<{
-      status: number;
-      body: { message: string; data?: { url: string } };
-    }> => {
-      const res = await fetch(SAML_SSO_INITIATE_URL, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "X-Client-Version": envConfig.clientVersion,
-        },
-      });
-      const body = (await res.json()) as {
-        message: string;
-        data?: { url: string };
-      };
-      return { status: res.status, body };
-    })(),
-  );
-
-  if (error !== null) {
-    Notifications.add(
-      Misc.createErrorMessage(error, "Could not start SSO"),
-      -1,
-    );
-    LoginPage.hidePreloader();
-    LoginPage.enableInputs();
-    LoginPage.updateSignupButton();
-    return;
-  }
-
-  if (response.status !== 200 || response.body.data?.url === undefined) {
-    Notifications.add(
-      response.status !== 200
-        ? response.body.message
-        : "SSO URL missing from server response",
-      -1,
-    );
-    LoginPage.hidePreloader();
-    LoginPage.enableInputs();
-    LoginPage.updateSignupButton();
-    return;
-  }
-
-  window.location.assign(response.body.data.url);
-}
-
 async function addGoogleAuth(): Promise<void> {
   return addAuthProvider("Google", gmailProvider);
 }
@@ -487,8 +424,9 @@ $(".pageLogin .login button.signInWithGitHub").on("click", () => {
   void signInWithGitHub();
 });
 
-$(".pageLogin .login button.signInWithSso").on("click", () => {
-  void signInWithSso();
+$("nav").on("click", "a.textButton.view-login", (e) => {
+  e.preventDefault();
+  void startSamlSignIn();
 });
 
 $("nav .accountButtonAndMenu .menu button.signOut").on("click", () => {

@@ -2,6 +2,7 @@ import * as PageController from "./page-controller";
 import * as TestUI from "../test/test-ui";
 import * as PageTransition from "../states/page-transition";
 import { isAuthAvailable, isAuthenticated } from "../firebase";
+import { startSamlSignIn } from "../utils/saml-sso";
 import { isFunboxActive } from "../test/funbox/list";
 import * as TestState from "../test/test-state";
 import * as Notifications from "../elements/notifications";
@@ -101,7 +102,10 @@ const routes: Route[] = [
         await navigate("/account", options);
         return;
       }
-      await PageController.change("login", options);
+      const ok = await startSamlSignIn();
+      if (!ok) {
+        await navigate("/", { ...options, force: true });
+      }
     },
   },
   {
