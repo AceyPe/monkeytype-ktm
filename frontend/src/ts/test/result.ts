@@ -808,7 +808,8 @@ function updateTestType(randomQuote: Quote | null): void {
     testType += " " + Config.words;
   } else if (Config.mode === "quote") {
     if (randomQuote?.group !== undefined) {
-      testType += " " + ["short", "medium", "long", "thicc"][randomQuote.group];
+      testType +=
+        " " + ["short", "medium", "long", "too long"][randomQuote.group];
     }
   }
   const ignoresLanguage = isFunboxActiveWithProperty("ignoresLanguage");

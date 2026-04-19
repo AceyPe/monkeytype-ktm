@@ -55,7 +55,7 @@ export const QuoteLengthSchema = z.union([
   z.literal("short"),
   z.literal("medium"),
   z.literal("long"),
-  z.literal("thicc"),
+  z.literal("too long"),
 ]);
 
 // // Step 1: Define the schema for specific string values "10" and "25"

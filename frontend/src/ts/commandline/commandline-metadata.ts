@@ -170,7 +170,7 @@ export const commandlineConfigMetadata: CommandlineConfigMetadataObject = {
           0: "short",
           1: "medium",
           2: "long",
-          3: "thicc",
+          3: "too long",
           "-3": "favorite",
         };
 

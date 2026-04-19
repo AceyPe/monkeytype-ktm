@@ -625,7 +625,7 @@ $(".pageAccount .topFilters button.currentConfigFilter").on("click", () => {
       "short",
       "medium",
       "long",
-      "thicc",
+      "too long",
     ];
     filterName.forEach((ql, index) => {
       if (Config.quoteLength.includes(index as QuoteLength)) {

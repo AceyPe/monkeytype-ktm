@@ -369,7 +369,7 @@ async function fillContent(): Promise<void> {
         } else if (result.quoteLength === 2) {
           filter = "long";
         } else if (result.quoteLength === 3) {
-          filter = "thicc";
+          filter = "too long";
         }
         if (
           filter !== undefined &&

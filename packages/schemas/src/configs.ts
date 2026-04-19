@@ -31,7 +31,7 @@ export const QuoteLengthConfigSchema = z
       "|0|Short quotes|",
       "|1|Medium quotes|",
       "|2|Long quotes|",
-      "|3|Thicc quotes|",
+      "|3|Too long quotes|",
     ].join("\n"),
   );
 export type QuoteLengthConfig = z.infer<typeof QuoteLengthConfigSchema>;

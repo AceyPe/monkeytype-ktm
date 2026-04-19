@@ -57,7 +57,7 @@ const mockResultFilter: ResultFilters = {
     short: false,
     medium: false,
     long: false,
-    thicc: false,
+    "too long": false,
   },
   punctuation: {
     on: false,

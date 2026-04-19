@@ -1962,7 +1962,7 @@ describe("user controller test", () => {
         short: false,
         medium: false,
         long: false,
-        thicc: false,
+        "too long": false,
       },
       punctuation: {
         on: false,

@@ -105,7 +105,7 @@ function updateData(): void {
   } else if (currentQuote.group === 2) {
     lengthDesc = "long";
   } else if (currentQuote.group === 3) {
-    lengthDesc = "thicc";
+    lengthDesc = "too long";
   }
   $(`#quoteRateModal .quote .text`).text(currentQuote.text);
   $(`#quoteRateModal .quote .source .val`).text(currentQuote.source);

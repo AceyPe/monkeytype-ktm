@@ -142,7 +142,7 @@ function buildQuoteSearchResult(
   } else if (quote.length < 601) {
     lengthDesc = "long";
   } else {
-    lengthDesc = "thicc";
+    lengthDesc = "too long";
   }
 
   const loggedOut = !isAuthenticated();
@@ -329,7 +329,7 @@ export async function show(showOptions?: ShowOptions): Promise<void> {
             value: "2",
           },
           {
-            text: "thicc",
+            text: "too long",
             value: "3",
           },
           {

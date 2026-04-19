@@ -4007,7 +4007,7 @@ backend/anticheat
           <div class="button" quote="0">short</div>
           <div class="button" quote="1">medium</div>
           <div class="button" quote="2">long</div>
-          <div class="button" quote="3">thicc</div>
+          <div class="button" quote="3">too long</div>
           <div class="button" quote="-2">search</div>
         </div>
         <div class="group customGroup hidden">
@@ -4856,7 +4856,7 @@ backend/anticheat
                     long
                   </div>
                   <div class="text-button" quoteLength="3" tabindex="2">
-                    thicc
+                    too long
                   </div>
                   <div class="text-button" quoteLength="-2" tabindex="2">
                     <i class="fas fa-search"></i>
@@ -8127,7 +8127,7 @@ backend/anticheat
                     <div class="button" filter="short">short</div>
                     <div class="button" filter="medium">medium</div>
                     <div class="button" filter="long">long</div>
-                    <div class="button" filter="thicc">thicc</div>
+                    <div class="button" filter="too long">too long</div>
                   </div>
                 </div>
                 <div class="buttonsAndTitle">
@@ -26469,7 +26469,7 @@ function updateTestType() {
     } else if (Config.quoteLength === 2) {
       qlen = "long ";
     } else if (Config.quoteLength === 3) {
-      qlen = "thicc ";
+      qlen = "too long ";
     }
     testType += qlen + Config.mode;
   } else {

@@ -39,7 +39,7 @@ const object: ResultFilters = {
     short: true,
     medium: true,
     long: true,
-    thicc: true,
+    "too long": true,
   },
   punctuation: {
     on: true,
