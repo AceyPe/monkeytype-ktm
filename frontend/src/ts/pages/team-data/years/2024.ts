@@ -54,7 +54,7 @@ export const year2024: TeamSection[] = [
       {
         name: "Yahya El Adawy",
         title: "Volunteer",
-        imagePath: "/images/team/2024/Yahya-El-Adawy.webp",
+        imagePath: "/images/team/2024/Yahya-EL-Adawy.webp",
         linkedin: "https://www.linkedin.com/in/yahyaeladawy/",
       },
       {
@@ -182,7 +182,7 @@ export const year2024: TeamSection[] = [
       {
         name: "Mariam Hassan",
         title: "Volunteer",
-        imagePath: "",
+        imagePath: "/images/team/2024/Mariam-Hassan.webp",
         linkedin: "https://www.linkedin.com/in/mariam07/",
       },
     ],

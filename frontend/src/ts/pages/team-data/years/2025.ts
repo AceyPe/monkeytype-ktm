@@ -85,7 +85,7 @@ export const year2025: TeamSection[] = [
       {
         name: "Yahya El Adawy",
         title: "Operations",
-        imagePath: "/images/team/2025/Yahya-El-Adawy.webp",
+        imagePath: "/images/team/2025/Yahya-EL-Adawy.webp",
         linkedin: "https://www.linkedin.com/in/yahyaeladawy",
       },
       {
