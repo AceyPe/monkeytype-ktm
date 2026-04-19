@@ -137,14 +137,6 @@ export const year2026: TeamSection[] = [
         section: "Tunisia Section",
       },
       {
-        name: "Youmna Adel",
-        title: "Marketing Specialist",
-        imagePath: "/images/team/2026/Youmna-Adel.webp",
-        linkedin: "https://www.linkedin.com/in/youmna-elhoseny-9b6557253/",
-        region: "R8",
-        section: "Egypt Section",
-      },
-      {
         name: "Mohamed Zouari",
         title: "Graphic Designer",
         imagePath: "/images/team/2026/Mohamed-Zouari.webp",
@@ -166,6 +158,14 @@ export const year2026: TeamSection[] = [
         imagePath: "/images/team/2026/Rashad-Elkhudari.webp",
         linkedin:
           "https://www.linkedin.com/in/rashad-alkhodary?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app",
+        region: "R8",
+        section: "Egypt Section",
+      },
+      {
+        name: "Youmna Adel",
+        title: "Marketing Specialist",
+        imagePath: "/images/team/2026/Youmna-Adel.webp",
+        linkedin: "https://www.linkedin.com/in/youmna-elhoseny-9b6557253/",
         region: "R8",
         section: "Egypt Section",
       },
