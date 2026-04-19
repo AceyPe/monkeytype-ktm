@@ -68,36 +68,6 @@ export const year2026: TeamSection[] = [
     ],
   },
   {
-    title: "Graphic Design",
-    items: [
-      {
-        name: "Mohamed Zouari",
-        title: "Graphic Designer",
-        imagePath: "/images/team/2026/Mohamed-Zouari.webp",
-        linkedin: "https://www.linkedin.com/in/mohamedzouari202/",
-        region: "R8",
-        section: "Tunisia Section",
-      },
-      {
-        name: "Devarsh Namboothiri",
-        title: "Graphic Designer",
-        imagePath: "/images/team/2026/Devarsh-Namboothiri.webp",
-        linkedin: "https://www.linkedin.com/in/devarsh-r/",
-        region: "R10",
-        section: "Kochi Subsection",
-      },
-      {
-        name: "Rashad Elkhudari",
-        title: "Graphic Designer",
-        imagePath: "/images/team/2026/Rashad-Elkhudari.webp",
-        linkedin:
-          "https://www.linkedin.com/in/rashad-alkhodary?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app",
-        region: "R8",
-        section: "Egypt Section",
-      },
-    ],
-  },
-  {
     title: "Content Writing",
     items: [
       {
@@ -124,6 +94,35 @@ export const year2026: TeamSection[] = [
         region: "R10",
         section: "Sri Lanka Section",
       },
+    ],
+  },
+  {
+    title: "Ambassadors Program",
+    items: [
+      {
+        name: "Rakshit Jain",
+        title: "Ambassadors Lead",
+        imagePath: "/images/team/2026/Rakshit-Jain.webp",
+        linkedin: "https://www.linkedin.com/in/rakshit-a-n-jain/",
+        region: "R10",
+        section: "Pune Section",
+      },
+      {
+        name: "Varghese Babu",
+        title: "Ambassadors Co-Lead",
+        imagePath: "/images/team/2026/Varghese-Babu.webp",
+        linkedin: "https://www.linkedin.com/in/varghese-babu",
+        region: "R10",
+        section: "Kerala Section",
+      },
+      // {
+      //   name: "Banshari Patel",
+      //   title: "Ambassadors Co-Lead",
+      //   imagePath: "/images/team/2026/Banshari-Patel.webp",
+      //   linkedin: "https://www.linkedin.com/in/banshari-patel-b699542b5/",
+      //   region: "R10",
+      //   section: "Gujarat Section",
+      // },
     ],
   },
   {
@@ -161,35 +160,31 @@ export const year2026: TeamSection[] = [
         region: "R8",
         section: "Tunisia Section",
       },
-    ],
-  },
-  {
-    title: "Ambassadors Program",
-    items: [
       {
-        name: "Rakshit Jain",
-        title: "Ambassadors Lead",
-        imagePath: "/images/team/2026/Rakshit-Jain.webp",
-        linkedin: "https://www.linkedin.com/in/rakshit-a-n-jain/",
-        region: "R10",
-        section: "Pune Section",
+        name: "Mohamed Zouari",
+        title: "Graphic Designer",
+        imagePath: "/images/team/2026/Mohamed-Zouari.webp",
+        linkedin: "https://www.linkedin.com/in/mohamedzouari202/",
+        region: "R8",
+        section: "Tunisia Section",
       },
       {
-        name: "Varghese Babu",
-        title: "Ambassadors Co-Lead",
-        imagePath: "/images/team/2026/Varghese-Babu.webp",
-        linkedin: "https://www.linkedin.com/in/varghese-babu",
+        name: "Devarsh Namboothiri",
+        title: "Graphic Designer",
+        imagePath: "/images/team/2026/Devarsh-Namboothiri.webp",
+        linkedin: "https://www.linkedin.com/in/devarsh-r/",
         region: "R10",
-        section: "Kerala Section",
+        section: "Kochi Subsection",
       },
-      // {
-      //   name: "Banshari Patel",
-      //   title: "Ambassadors Co-Lead",
-      //   imagePath: "/images/team/2026/Banshari-Patel.webp",
-      //   linkedin: "https://www.linkedin.com/in/banshari-patel-b699542b5/",
-      //   region: "R10",
-      //   section: "Gujarat Section",
-      // },
+      {
+        name: "Rashad Elkhudari",
+        title: "Graphic Designer",
+        imagePath: "/images/team/2026/Rashad-Elkhudari.webp",
+        linkedin:
+          "https://www.linkedin.com/in/rashad-alkhodary?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app",
+        region: "R8",
+        section: "Egypt Section",
+      },
     ],
   },
 ];
