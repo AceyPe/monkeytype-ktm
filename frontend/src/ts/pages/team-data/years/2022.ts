@@ -127,7 +127,7 @@ export const year2022: TeamSection[] = [
         name: "Yehia Zakaria",
         title: "Volunteer",
         imagePath: "",
-        linkedin: "",
+        linkedin: "https://www.linkedin.com/in/yahya-khamis-a822b0225/",
       },
       {
         name: "Mohamed Taymour",
@@ -140,7 +140,7 @@ export const year2022: TeamSection[] = [
         name: "Salah El-Shafie",
         title: "Volunteer",
         imagePath: "",
-        linkedin: "",
+        linkedin: "https://www.linkedin.com/in/salah-elshafey/",
       },
       {
         name: "Omar Yasser",
