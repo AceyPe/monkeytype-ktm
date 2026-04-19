@@ -22,17 +22,17 @@ export const year2022: TeamSection[] = [
         imagePath: "/images/team/2022/Ibrahim-Lotfy.webp",
         linkedin: "https://www.linkedin.com/in/ibrahemlotfy/",
       },
+    ],
+  },
+  {
+    title: "Student Branch Volunteers",
+    items: [
       {
         name: "Omar Khaled",
         title: "IT Head",
         imagePath: "/images/team/2022/Omar-Khaled.webp",
         linkedin: "https://www.linkedin.com/in/omaarkhaledd/",
       },
-    ],
-  },
-  {
-    title: "Student Branch Volunteers",
-    items: [
       {
         name: "Danah Khedr",
         title: "Registration Head",

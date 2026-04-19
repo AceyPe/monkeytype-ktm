@@ -90,11 +90,11 @@ function profileDetailsBase(
     .transform((value) => (value === null ? undefined : value));
 }
 
-export const TwitterProfileSchema = profileDetailsBase(
+export const LinkedinProfileSchema = profileDetailsBase(
   z
     .string()
-    .max(20)
-    .regex(/^[0-9a-zA-Z_.-]+$/),
+    .max(100)
+    .regex(/^[0-9a-zA-Z_-]+$/),
 ).or(z.literal(""));
 
 export const GithubProfileSchema = profileDetailsBase(
@@ -108,18 +108,34 @@ export const WebsiteSchema = profileDetailsBase(
   z.string().url().max(200).startsWith("https://"),
 ).or(z.literal(""));
 
+function migrateSocialProfiles(raw: unknown): unknown {
+  if (raw === undefined || raw === null) return raw;
+  if (typeof raw !== "object" || Array.isArray(raw)) return raw;
+  const r = raw as Record<string, unknown>;
+  const linkedinSource = r["linkedin"] ?? r["twitter"];
+  return {
+    linkedin: typeof linkedinSource === "string" ? linkedinSource : "",
+    github: typeof r["github"] === "string" ? r["github"] : "",
+    website: typeof r["website"] === "string" ? r["website"] : "",
+  };
+}
+
+export const SocialProfilesSchema = z.preprocess(
+  migrateSocialProfiles,
+  z
+    .object({
+      linkedin: LinkedinProfileSchema,
+      github: GithubProfileSchema,
+      website: WebsiteSchema,
+    })
+    .strict(),
+);
+
 export const UserProfileDetailsSchema = z
   .object({
     bio: profileDetailsBase(z.string().max(250)).or(z.literal("")),
     keyboard: profileDetailsBase(z.string().max(75)).or(z.literal("")),
-    socialProfiles: z
-      .object({
-        twitter: TwitterProfileSchema,
-        github: GithubProfileSchema,
-        website: WebsiteSchema,
-      })
-      .strict()
-      .optional(),
+    socialProfiles: SocialProfilesSchema.optional(),
     showActivityOnPublicProfile: z.boolean().optional(),
   })
   .strict();

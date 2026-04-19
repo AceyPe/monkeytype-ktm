@@ -653,7 +653,7 @@ describe("UserDal", () => {
         {
           keyboard: "test keyboard",
           socialProfiles: {
-            twitter: "test twitter",
+            linkedin: "test-linkedin",
           },
         },
         {
@@ -671,7 +671,7 @@ describe("UserDal", () => {
         bio: "test bio",
         keyboard: "test keyboard",
         socialProfiles: {
-          twitter: "test twitter",
+          linkedin: "test-linkedin",
         },
       });
       expect(updatedUser.inventory).toStrictEqual({
@@ -709,7 +709,7 @@ describe("UserDal", () => {
         bio: "test bio 2",
         keyboard: "test keyboard",
         socialProfiles: {
-          twitter: "test twitter",
+          linkedin: "test-linkedin",
           github: "test github",
           website: "test website",
         },
@@ -729,7 +729,7 @@ describe("UserDal", () => {
           bio: "test bio",
           keyboard: "test keyboard",
           socialProfiles: {
-            twitter: "test twitter",
+            linkedin: "test-linkedin",
             github: "test github",
           },
         },
@@ -761,7 +761,7 @@ describe("UserDal", () => {
         bio: "test bio",
         keyboard: "test keyboard",
         socialProfiles: {
-          twitter: "test twitter",
+          linkedin: "test-linkedin",
           github: "test github",
         },
       },

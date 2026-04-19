@@ -2927,7 +2927,7 @@ describe("user controller test", () => {
         bio: "bio",
         keyboard: "keyboard",
         socialProfiles: {
-          twitter: "twitter",
+          linkedin: "twitter",
           github: "github",
         },
       },
@@ -3185,7 +3185,7 @@ describe("user controller test", () => {
 
         socialProfiles: {
           github: "github",
-          twitter: "twitter",
+          linkedin: "twitter",
           website: "https://monkeytype.com",
         },
         showActivityOnPublicProfile: false,
@@ -3213,7 +3213,7 @@ describe("user controller test", () => {
           keyboard: "newKeyboard",
           socialProfiles: {
             github: "github",
-            twitter: "twitter",
+            linkedin: "twitter",
             website: "https://monkeytype.com",
           },
           showActivityOnPublicProfile: false,
@@ -3231,7 +3231,7 @@ describe("user controller test", () => {
 
         socialProfiles: {
           github: "",
-          twitter: "",
+          linkedin: "",
           website: "",
         },
       };
@@ -3258,7 +3258,7 @@ describe("user controller test", () => {
           keyboard: "",
           socialProfiles: {
             github: "",
-            twitter: "",
+            linkedin: "",
             website: "",
           },
         },
@@ -3320,7 +3320,7 @@ describe("user controller test", () => {
           bio: "miodec",
           keyboard: "miodec",
           socialProfiles: {
-            twitter: "miodec",
+            linkedin: "miodec",
             github: "miodec",
             website: "https://i-luv-miodec.com",
           },
@@ -3333,7 +3333,7 @@ describe("user controller test", () => {
         validationErrors: [
           '"bio" Profanity detected. Please remove it. If you believe this is a mistake, please contact us. (miodec)',
           '"keyboard" Profanity detected. Please remove it. If you believe this is a mistake, please contact us. (miodec)',
-          '"socialProfiles.twitter" Profanity detected. Please remove it. If you believe this is a mistake, please contact us. (miodec)',
+          '"socialProfiles.linkedin" Profanity detected. Please remove it. If you believe this is a mistake, please contact us. (miodec)',
           '"socialProfiles.github" Profanity detected. Please remove it. If you believe this is a mistake, please contact us. (miodec)',
           '"socialProfiles.website" Profanity detected. Please remove it. If you believe this is a mistake, please contact us. (https://i-luv-miodec.com)',
         ],
@@ -3348,7 +3348,7 @@ describe("user controller test", () => {
           bio: new Array(251).fill("x").join(""),
           keyboard: new Array(76).fill("x").join(""),
           socialProfiles: {
-            twitter: new Array(21).fill("x").join(""),
+            linkedin: new Array(101).fill("x").join(""),
             github: new Array(40).fill("x").join(""),
             website:
               "https://" +
@@ -3363,7 +3363,7 @@ describe("user controller test", () => {
         validationErrors: [
           '"bio" String must contain at most 250 character(s)',
           '"keyboard" String must contain at most 75 character(s)',
-          '"socialProfiles.twitter" String must contain at most 20 character(s)',
+          '"socialProfiles.linkedin" String must contain at most 100 character(s)',
           '"socialProfiles.github" String must contain at most 39 character(s)',
           '"socialProfiles.website" String must contain at most 200 character(s)',
         ],

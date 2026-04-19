@@ -10,7 +10,7 @@ import { CharacterCounter } from "../elements/character-counter";
 import {
   Badge,
   GithubProfileSchema,
-  TwitterProfileSchema,
+  LinkedinProfileSchema,
   UserProfileDetails,
   WebsiteSchema,
 } from "@monkeytype/schemas/users";
@@ -46,7 +46,7 @@ const bioInput: JQuery<HTMLTextAreaElement> = $("#editProfileModal .bio");
 const keyboardInput: JQuery<HTMLTextAreaElement> = $(
   "#editProfileModal .keyboard",
 );
-const twitterInput = $("#editProfileModal .twitter");
+const linkedinInput = $("#editProfileModal .linkedin");
 const githubInput = $("#editProfileModal .github");
 const websiteInput = $("#editProfileModal .website");
 const badgeIdsSelect = $("#editProfileModal .badgeSelectionContainer");
@@ -55,7 +55,7 @@ const showActivityOnPublicProfileInput = document.querySelector(
 ) as HTMLInputElement;
 
 const indicators = [
-  addValidation(twitterInput, TwitterProfileSchema),
+  addValidation(linkedinInput, LinkedinProfileSchema),
   addValidation(githubInput, GithubProfileSchema),
   addValidation(websiteInput, WebsiteSchema),
 ];
@@ -72,7 +72,10 @@ function hydrateInputs(): void {
 
   bioInput.val(bio ?? "");
   keyboardInput.val(keyboard ?? "");
-  twitterInput.val(socialProfiles?.twitter ?? "");
+  const legacySocials = socialProfiles as
+    | { linkedin?: string; twitter?: string }
+    | undefined;
+  linkedinInput.val(legacySocials?.linkedin ?? legacySocials?.twitter ?? "");
   githubInput.val(socialProfiles?.github ?? "");
   websiteInput.val(socialProfiles?.website ?? "");
   badgeIdsSelect.html("");
@@ -121,7 +124,7 @@ function initializeCharacterCounters(): void {
 function buildUpdatesFromInputs(): UserProfileDetails {
   const bio = (bioInput.val() ?? "") as string;
   const keyboard = (keyboardInput.val() ?? "") as string;
-  const twitter = (twitterInput.val() ?? "") as string;
+  const linkedin = (linkedinInput.val() ?? "") as string;
   const github = (githubInput.val() ?? "") as string;
   const website = (websiteInput.val() ?? "") as string;
   const showActivityOnPublicProfile =
@@ -131,7 +134,7 @@ function buildUpdatesFromInputs(): UserProfileDetails {
     bio,
     keyboard,
     socialProfiles: {
-      twitter,
+      linkedin,
       github,
       website,
     },
@@ -159,13 +162,13 @@ async function updateProfile(): Promise<void> {
     return;
   }
 
-  const twitterLengthLimit = 20;
+  const linkedinLengthLimit = 100;
   if (
-    updates.socialProfiles?.twitter !== undefined &&
-    updates.socialProfiles?.twitter.length > twitterLengthLimit
+    updates.socialProfiles?.linkedin !== undefined &&
+    updates.socialProfiles?.linkedin.length > linkedinLengthLimit
   ) {
     Notifications.add(
-      `Twitter username exceeds maximum allowed length (${twitterLengthLimit} characters).`,
+      `LinkedIn profile id exceeds maximum allowed length (${linkedinLengthLimit} characters).`,
       -1,
     );
     return;

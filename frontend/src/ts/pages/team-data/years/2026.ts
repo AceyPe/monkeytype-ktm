@@ -140,7 +140,7 @@ export const year2026: TeamSection[] = [
       {
         name: "Youmna Adel",
         title: "Marketing Specialist",
-        imagePath: "",
+        imagePath: "/images/team/2026/Youmna-Adel.webp",
         linkedin: "https://www.linkedin.com/in/youmna-elhoseny-9b6557253/",
         region: "R8",
         section: "Egypt Section",

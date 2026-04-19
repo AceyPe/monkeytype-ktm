@@ -232,8 +232,8 @@ export async function update(
     if (
       (profile.details?.socialProfiles?.github !== undefined &&
         profile.details?.socialProfiles?.github !== "") ||
-      (profile.details?.socialProfiles?.twitter !== undefined &&
-        profile.details?.socialProfiles?.twitter !== "") ||
+      (profile.details?.socialProfiles?.linkedin !== undefined &&
+        profile.details?.socialProfiles?.linkedin !== "") ||
       (profile.details?.socialProfiles?.website !== undefined &&
         profile.details?.socialProfiles?.website !== "")
     ) {
@@ -252,14 +252,14 @@ export async function update(
         );
       }
 
-      const twitter = profile.details?.socialProfiles.twitter ?? "";
-      if (twitter) {
+      const linkedin = profile.details?.socialProfiles.linkedin ?? "";
+      if (linkedin) {
         socialsEl.append(
-          `<a href='https://x.com/${Misc.escapeHTML(
-            twitter,
-          )}' target="_blank" rel="nofollow me" aria-label="${Misc.escapeHTML(
-            twitter,
-          )}" data-balloon-pos="up" class="textButton"><i class="fab fa-fw fa-twitter"></i></a>`,
+          `<a href='https://www.linkedin.com/in/${Misc.escapeHTML(
+            linkedin,
+          )}/' target="_blank" rel="nofollow me" aria-label="${Misc.escapeHTML(
+            linkedin,
+          )}" data-balloon-pos="up" class="textButton"><i class="fab fa-fw fa-linkedin-in"></i></a>`,
         );
       }
 
