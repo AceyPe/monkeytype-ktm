@@ -7,8 +7,8 @@ import { tryCatch } from "@monkeytype/util/trycatch";
 import { envConfig } from "virtual:env-config";
 
 /** SAML initiate uses this host instead of `backendUrl` (temporary). */
-// const SAML_SSO_INITIATE_URL = "https://api.ieeektm.org/users/login";
-const SAML_SSO_INITIATE_URL = "http://localhost:5005/users/login";
+const SAML_SSO_INITIATE_URL = "https://api.ieeektm.org/users/login";
+// const SAML_SSO_INITIATE_URL = "http://localhost:5005/users/login";
 
 /** Normalize pathname without a trailing slash (except `/`). */
 function normalizedPathname(): string {
