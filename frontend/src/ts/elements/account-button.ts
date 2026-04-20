@@ -43,7 +43,16 @@ export function update(): void {
   if (isAuthenticated()) {
     const snapshot = getSnapshot();
 
-    if (snapshot === undefined) return;
+    if (snapshot === undefined) {
+      loading(true);
+      void Misc.swapElements(
+        document.querySelector("nav .textButton.view-login") as HTMLElement,
+        document.querySelector("nav .accountButtonAndMenu") as HTMLElement,
+        250,
+      );
+      updateFriendRequestsIndicator();
+      return;
+    }
 
     const { xp, name } = snapshot;
 
@@ -105,10 +114,7 @@ if (coarse) {
 }
 
 AuthEvent.subscribe((event) => {
-  if (
-    (event.type === "authStateChanged" && !event.data.isUserSignedIn) ||
-    event.type === "snapshotUpdated"
-  ) {
+  if (event.type === "authStateChanged" || event.type === "snapshotUpdated") {
     update();
   }
 });
