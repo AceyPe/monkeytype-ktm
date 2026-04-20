@@ -1,251 +1,158 @@
-import {
-  FirebaseApp,
-  FirebaseError,
-  FirebaseOptions,
-  getApp,
-  getApps,
-  initializeApp,
-} from "firebase/app";
-import {
-  getAuth,
-  Auth as AuthType,
-  User,
-  setPersistence as firebaseSetPersistence,
-  browserSessionPersistence,
-  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
-  signInWithPopup as firebaseSignInWithPopup,
-  createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword,
-  getIdToken as firebaseGetIdToken,
-  UserCredential,
-  AuthProvider,
-  onAuthStateChanged,
-  indexedDBLocalPersistence,
-  getAdditionalUserInfo,
-} from "firebase/auth";
-import * as Notifications from "./elements/notifications";
-import {
-  createErrorMessage,
-  isDevEnvironment,
-  promiseWithResolvers,
-} from "./utils/misc";
+import type { Analytics as AnalyticsType } from "firebase/analytics";
+import type { AuthProvider, User, UserCredential } from "firebase/auth";
+import { promiseWithResolvers } from "./utils/misc";
 
-import {
-  Analytics as AnalyticsType,
-  getAnalytics as firebaseGetAnalytics,
-} from "firebase/analytics";
-import { tryCatch } from "@monkeytype/util/trycatch";
-import { dispatch as dispatchSignUpEvent } from "./observables/google-sign-up-event";
-
-let app: FirebaseApp | undefined;
-let Auth: AuthType | undefined;
-
-/**
- * ignore auth callback. This is used during signup with google/github where we need to create the user on the backend first.
- */
-let ignoreAuthCallback: boolean = false;
+const AUTH_TOKEN_COOKIE = "mt_auth_token";
 
 type ReadyCallback = (success: boolean, user: User | null) => Promise<void>;
 let readyCallback: ReadyCallback | undefined;
 
+type JwtClaims = {
+  uid: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  grade?: string;
+  ssoid?: string;
+  exp?: number;
+};
+
 const { promise: authPromise, resolve: resolveAuthPromise } =
   promiseWithResolvers();
 
-export async function init(callback: ReadyCallback): Promise<void> {
+function getCookieValue(name: string): string | null {
+  const prefix = `${name}=`;
+  const cookies = document.cookie.split(";");
+  for (const rawCookie of cookies) {
+    const cookie = rawCookie.trim();
+    if (cookie.startsWith(prefix)) {
+      const value = cookie.slice(prefix.length);
+      if (value !== "") return decodeURIComponent(value);
+    }
+  }
+  return null;
+}
+
+function clearCookie(name: string): void {
+  document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
+}
+
+function decodeBase64Url(input: string): string {
+  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
+  const padLength = (4 - (normalized.length % 4)) % 4;
+  return atob(`${normalized}${"=".repeat(padLength)}`);
+}
+
+function getTokenClaimsFromCookie(): JwtClaims | null {
+  const token = getCookieValue(AUTH_TOKEN_COOKIE);
+  if (token === null) return null;
+
   try {
-    let firebaseConfig: FirebaseOptions | null;
+    const parts = token.split(".");
+    const payload = parts[1];
+    if (payload === undefined || payload === "") return null;
+    const parsed = JSON.parse(decodeBase64Url(payload)) as Partial<JwtClaims>;
+    if (typeof parsed.uid !== "string" || parsed.uid === "") return null;
+    if (typeof parsed.email !== "string" || parsed.email === "") return null;
 
-    const constants = import.meta.glob("./constants/firebase-config.ts");
-    const loader = constants["./constants/firebase-config.ts"];
-    if (loader) {
-      firebaseConfig = ((await loader()) as { firebaseConfig: FirebaseOptions })
-        .firebaseConfig;
-    } else {
-      throw new Error(
-        "No config file found. Make sure frontend/src/ts/constants/firebase-config.ts exists",
-      );
+    if (typeof parsed.exp === "number" && Date.now() >= parsed.exp * 1000) {
+      clearCookie(AUTH_TOKEN_COOKIE);
+      return null;
     }
 
-    readyCallback = callback;
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    Auth = getAuth(app);
+    return {
+      uid: parsed.uid,
+      email: parsed.email,
+      firstName: parsed.firstName,
+      lastName: parsed.lastName,
+      grade: parsed.grade,
+      ssoid: parsed.ssoid,
+      exp: parsed.exp,
+    };
+  } catch {
+    return null;
+  }
+}
 
-    const rememberMe =
-      window.localStorage.getItem("firebasePersistence") === "LOCAL";
-    await setPersistence(rememberMe, false);
+function getJwtUser(): User | null {
+  const claims = getTokenClaimsFromCookie();
+  if (claims === null) return null;
+  const displayName = [claims.firstName, claims.lastName]
+    .filter((it) => typeof it === "string" && it !== "")
+    .join(" ");
 
-    onAuthStateChanged(Auth, async (user) => {
-      if (!ignoreAuthCallback) {
-        await callback(true, user);
-      }
-    });
-  } catch (e) {
-    app = undefined;
-    Auth = undefined;
-    console.error("Firebase failed to initialize", e);
-    await callback(false, null);
-    if (isDevEnvironment()) {
-      Notifications.addPSA(
-        createErrorMessage(e, "Firebase uninitialized"),
-        0,
-        undefined,
-        false,
-      );
-    }
+  return {
+    uid: claims.uid,
+    email: claims.email,
+    emailVerified: true,
+    displayName: displayName === "" ? null : displayName,
+    providerData: [],
+    // expose custom claims for callers that need SAML payload fields
+    ssoid: claims.ssoid,
+    firstName: claims.firstName,
+    lastName: claims.lastName,
+    grade: claims.grade,
+  } as unknown as User;
+}
+
+export async function init(callback: ReadyCallback): Promise<void> {
+  readyCallback = callback;
+  try {
+    await callback(true, getJwtUser());
   } finally {
     resolveAuthPromise();
   }
 }
 
 export function isAuthenticated(): boolean {
-  return Auth?.currentUser !== undefined && Auth?.currentUser !== null;
+  return getJwtUser() !== null;
 }
 
-/**
- *
- * @returns the current user if authenticated, else `null`
- */
 export function getAuthenticatedUser(): User | null {
-  return Auth?.currentUser ?? null;
+  return getJwtUser();
 }
 
 export function getAnalytics(): AnalyticsType {
-  return firebaseGetAnalytics(app);
+  throw new Error("Analytics is unavailable without Firebase auth runtime");
 }
 
 export function isAuthAvailable(): boolean {
-  return Auth !== undefined;
+  return true;
 }
 
 export async function signOut(): Promise<void> {
-  console.log("auth signout");
-  await Auth?.signOut();
+  clearCookie(AUTH_TOKEN_COOKIE);
+  await readyCallback?.(true, null);
 }
 
 export async function signInWithEmailAndPassword(
-  email: string,
-  password: string,
-  rememberMe: boolean,
+  _email: string,
+  _password: string,
+  _rememberMe: boolean,
 ): Promise<UserCredential> {
-  if (Auth === undefined) throw new Error("Authentication uninitialized");
-  await setPersistence(rememberMe, true);
-
-  const { data: result, error } = await tryCatch(
-    firebaseSignInWithEmailAndPassword(Auth, email, password),
-  );
-  if (error !== null) {
-    console.error(error);
-    throw translateFirebaseError(
-      error,
-      "Failed to sign in with email and password",
-    );
-  }
-
-  return result;
+  throw new Error("Email/password sign-in is disabled. Use SAML sign-in.");
 }
 
 export async function signInWithPopup(
-  provider: AuthProvider,
-  rememberMe: boolean,
+  _provider: AuthProvider,
+  _rememberMe: boolean,
 ): Promise<void> {
-  if (Auth === undefined) throw new Error("Authentication uninitialized");
-  await setPersistence(rememberMe, true);
-  ignoreAuthCallback = true;
-
-  const { data: signedInUser, error } = await tryCatch(
-    firebaseSignInWithPopup(Auth, provider),
-  );
-  if (error !== null) {
-    ignoreAuthCallback = false;
-    console.log(error);
-    throw translateFirebaseError(error, "Failed to sign in with popup");
-  }
-  const additionalUserInfo = getAdditionalUserInfo(signedInUser);
-  if (additionalUserInfo?.isNewUser) {
-    dispatchSignUpEvent(signedInUser, true);
-  } else {
-    ignoreAuthCallback = false;
-    await readyCallback?.(true, signedInUser.user);
-  }
+  throw new Error("Popup auth is disabled. Use SAML sign-in.");
 }
 
 export async function createUserWithEmailAndPassword(
-  email: string,
-  password: string,
+  _email: string,
+  _password: string,
 ): Promise<UserCredential> {
-  if (Auth === undefined) throw new Error("Authentication uninitialized");
-  ignoreAuthCallback = true;
-  const result = await firebaseCreateUserWithEmailAndPassword(
-    Auth,
-    email,
-    password,
-  );
-
-  return result;
+  throw new Error("Sign-up is disabled. Use SAML sign-in.");
 }
 
 export async function getIdToken(): Promise<string | null> {
-  const user = getAuthenticatedUser();
-  if (user === null) return null;
-  return firebaseGetIdToken(user);
-}
-async function setPersistence(
-  rememberMe: boolean,
-  store = false,
-): Promise<void> {
-  if (Auth === undefined) throw new Error("Authentication uninitialized");
-  const persistence = rememberMe
-    ? indexedDBLocalPersistence
-    : browserSessionPersistence;
-
-  if (store) {
-    window.localStorage.setItem(
-      "firebasePersistence",
-      rememberMe ? "LOCAL" : "SESSION",
-    );
-  }
-
-  await firebaseSetPersistence(Auth, persistence);
-}
-
-function translateFirebaseError(
-  error: Error | FirebaseError,
-  defaultMessage: string,
-): Error {
-  let message = createErrorMessage(error, defaultMessage);
-
-  if (error instanceof FirebaseError) {
-    if (error.code === "auth/wrong-password") {
-      message = "Incorrect password";
-    } else if (error.code === "auth/user-not-found") {
-      message = "User not found";
-    } else if (error.code === "auth/invalid-email") {
-      message =
-        "Invalid email format (make sure you are using your email to login - not your username)";
-    } else if (error.code === "auth/invalid-credential") {
-      message =
-        "Email/password is incorrect or your account does not have password authentication enabled.";
-    } else if (error.code === "auth/popup-closed-by-user") {
-      message = "";
-      // message = "Popup closed by user";
-      // return;
-    } else if (error.code === "auth/popup-blocked") {
-      message =
-        "Sign in popup was blocked by the browser. Check the address bar for a blocked popup icon, or update your browser settings to allow popups.";
-    } else if (error.code === "auth/user-cancelled") {
-      message = "";
-      // message = "User refused to sign in";
-      // return;
-    } else if (error.code === "auth/account-exists-with-different-credential") {
-      message =
-        "Account already exists, but its using a different authentication method. Try signing in with a different method";
-    }
-  }
-
-  return new Error(message, { cause: error });
+  return getCookieValue(AUTH_TOKEN_COOKIE);
 }
 
 export function resetIgnoreAuthCallback(): void {
-  ignoreAuthCallback = false;
+  // no-op: Firebase callback suppression is no longer used.
 }
 
 export { authPromise };

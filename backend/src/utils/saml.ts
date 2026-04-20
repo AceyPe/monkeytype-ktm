@@ -186,9 +186,11 @@ export async function getSamlInitiateNavigateUrl(
 }
 
 export type SamlProfile = {
+  ssoid?: string;
   email?: string;
   firstName?: string;
   lastName?: string;
+  grade?: string;
   nameID?: string;
   nameIDFormat?: string;
   [key: string]: unknown;

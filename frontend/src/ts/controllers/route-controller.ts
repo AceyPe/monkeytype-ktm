@@ -1,13 +1,18 @@
 import * as PageController from "./page-controller";
 import * as TestUI from "../test/test-ui";
 import * as PageTransition from "../states/page-transition";
-import { isAuthAvailable, isAuthenticated } from "../firebase";
+import {
+  getAuthenticatedUser,
+  isAuthAvailable,
+  isAuthenticated,
+} from "../firebase";
 import { startSamlSignIn } from "../utils/saml-sso";
 import { isFunboxActive } from "../test/funbox/list";
 import * as TestState from "../test/test-state";
 import * as Notifications from "../elements/notifications";
 import { LoadingOptions } from "../pages/page";
 import * as NavigationEvent from "../observables/navigation-event";
+import { checkIfGetParameterExists } from "../utils/misc";
 
 //source: https://www.youtube.com/watch?v=OstALBk-jTc
 // https://www.youtube.com/watch?v=OstALBk-jTc
@@ -139,6 +144,20 @@ const routes: Route[] = [
   {
     path: "/profile",
     load: async (_params, options) => {
+      if (isAuthenticated()) {
+        const uid = getAuthenticatedUser()?.uid ?? "";
+        if (uid !== "") {
+          if (!checkIfGetParameterExists("isUid")) {
+            history.replaceState(null, "", "/profile?isUid");
+          }
+          await PageController.change("profile", {
+            ...options,
+            force: true,
+            params: { uidOrName: uid },
+          });
+          return;
+        }
+      }
       await PageController.change("profileSearch", options);
     },
   },

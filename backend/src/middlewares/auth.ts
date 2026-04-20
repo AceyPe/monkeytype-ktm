@@ -26,6 +26,10 @@ export type DecodedToken = {
   type: "Bearer" | "ApeKey" | "None" | "GithubWebhook";
   uid: string;
   email: string;
+  ssoid?: string;
+  firstName?: string;
+  lastName?: string;
+  grade?: string;
 };
 
 const DEFAULT_OPTIONS: RequestAuthenticationOptions = {
@@ -189,6 +193,10 @@ async function authenticateWithBearerToken(
       type: "Bearer",
       uid: decodedToken.uid,
       email: decodedToken.email ?? "",
+      ssoid: decodedToken.ssoid,
+      firstName: decodedToken.firstName,
+      lastName: decodedToken.lastName,
+      grade: decodedToken.grade,
     };
   } catch (error) {
     if (error instanceof MonkeyError) {

@@ -2,7 +2,7 @@ import * as Misc from "./utils/misc";
 import * as MonkeyPower from "./elements/monkey-power";
 import * as MerchBanner from "./elements/merch-banner";
 import * as ConnectionState from "./states/connection";
-import * as AccountButton from "./elements/account-button";
+// import * as AccountButton from "./elements/account-button";
 //@ts-expect-error no types for this package
 import Konami from "konami";
 import * as ServerConfiguration from "./ape/server-configuration";
@@ -33,9 +33,7 @@ $(async (): Promise<void> => {
   if (ConnectionState.get()) {
     void ServerConfiguration.sync().then(() => {
       if (!ServerConfiguration.get()?.users.signUp) {
-        AccountButton.hide();
         $(".register").addClass("hidden");
-        $(".login").addClass("hidden");
         $(".disabledNotification").removeClass("hidden");
       }
       if (!ServerConfiguration.get()?.connections.enabled) {

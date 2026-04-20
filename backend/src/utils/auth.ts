@@ -14,6 +14,10 @@ import MonkeyError from "./error";
 export type DecodedIdToken = {
   uid: string;
   email: string;
+  ssoid?: string;
+  firstName?: string;
+  lastName?: string;
+  grade?: string;
   iat: number;
   exp: number;
   type: string;
@@ -83,6 +87,10 @@ export async function verifyIdToken(
     }) as jwt.JwtPayload & {
       uid: string;
       email: string;
+      ssoid?: string;
+      firstName?: string;
+      lastName?: string;
+      grade?: string;
       iat: number;
       exp: number;
       type: string;
@@ -112,6 +120,12 @@ export async function verifyIdToken(
     const decodedToken: DecodedIdToken = {
       uid: decoded.uid,
       email: decoded.email,
+      ssoid: typeof decoded.ssoid === "string" ? decoded.ssoid : undefined,
+      firstName:
+        typeof decoded.firstName === "string" ? decoded.firstName : undefined,
+      lastName:
+        typeof decoded.lastName === "string" ? decoded.lastName : undefined,
+      grade: typeof decoded.grade === "string" ? decoded.grade : undefined,
       iat: typeof decoded.iat === "number" ? decoded.iat : 0,
       exp: typeof decoded.exp === "number" ? decoded.exp : 0,
       type: typeof decoded.type === "string" ? decoded.type : "Bearer",
@@ -166,6 +180,12 @@ export function generateJwtToken(
   uid: string,
   email: string,
   expiresIn: string = "1h",
+  claims?: {
+    ssoid?: string;
+    firstName?: string;
+    lastName?: string;
+    grade?: string;
+  },
 ): string {
   const secret = getJwtSecret();
   const now = Math.floor(Date.now() / 1000);
@@ -173,6 +193,7 @@ export function generateJwtToken(
   const payload = {
     uid,
     email,
+    ...claims,
     iat: now,
     type: "Bearer",
   };

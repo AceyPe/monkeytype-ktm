@@ -239,8 +239,7 @@ function applyApiRoutes(app: Application): void {
         res.setHeader("Set-Cookie", cookie);
 
         const frontendUrl = getFrontendUrl().replace(/\/$/, "");
-        // const frontendUrl = "http://localhost:3000";
-        res.redirect(302, `${frontendUrl}/profile/${uid}?isUid`);
+        res.redirect(302, `${frontendUrl}/profile?isUid`);
       } catch (error) {
         next(error);
       }

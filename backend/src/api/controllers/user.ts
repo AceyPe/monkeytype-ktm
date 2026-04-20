@@ -138,6 +138,19 @@ function generateUidFromEmail(email: string): string {
   return crypto.createHash("sha256").update(email.toLowerCase()).digest("hex");
 }
 
+function getProfileString(
+  profile: SamlUtils.SamlProfile,
+  keys: string[],
+): string | undefined {
+  for (const key of keys) {
+    const value = profile[key];
+    if (typeof value === "string" && value.trim() !== "") {
+      return value;
+    }
+  }
+  return undefined;
+}
+
 async function generateAvailableUsername(
   emailRaw: string,
   uid: string,
@@ -220,21 +233,33 @@ export async function acs(
   const emailRaw =
     profile.email ??
     profile.nameID ??
-    (profile[
-      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-    ] as string | undefined);
-  // const firstName =
-  //   profile.firstName ??
-  //   (profile["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"] as
-  //     | string
-  //     | undefined) ??
-  //   "";
-  // const lastName =
-  //   profile.lastName ??
-  //   (profile["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"] as
-  //     | string
-  //     | undefined) ??
-  //   "";
+    getProfileString(profile, [
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+      "email",
+      "mail",
+    ]);
+
+  const firstName = getProfileString(profile, [
+    "firstName",
+    "givenName",
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+  ]);
+
+  const lastName = getProfileString(profile, [
+    "lastName",
+    "sn",
+    "surname",
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
+  ]);
+
+  const grade = getProfileString(profile, ["grade", "Grade"]);
+  const ssoid = getProfileString(profile, [
+    "ssoid",
+    "ssoId",
+    "SSOID",
+    "uid",
+    "employeeNumber",
+  ]);
 
   if (emailRaw === undefined || emailRaw === null || emailRaw === "") {
     throw new MonkeyError(400, "Email not found in SAML response");
@@ -256,7 +281,12 @@ export async function acs(
   const userEmail = user.email ?? normalizedEmail;
 
   // Generate JWT token with security standards
-  const token = AuthUtil.generateJwtToken(uid, userEmail, "1h");
+  const token = AuthUtil.generateJwtToken(uid, userEmail, "1h", {
+    ssoid,
+    firstName,
+    lastName,
+    grade,
+  });
 
   return new MonkeyResponse("SAML authentication successful", {
     token,

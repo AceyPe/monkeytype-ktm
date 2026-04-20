@@ -8,8 +8,6 @@ import "./event-handlers/account";
 import "./event-handlers/leaderboards";
 import "./event-handlers/login";
 
-import "./modals/google-sign-up";
-
 import { init } from "./firebase";
 import * as Logger from "./utils/logger";
 import * as DB from "./db";
