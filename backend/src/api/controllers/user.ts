@@ -77,6 +77,7 @@ import {
   RemoveResultFilterPresetPathParams,
   ReportUserRequest,
   SamlInitiateResponse,
+  SessionResponse,
   SetStreakHourOffsetRequest,
   TagIdPathParams,
   UpdateEmailRequest,
@@ -116,6 +117,26 @@ export async function samlInitiate(
   const publicBase = SamlUtils.getPublicApiBaseUrlFromExpressRequest(req.raw);
   const url = await SamlUtils.getSamlInitiateNavigateUrl(publicBase, host);
   return new MonkeyResponse("SAML SSO URL generated", { url });
+}
+
+export async function getSession(req: MonkeyRequest): Promise<SessionResponse> {
+  const decodedToken = req.ctx.decodedToken;
+  if (decodedToken.type !== "Bearer" || decodedToken.uid === "") {
+    return new MonkeyResponse("No active session", {
+      authenticated: false,
+      user: null,
+    });
+  }
+  return new MonkeyResponse("Session is active", {
+    authenticated: true,
+    user: {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      firstName: decodedToken.firstName,
+      lastName: decodedToken.lastName,
+      avatarUrl: decodedToken.avatarUrl,
+    },
+  });
 }
 
 const SAML_IDP_DEBUG_SEPARATOR = "*****************************";
@@ -182,14 +203,10 @@ async function generateAvailableUsername(
 // }
 
 async function findOrCreateUser(
+  uid: string,
   normalizedEmail: string,
   emailRaw: string,
-  // firstName: string,
-  // lastName: string,
 ): Promise<string> {
-  // Generate deterministic UID from email
-  const uid = generateUidFromEmail(normalizedEmail);
-
   // Check if user exists in database
   try {
     await UserDAL.getUser(uid, "saml acs check");
@@ -254,11 +271,22 @@ export async function acs(
 
   const grade = getProfileString(profile, ["grade", "Grade"]);
   const ssoid = getProfileString(profile, [
+    "ieeeId",
+    "ieeeid",
+    "ieee_id",
     "ssoid",
     "ssoId",
     "SSOID",
     "uid",
     "employeeNumber",
+  ]);
+  const avatarUrl = getProfileString(profile, [
+    "picture",
+    "photo",
+    "photoURL",
+    "avatar",
+    "thumbnailPhoto",
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/picture",
   ]);
 
   if (emailRaw === undefined || emailRaw === null || emailRaw === "") {
@@ -268,13 +296,13 @@ export async function acs(
   // Normalize email
   const normalizedEmail = emailRaw.toLowerCase();
 
+  // Prefer IEEE/SAML identifier as uid; fall back to deterministic email hash.
+  const uidFromSaml = (ssoid ?? "").trim();
+  const resolvedUid =
+    uidFromSaml === "" ? generateUidFromEmail(normalizedEmail) : uidFromSaml;
+
   // Find or create user
-  const uid = await findOrCreateUser(
-    normalizedEmail,
-    emailRaw,
-    // firstName,
-    // lastName,
-  );
+  const uid = await findOrCreateUser(resolvedUid, normalizedEmail, emailRaw);
 
   // Get user email for JWT token
   const user = await UserDAL.getPartialUser(uid, "saml acs", ["email"]);
@@ -286,6 +314,7 @@ export async function acs(
     firstName,
     lastName,
     grade,
+    avatarUrl,
   });
 
   return new MonkeyResponse("SAML authentication successful", {

@@ -30,6 +30,7 @@ export type DecodedToken = {
   firstName?: string;
   lastName?: string;
   grade?: string;
+  avatarUrl?: string;
 };
 
 const DEFAULT_OPTIONS: RequestAuthenticationOptions = {
@@ -39,6 +40,7 @@ const DEFAULT_OPTIONS: RequestAuthenticationOptions = {
   requireFreshToken: false,
   isPublicOnDev: false,
 };
+const AUTH_COOKIE_NAME = "mt_auth_token";
 
 /**
  * Authenticate request based on the auth settings of the route.
@@ -68,6 +70,7 @@ export function authenticateTsRestRequest<
 
     const {
       authorization: authHeader,
+      cookie: cookieHeader,
       "x-hub-signature-256": githubWebhookHeader,
     } = req.headers;
 
@@ -80,18 +83,34 @@ export function authenticateTsRestRequest<
           req.ctx.configuration,
           options,
         );
-      } else if (isPublic === true) {
-        token = {
-          type: "None",
-          uid: "",
-          email: "",
-        };
       } else {
-        throw new MonkeyError(
-          401,
-          "Unauthorized",
-          `endpoint: ${req.baseUrl} no authorization header found`,
-        );
+        const tokenFromCookie = getAuthTokenFromCookie(cookieHeader);
+        if (tokenFromCookie !== undefined) {
+          try {
+            token = await authenticateWithBearerToken(tokenFromCookie, options);
+          } catch (error) {
+            if (!isPublic) {
+              throw error;
+            }
+            token = {
+              type: "None",
+              uid: "",
+              email: "",
+            };
+          }
+        } else if (isPublic === true) {
+          token = {
+            type: "None",
+            uid: "",
+            email: "",
+          };
+        } else {
+          throw new MonkeyError(
+            401,
+            "Unauthorized",
+            `endpoint: ${req.baseUrl} no authorization header found`,
+          );
+        }
       }
 
       incrementAuth(token.type);
@@ -131,6 +150,32 @@ export function authenticateTsRestRequest<
 
     next();
   };
+}
+
+function getAuthTokenFromCookie(
+  cookieHeader: string | string[] | undefined,
+): string | undefined {
+  if (cookieHeader === undefined || cookieHeader === "") {
+    return undefined;
+  }
+  const raw = Array.isArray(cookieHeader)
+    ? cookieHeader.join(";")
+    : cookieHeader;
+  const cookies = raw.split(";");
+  for (const cookie of cookies) {
+    const [name, ...valueParts] = cookie.trim().split("=");
+    if (name === AUTH_COOKIE_NAME) {
+      const value = valueParts.join("=");
+      if (value !== "") {
+        try {
+          return decodeURIComponent(value);
+        } catch {
+          return value;
+        }
+      }
+    }
+  }
+  return undefined;
 }
 
 async function authenticateWithAuthHeader(
@@ -197,6 +242,7 @@ async function authenticateWithBearerToken(
       firstName: decodedToken.firstName,
       lastName: decodedToken.lastName,
       grade: decodedToken.grade,
+      avatarUrl: decodedToken.avatarUrl,
     };
   } catch (error) {
     if (error instanceof MonkeyError) {

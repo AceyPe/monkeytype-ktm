@@ -40,7 +40,7 @@ export function getOpenApi(): OpenAPIObject {
       },
       servers: [
         {
-          url: "https://api.monkeytype.com",
+          url: "https://api.ieeektm.org",
           description: "Production server",
         },
       ],

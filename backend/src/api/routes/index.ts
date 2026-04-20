@@ -234,17 +234,32 @@ function applyApiRoutes(app: Application): void {
           `${SAML_AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
           "Path=/",
           `Max-Age=${SAML_AUTH_COOKIE_MAX_AGE_SECONDS.toString()}`,
+          "HttpOnly",
+          "Secure",
           "SameSite=Lax",
         ].join("; ");
         res.setHeader("Set-Cookie", cookie);
 
         const frontendUrl = getFrontendUrl().replace(/\/$/, "");
-        res.redirect(302, `${frontendUrl}/profile?isUid`);
+        res.redirect(302, `${frontendUrl}/profile/${uid}?isUid`);
       } catch (error) {
         next(error);
       }
     },
   );
+
+  app.post(`${BASE_ROUTE}/users/logout`, (_req, res) => {
+    const cookie = [
+      `${SAML_AUTH_COOKIE_NAME}=`,
+      "Path=/",
+      "Max-Age=0",
+      "HttpOnly",
+      "Secure",
+      "SameSite=Lax",
+    ].join("; ");
+    res.setHeader("Set-Cookie", cookie);
+    res.status(200).json(new MonkeyResponse("Logged out", null));
+  });
 
   for (const [route, router] of Object.entries(API_ROUTE_MAP)) {
     const apiRoute = `${BASE_ROUTE}${route}`;
