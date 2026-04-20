@@ -26,7 +26,7 @@ import {
   Response,
   static as expressStatic,
 } from "express";
-import { isDevEnvironment } from "../../utils/misc";
+import { isDevEnvironment, getFrontendUrl } from "../../utils/misc";
 import { getLiveConfiguration } from "../../init/configuration";
 import Logger from "../../utils/logger";
 import { createExpressEndpoints, initServer } from "@ts-rest/express";
@@ -36,8 +36,10 @@ import { authenticateTsRestRequest } from "../../middlewares/auth";
 import { rateLimitRequest } from "../../middlewares/rate-limit";
 import { verifyPermissions } from "../../middlewares/permission";
 import { verifyRequiredConfiguration } from "../../middlewares/configuration";
-import { ExpressRequestWithContext } from "../types";
+import { ExpressRequestWithContext, TsRestRequest } from "../types";
 import * as SamlUtils from "../../utils/saml";
+import * as UserController from "../controllers/user";
+import { verifyIdToken } from "../../utils/auth";
 
 const pathOverride = process.env["API_PATH_OVERRIDE"];
 const BASE_ROUTE = pathOverride !== undefined ? `/${pathOverride}` : "";
@@ -48,6 +50,8 @@ const API_ROUTE_MAP = {
 };
 
 const s = initServer();
+const SAML_AUTH_COOKIE_NAME = "mt_auth_token";
+const SAML_AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60;
 const router = s.router(contract, {
   admin,
   apeKeys,
@@ -201,6 +205,47 @@ function applyApiRoutes(app: Application): void {
       next(error);
     }
   });
+
+  app.post(
+    `${BASE_ROUTE}/users/acs`,
+    async (req: ExpressRequestWithContext, res, next) => {
+      try {
+        const acsResponse = await UserController.acs({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          body: req.body,
+          query: undefined,
+          params: undefined,
+          raw: req as unknown as TsRestRequest,
+          ctx: req.ctx,
+        });
+
+        const token = acsResponse.data?.token;
+        if (token === undefined || token === "") {
+          throw new Error("SAML token missing from ACS response");
+        }
+
+        const decoded = await verifyIdToken(token, true);
+        const uid = decoded.uid;
+        if (uid === undefined || uid === "") {
+          throw new Error("UID missing in SAML token");
+        }
+
+        const cookie = [
+          `${SAML_AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
+          "Path=/",
+          `Max-Age=${SAML_AUTH_COOKIE_MAX_AGE_SECONDS.toString()}`,
+          "SameSite=Lax",
+        ].join("; ");
+        res.setHeader("Set-Cookie", cookie);
+
+        const frontendUrl = getFrontendUrl().replace(/\/$/, "");
+        // const frontendUrl = "http://localhost:3000";
+        res.redirect(302, `${frontendUrl}/profile/${uid}?isUid`);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   for (const [route, router] of Object.entries(API_ROUTE_MAP)) {
     const apiRoute = `${BASE_ROUTE}${route}`;
