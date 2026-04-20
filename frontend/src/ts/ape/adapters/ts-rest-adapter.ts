@@ -5,7 +5,6 @@ import {
   type ApiFetcherArgs,
 } from "@ts-rest/core";
 import { envConfig } from "virtual:env-config";
-import { getIdToken } from "../../firebase";
 import {
   COMPATIBILITY_CHECK,
   COMPATIBILITY_CHECK_HEADER,
@@ -29,15 +28,11 @@ function buildApi(timeout: number): (args: ApiFetcherArgs) => Promise<{
 }> {
   return async (request: ApiFetcherArgs) => {
     try {
-      const token = await getIdToken();
-      if (token !== null) {
-        request.headers["Authorization"] = `Bearer ${token}`;
-      }
-
       const usePolyfill = AbortSignal?.timeout === undefined;
 
       request.fetchOptions = {
         ...request.fetchOptions,
+        credentials: "include",
         signal: usePolyfill
           ? timeoutSignal(timeout)
           : AbortSignal.timeout(timeout),

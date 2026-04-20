@@ -3,7 +3,7 @@ import {
   getHtmlByUserFlags,
   SupportsFlags,
 } from "../controllers/user-flag-controller";
-import { isAuthenticated } from "../firebase";
+import { getAuthenticatedUser, isAuthenticated } from "../firebase";
 import * as XpBar from "./xp-bar";
 import { getAvatarElement } from "../utils/discord-avatar";
 import * as AuthEvent from "../observables/auth-event";
@@ -30,6 +30,7 @@ function updateFlags(flags: SupportsFlags): void {
 }
 
 export function updateAvatar(avatar?: {
+  avatarUrl?: string;
   discordId?: string;
   discordAvatar?: string;
 }): void {
@@ -41,10 +42,12 @@ export function updateAvatar(avatar?: {
 
 export function update(): void {
   if (isAuthenticated()) {
+    const authenticatedUser = getAuthenticatedUser();
     const snapshot = getSnapshot();
 
     if (snapshot === undefined) {
       loading(true);
+      updateAvatar({ avatarUrl: authenticatedUser?.photoURL ?? undefined });
       void Misc.swapElements(
         document.querySelector("nav .textButton.view-login") as HTMLElement,
         document.querySelector("nav .accountButtonAndMenu") as HTMLElement,
@@ -60,7 +63,11 @@ export function update(): void {
     updateName(name);
     updateFlags(snapshot ?? {});
     XpBar.setXp(xp);
-    updateAvatar(snapshot);
+    updateAvatar({
+      avatarUrl: authenticatedUser?.photoURL ?? undefined,
+      discordId: snapshot.discordId,
+      discordAvatar: snapshot.discordAvatar,
+    });
 
     $("nav .accountButtonAndMenu .menu .items .goToProfile").attr(
       "href",

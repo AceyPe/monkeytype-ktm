@@ -1,115 +1,88 @@
 import type { Analytics as AnalyticsType } from "firebase/analytics";
 import type { AuthProvider, User, UserCredential } from "firebase/auth";
 import { promiseWithResolvers } from "./utils/misc";
+// eslint-disable-next-line import/no-unresolved
+import { envConfig } from "virtual:env-config";
 
-const AUTH_TOKEN_COOKIE = "mt_auth_token";
+const MOCK_AVATAR_URL = "/images/ktm.png";
+const SESSION_URL = `${envConfig.backendUrl}/users/session`;
+const LOGOUT_URL = `${envConfig.backendUrl}/users/logout`;
 
 type ReadyCallback = (success: boolean, user: User | null) => Promise<void>;
 let readyCallback: ReadyCallback | undefined;
+let currentUser: User | null = null;
 
-type JwtClaims = {
+type SessionUser = {
   uid: string;
   email: string;
   firstName?: string;
   lastName?: string;
-  grade?: string;
-  ssoid?: string;
-  exp?: number;
+  avatarUrl?: string;
 };
 
 const { promise: authPromise, resolve: resolveAuthPromise } =
   promiseWithResolvers();
 
-function getCookieValue(name: string): string | null {
-  const prefix = `${name}=`;
-  const cookies = document.cookie.split(";");
-  for (const rawCookie of cookies) {
-    const cookie = rawCookie.trim();
-    if (cookie.startsWith(prefix)) {
-      const value = cookie.slice(prefix.length);
-      if (value !== "") return decodeURIComponent(value);
-    }
-  }
-  return null;
+type SessionResponse = {
+  data?: {
+    authenticated: boolean;
+    user: SessionUser | null;
+  };
+};
+
+function toAuthUser(sessionUser: SessionUser): User {
+  const displayName = [sessionUser.firstName, sessionUser.lastName]
+    .filter((it) => typeof it === "string" && it !== "")
+    .join(" ");
+  return {
+    uid: sessionUser.uid,
+    email: sessionUser.email,
+    emailVerified: true,
+    displayName: displayName === "" ? null : displayName,
+    photoURL: sessionUser.avatarUrl ?? MOCK_AVATAR_URL,
+    providerData: [],
+  } as unknown as User;
 }
 
-function clearCookie(name: string): void {
-  document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
-}
-
-function decodeBase64Url(input: string): string {
-  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
-  const padLength = (4 - (normalized.length % 4)) % 4;
-  return atob(`${normalized}${"=".repeat(padLength)}`);
-}
-
-function getTokenClaimsFromCookie(): JwtClaims | null {
-  const token = getCookieValue(AUTH_TOKEN_COOKIE);
-  if (token === null) return null;
-
+async function fetchSessionUser(): Promise<User | null> {
   try {
-    const parts = token.split(".");
-    const payload = parts[1];
-    if (payload === undefined || payload === "") return null;
-    const parsed = JSON.parse(decodeBase64Url(payload)) as Partial<JwtClaims>;
-    if (typeof parsed.uid !== "string" || parsed.uid === "") return null;
-    if (typeof parsed.email !== "string" || parsed.email === "") return null;
-
-    if (typeof parsed.exp === "number" && Date.now() >= parsed.exp * 1000) {
-      clearCookie(AUTH_TOKEN_COOKIE);
+    const response = await fetch(SESSION_URL, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+        "X-Client-Version": envConfig.clientVersion,
+      },
+    });
+    if (!response.ok) {
       return null;
     }
-
-    return {
-      uid: parsed.uid,
-      email: parsed.email,
-      firstName: parsed.firstName,
-      lastName: parsed.lastName,
-      grade: parsed.grade,
-      ssoid: parsed.ssoid,
-      exp: parsed.exp,
-    };
+    const body = (await response.json()) as SessionResponse;
+    if (body.data?.authenticated !== true || body.data.user === null) {
+      return null;
+    }
+    return toAuthUser(body.data.user);
   } catch {
     return null;
   }
 }
 
-function getJwtUser(): User | null {
-  const claims = getTokenClaimsFromCookie();
-  if (claims === null) return null;
-  const displayName = [claims.firstName, claims.lastName]
-    .filter((it) => typeof it === "string" && it !== "")
-    .join(" ");
-
-  return {
-    uid: claims.uid,
-    email: claims.email,
-    emailVerified: true,
-    displayName: displayName === "" ? null : displayName,
-    providerData: [],
-    // expose custom claims for callers that need SAML payload fields
-    ssoid: claims.ssoid,
-    firstName: claims.firstName,
-    lastName: claims.lastName,
-    grade: claims.grade,
-  } as unknown as User;
-}
-
 export async function init(callback: ReadyCallback): Promise<void> {
   readyCallback = callback;
   try {
-    await callback(true, getJwtUser());
+    currentUser = await fetchSessionUser();
+    await callback(true, currentUser);
   } finally {
     resolveAuthPromise();
   }
 }
 
 export function isAuthenticated(): boolean {
-  return getJwtUser() !== null;
+  return currentUser !== null;
 }
 
 export function getAuthenticatedUser(): User | null {
-  return getJwtUser();
+  return currentUser;
 }
 
 export function getAnalytics(): AnalyticsType {
@@ -121,7 +94,15 @@ export function isAuthAvailable(): boolean {
 }
 
 export async function signOut(): Promise<void> {
-  clearCookie(AUTH_TOKEN_COOKIE);
+  await fetch(LOGOUT_URL, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "X-Client-Version": envConfig.clientVersion,
+    },
+  });
+  currentUser = null;
   await readyCallback?.(true, null);
 }
 
@@ -148,7 +129,7 @@ export async function createUserWithEmailAndPassword(
 }
 
 export async function getIdToken(): Promise<string | null> {
-  return getCookieValue(AUTH_TOKEN_COOKIE);
+  return null;
 }
 
 export function resetIgnoreAuthCallback(): void {

@@ -3,6 +3,7 @@ import * as Loader from "../elements/loader";
 import * as Notifications from "../elements/notifications";
 import * as Misc from "./misc";
 import { tryCatch } from "@monkeytype/util/trycatch";
+import { isAuthenticated } from "../firebase";
 // eslint-disable-next-line import/no-unresolved
 import { envConfig } from "virtual:env-config";
 
@@ -34,6 +35,11 @@ function replaceLoginHistoryEntryWithHome(): void {
 
 /** Returns true when redirecting to the IdP; false on error or offline. */
 export async function startSamlSignIn(): Promise<boolean> {
+  if (isAuthenticated()) {
+    window.location.assign("/account");
+    return true;
+  }
+
   if (!ConnectionState.get()) {
     Notifications.add("You are offline", 0, {
       duration: 2,

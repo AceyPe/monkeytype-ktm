@@ -101,7 +101,7 @@ export default {
         runtimeCaching: [
           {
             urlPattern: (options) => {
-              const isApi = options.url.hostname === "api.monkeytype.com";
+              const isApi = options.url.hostname === "api.ieeektm.org";
               return options.sameOrigin && !isApi;
             },
             handler: "NetworkFirst",
