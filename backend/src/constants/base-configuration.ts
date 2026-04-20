@@ -57,7 +57,7 @@ export const BASE_CONFIGURATION: Configuration = {
       maxHours: 1,
     },
     profiles: {
-      enabled: false,
+      enabled: true,
     },
     xp: {
       enabled: false,

@@ -85,6 +85,12 @@ export async function getLiveConfiguration(): Promise<Configuration> {
       ]) as Configuration;
       mergeConfigurations(baseConfiguration, liveConfigurationWithoutId);
 
+      // Public profiles follow BASE_CONFIGURATION only; older DB snapshots
+      // cannot leave `users.profiles.enabled` false when the codebase enables it.
+      baseConfiguration.users.profiles = structuredClone(
+        BASE_CONFIGURATION.users.profiles,
+      );
+
       await pushConfiguration(baseConfiguration);
       configuration = baseConfiguration;
     } else {

@@ -14,7 +14,8 @@ const developmentConfig: EnvConfig = {
 };
 const productionConfig: Omit<EnvConfig, "clientVersion"> = {
   isDevelopment: false,
-  backendUrl: fallbackEnv("BACKEND_URL", "https://api.ieeektm.org"),
+  // backendUrl: fallbackEnv("BACKEND_URL", "http://localhost:5005"),
+  backendUrl: fallbackEnv("BACKEND_URL", "http://api.ieeektm.org"),
   recaptchaSiteKey: process.env["RECAPTCHA_SITE_KEY"] ?? "",
   quickLoginEmail: undefined,
   quickLoginPassword: undefined,

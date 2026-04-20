@@ -5,7 +5,7 @@ import * as Misc from "./utils/misc";
 import * as DB from "./db";
 import * as Loader from "./elements/loader";
 import * as LoginPage from "./pages/login";
-import type { AuthProvider } from "firebase/auth";
+import type { AuthProvider } from "./auth-types";
 import {
   isAuthAvailable,
   isAuthenticated,

@@ -6,20 +6,12 @@ import * as Notifications from "../elements/notifications";
 import * as Settings from "../pages/settings";
 // import * as ThemePicker from "../elements/settings/theme-picker";
 import * as CustomText from "../test/custom-text";
-import { FirebaseError } from "firebase/app";
+import type { User } from "../auth-types";
 import {
   isAuthenticated,
   getAuthenticatedUser,
   isAuthAvailable,
 } from "../firebase";
-import {
-  EmailAuthProvider,
-  User,
-  linkWithCredential,
-  reauthenticateWithCredential,
-  reauthenticateWithPopup,
-  unlink,
-} from "firebase/auth";
 import {
   createErrorMessage,
   // isDevEnvironment,
@@ -116,17 +108,6 @@ type ReauthenticateOptions = {
   password?: string;
 };
 
-function getPreferredAuthenticationMethod(
-  exclude?: AuthMethod,
-): AuthMethod | undefined {
-  const authMethods = ["password", "github.com", "google.com"] as AuthMethod[];
-  const filteredMethods = authMethods.filter((it) => it !== exclude);
-  for (const method of filteredMethods) {
-    if (isUsingAuthentication(method)) return method;
-  }
-  return undefined;
-}
-
 function isUsingPasswordAuthentication(): boolean {
   return isUsingAuthentication("password");
 }
@@ -148,7 +129,7 @@ function isUsingAuthentication(authProvider: AuthMethod): boolean {
 }
 
 async function reauthenticate(
-  options: ReauthenticateOptions,
+  _options: ReauthenticateOptions,
 ): Promise<ReauthSuccess | ReauthFailed> {
   if (!isAuthAvailable()) {
     return {
@@ -165,64 +146,31 @@ async function reauthenticate(
     };
   }
 
-  const authMethod = getPreferredAuthenticationMethod(options.excludeMethod);
+  // Session cookie (SAML) is the source of truth; Firebase re-auth is not used.
+  return {
+    status: 1,
+    message: "Reauthenticated",
+    user,
+  };
+}
 
-  try {
-    if (authMethod === undefined) {
-      return {
-        status: -1,
-        message:
-          "Failed to reauthenticate: there is no valid authentication present on the account.",
-      };
-    }
+async function unlinkFirebaseProvider(
+  _user: User,
+  _providerId: string,
+): Promise<void> {
+  throw new Error(
+    "Unlinking OAuth or password providers is not available with SAML-only sign-in.",
+  );
+}
 
-    if (authMethod === "password") {
-      if (options.password === undefined) {
-        return {
-          status: -1,
-          message: "Failed to reauthenticate using password: password missing.",
-        };
-      }
-      const credential = EmailAuthProvider.credential(
-        user.email as string,
-        options.password,
-      );
-      await reauthenticateWithCredential(user, credential);
-    } else {
-      const authProvider =
-        authMethod === "github.com"
-          ? AccountController.githubProvider
-          : AccountController.gmailProvider;
-      await reauthenticateWithPopup(user, authProvider);
-    }
-
-    return {
-      status: 1,
-      message: "Reauthenticated",
-      user,
-    };
-  } catch (e) {
-    const typedError = e as FirebaseError;
-    if (typedError.code === "auth/wrong-password") {
-      return {
-        status: 0,
-        message: "Incorrect password",
-      };
-    } else if (typedError.code === "auth/invalid-credential") {
-      return {
-        status: 0,
-        message:
-          "Password is incorrect or your account does not have password authentication enabled.",
-      };
-    } else {
-      return {
-        status: -1,
-        message:
-          "Failed to reauthenticate: " +
-          (typedError?.message ?? JSON.stringify(e)),
-      };
-    }
-  }
+async function linkPasswordToFirebaseUser(
+  _user: User,
+  _email: string,
+  _password: string,
+): Promise<void> {
+  throw new Error(
+    "Adding password authentication is not available with SAML-only sign-in.",
+  );
 }
 
 list.updateEmail = new SimpleModal({
@@ -334,7 +282,7 @@ list.removeGoogleAuth = new SimpleModal({
     }
 
     try {
-      await unlink(reauth.user, "google.com");
+      await unlinkFirebaseProvider(reauth.user, "google.com");
     } catch (e) {
       const message = createErrorMessage(e, "Failed to unlink Google account");
       return {
@@ -388,7 +336,7 @@ list.removeGithubAuth = new SimpleModal({
     }
 
     try {
-      await unlink(reauth.user, "github.com");
+      await unlinkFirebaseProvider(reauth.user, "github.com");
     } catch (e) {
       const message = createErrorMessage(e, "Failed to unlink GitHub account");
       return {
@@ -440,7 +388,7 @@ list.removePasswordAuth = new SimpleModal({
     }
 
     try {
-      await unlink(reauth.user, "password");
+      await unlinkFirebaseProvider(reauth.user, "password");
     } catch (e) {
       const message = createErrorMessage(
         e,
@@ -676,8 +624,7 @@ list.addPasswordAuth = new SimpleModal({
     }
 
     try {
-      const credential = EmailAuthProvider.credential(email, password);
-      await linkWithCredential(reauth.user, credential);
+      await linkPasswordToFirebaseUser(reauth.user, email, password);
     } catch (e) {
       const message = createErrorMessage(
         e,

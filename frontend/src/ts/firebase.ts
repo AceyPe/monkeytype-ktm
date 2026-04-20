@@ -1,5 +1,4 @@
-import type { Analytics as AnalyticsType } from "firebase/analytics";
-import type { AuthProvider, User, UserCredential } from "firebase/auth";
+import type { AuthProvider, User, UserCredential } from "./auth-types";
 import { promiseWithResolvers } from "./utils/misc";
 // eslint-disable-next-line import/no-unresolved
 import { envConfig } from "virtual:env-config";
@@ -41,7 +40,10 @@ function toAuthUser(sessionUser: SessionUser): User {
     displayName: displayName === "" ? null : displayName,
     photoURL: sessionUser.avatarUrl ?? MOCK_AVATAR_URL,
     providerData: [],
-  } as unknown as User;
+    delete: async () => {
+      await Promise.resolve();
+    },
+  };
 }
 
 async function fetchSessionUser(): Promise<User | null> {
@@ -83,10 +85,6 @@ export function isAuthenticated(): boolean {
 
 export function getAuthenticatedUser(): User | null {
   return currentUser;
-}
-
-export function getAnalytics(): AnalyticsType {
-  throw new Error("Analytics is unavailable without Firebase auth runtime");
 }
 
 export function isAuthAvailable(): boolean {
