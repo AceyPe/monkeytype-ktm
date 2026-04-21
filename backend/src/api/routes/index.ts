@@ -39,7 +39,6 @@ import { verifyRequiredConfiguration } from "../../middlewares/configuration";
 import { ExpressRequestWithContext, TsRestRequest } from "../types";
 import * as SamlUtils from "../../utils/saml";
 import * as UserController from "../controllers/user";
-import { verifyIdToken } from "../../utils/auth";
 
 const pathOverride = process.env["API_PATH_OVERRIDE"];
 const BASE_ROUTE = pathOverride !== undefined ? `/${pathOverride}` : "";
@@ -50,8 +49,7 @@ const API_ROUTE_MAP = {
 };
 
 const s = initServer();
-const SAML_AUTH_COOKIE_NAME = "mt_auth_token";
-const SAML_AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60;
+
 const router = s.router(contract, {
   admin,
   apeKeys,
@@ -224,24 +222,9 @@ function applyApiRoutes(app: Application): void {
           throw new Error("SAML token missing from ACS response");
         }
 
-        const decoded = await verifyIdToken(token, true);
-        const uid = decoded.uid;
-        if (uid === undefined || uid === "") {
-          throw new Error("UID missing in SAML token");
-        }
-
-        const cookie = [
-          `${SAML_AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
-          "Path=/",
-          `Max-Age=${SAML_AUTH_COOKIE_MAX_AGE_SECONDS.toString()}`,
-          "HttpOnly",
-          "Secure",
-          "SameSite=Lax",
-        ].join("; ");
-        res.setHeader("Set-Cookie", cookie);
-
         const frontendUrl = getFrontendUrl().replace(/\/$/, "");
-        res.redirect(302, `${frontendUrl}/profile/${uid}?isUid`);
+        const tokenFragment = `mt_auth_token=${encodeURIComponent(token)}`;
+        res.redirect(302, `${frontendUrl}/account#${tokenFragment}`);
       } catch (error) {
         next(error);
       }
@@ -249,15 +232,6 @@ function applyApiRoutes(app: Application): void {
   );
 
   app.post(`${BASE_ROUTE}/users/logout`, (_req, res) => {
-    const cookie = [
-      `${SAML_AUTH_COOKIE_NAME}=`,
-      "Path=/",
-      "Max-Age=0",
-      "HttpOnly",
-      "Secure",
-      "SameSite=Lax",
-    ].join("; ");
-    res.setHeader("Set-Cookie", cookie);
     res.status(200).json(new MonkeyResponse("Logged out", null));
   });
 

@@ -10,6 +10,7 @@ import {
   COMPATIBILITY_CHECK_HEADER,
 } from "@monkeytype/contracts";
 import * as Notifications from "../../elements/notifications";
+import { getIdToken } from "../../firebase";
 
 let bannerShownThisSession = false;
 
@@ -29,10 +30,18 @@ function buildApi(timeout: number): (args: ApiFetcherArgs) => Promise<{
   return async (request: ApiFetcherArgs) => {
     try {
       const usePolyfill = AbortSignal?.timeout === undefined;
+      const token = await getIdToken();
+      const headers = new Headers(request.headers);
+      if (token !== null) {
+        headers.set("Authorization", `Bearer ${token}`);
+      } else {
+        headers.delete("Authorization");
+      }
+      request.headers = Object.fromEntries(headers.entries());
 
       request.fetchOptions = {
         ...request.fetchOptions,
-        credentials: "include",
+        credentials: "omit",
         signal: usePolyfill
           ? timeoutSignal(timeout)
           : AbortSignal.timeout(timeout),

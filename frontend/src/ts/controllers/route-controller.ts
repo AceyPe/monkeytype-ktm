@@ -164,6 +164,16 @@ const routes: Route[] = [
   {
     path: "/profile/:uidOrName",
     load: async (params, options) => {
+      if (isAuthenticated() && checkIfGetParameterExists("isUid")) {
+        const authenticatedUid = getAuthenticatedUser()?.uid ?? "";
+        if (
+          authenticatedUid !== "" &&
+          params["uidOrName"] === authenticatedUid
+        ) {
+          await navigate("/account", options);
+          return;
+        }
+      }
       await PageController.change("profile", {
         ...options,
         force: true,

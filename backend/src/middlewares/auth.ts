@@ -87,7 +87,11 @@ export function authenticateTsRestRequest<
         const tokenFromCookie = getAuthTokenFromCookie(cookieHeader);
         if (tokenFromCookie !== undefined) {
           try {
-            token = await authenticateWithBearerToken(tokenFromCookie, options);
+            token = await authenticateWithBearerToken(
+              tokenFromCookie,
+              options,
+              "cookie",
+            );
           } catch (error) {
             if (!isPublic) {
               throw error;
@@ -214,6 +218,7 @@ async function authenticateWithAuthHeader(
 async function authenticateWithBearerToken(
   token: string,
   options: RequestAuthenticationOptions,
+  source: "header" | "cookie" = "header",
 ): Promise<DecodedToken> {
   try {
     const decodedToken = await verifyIdToken(
@@ -221,7 +226,8 @@ async function authenticateWithBearerToken(
       (options.requireFreshToken ?? false) || (options.noCache ?? false),
     );
 
-    if (options.requireFreshToken) {
+    // Cookie-based auth does not support minting fresh tokens client-side.
+    if (options.requireFreshToken && source === "header") {
       const now = Date.now();
       const tokenIssuedAt = new Date(decodedToken.iat * 1000).getTime();
 
