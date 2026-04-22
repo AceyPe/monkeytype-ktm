@@ -197,9 +197,7 @@ export function getFrontendUrl(): string {
   if (fromEnv !== undefined && fromEnv !== "") {
     return fromEnv;
   }
-  if (isDevEnvironment()) {
-    return "http://localhost:3000";
-  }
+  //   return "http://localhost:3000";
   return "https://ieeektm.org";
 }
 

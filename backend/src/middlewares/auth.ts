@@ -26,9 +26,12 @@ export type DecodedToken = {
   type: "Bearer" | "ApeKey" | "None" | "GithubWebhook";
   uid: string;
   email: string;
+  geocode?: string;
+  status?: string;
   ssoid?: string;
   firstName?: string;
   lastName?: string;
+  lastname?: string;
   grade?: string;
   avatarUrl?: string;
 };
@@ -244,9 +247,12 @@ async function authenticateWithBearerToken(
       type: "Bearer",
       uid: decodedToken.uid,
       email: decodedToken.email ?? "",
+      geocode: decodedToken.geocode,
+      status: decodedToken.status,
       ssoid: decodedToken.ssoid,
       firstName: decodedToken.firstName,
       lastName: decodedToken.lastName,
+      lastname: decodedToken.lastname,
       grade: decodedToken.grade,
       avatarUrl: decodedToken.avatarUrl,
     };

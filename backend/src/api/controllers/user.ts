@@ -163,8 +163,12 @@ function getProfileString(
   profile: SamlUtils.SamlProfile,
   keys: string[],
 ): string | undefined {
+  const attributes =
+    typeof profile["attributes"] === "object" && profile["attributes"] !== null
+      ? (profile["attributes"] as Record<string, unknown>)
+      : undefined;
   for (const key of keys) {
-    const value = profile[key];
+    const value = profile[key] ?? attributes?.[key];
     if (typeof value === "string" && value.trim() !== "") {
       return value;
     }
@@ -252,23 +256,29 @@ export async function acs(
     profile.nameID ??
     getProfileString(profile, [
       "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+      "Email",
       "email",
       "mail",
     ]);
 
   const firstName = getProfileString(profile, [
+    "FirstName",
     "firstName",
     "givenName",
     "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
   ]);
 
   const lastName = getProfileString(profile, [
+    "LastName",
+    "lastname",
     "lastName",
     "sn",
     "surname",
     "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
   ]);
 
+  const geocode = getProfileString(profile, ["geocode", "Geocode"]);
+  const status = getProfileString(profile, ["status", "Status"]);
   const grade = getProfileString(profile, ["grade", "Grade"]);
   const ssoid = getProfileString(profile, [
     "ieeeId",
@@ -310,9 +320,13 @@ export async function acs(
 
   // Generate JWT token with security standards
   const token = AuthUtil.generateJwtToken(uid, userEmail, "1h", {
+    geocode,
+    status,
     ssoid,
+    email: userEmail,
     firstName,
     lastName,
+    lastname: lastName,
     grade,
     avatarUrl,
   });
@@ -1159,12 +1173,13 @@ export async function updateProfile(
   const profileDetailsUpdates: Partial<UserProfileDetails> = {
     bio: sanitizeString(bio),
     keyboard: sanitizeString(keyboard),
-    socialProfiles: Object.fromEntries(
-      Object.entries(socialProfiles ?? {}).map(([key, value]) => [
-        key,
-        sanitizeString(value),
-      ]),
-    ),
+    // Only allow these explicit profile links.
+    // Legacy fields like `page` are intentionally ignored.
+    socialProfiles: {
+      linkedin: sanitizeString(socialProfiles?.linkedin),
+      github: sanitizeString(socialProfiles?.github),
+      website: sanitizeString(socialProfiles?.website),
+    },
     showActivityOnPublicProfile,
   };
 
