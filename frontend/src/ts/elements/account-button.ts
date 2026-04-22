@@ -3,7 +3,11 @@ import {
   getHtmlByUserFlags,
   SupportsFlags,
 } from "../controllers/user-flag-controller";
-import { getAuthenticatedUser, isAuthenticated } from "../firebase";
+import {
+  getAccountClaimsFromStoredToken,
+  getAuthenticatedUser,
+  isAuthenticated,
+} from "../firebase";
 import * as XpBar from "./xp-bar";
 import { getAvatarElement } from "../utils/discord-avatar";
 import * as AuthEvent from "../observables/auth-event";
@@ -40,6 +44,22 @@ export function updateAvatar(avatar?: {
   $("header nav .view-account .avatar").replaceWith(element);
 }
 
+/** Label next to the nav avatar: JWT first/last name when present, else session user displayName, else account name. */
+function getNavbarProfileDisplayName(
+  authenticatedUser: ReturnType<typeof getAuthenticatedUser>,
+  snapshotName: string | undefined,
+): string {
+  const claims = getAccountClaimsFromStoredToken();
+  const fromClaims = [claims?.firstName, claims?.lastName]
+    .filter((p): p is string => typeof p === "string" && p.trim() !== "")
+    .join(" ")
+    .trim();
+  if (fromClaims !== "") return fromClaims;
+  const fromUser = authenticatedUser?.displayName?.trim();
+  if (fromUser !== undefined && fromUser !== "") return fromUser;
+  return snapshotName ?? "";
+}
+
 export function update(): void {
   if (isAuthenticated()) {
     const authenticatedUser = getAuthenticatedUser();
@@ -47,6 +67,7 @@ export function update(): void {
 
     if (snapshot === undefined) {
       loading(true);
+      updateName(getNavbarProfileDisplayName(authenticatedUser, undefined));
       updateAvatar({ avatarUrl: authenticatedUser?.photoURL ?? undefined });
       void Misc.swapElements(
         document.querySelector("nav .textButton.view-login") as HTMLElement,
@@ -60,7 +81,7 @@ export function update(): void {
     const { xp, name } = snapshot;
 
     loading(false);
-    updateName(name);
+    updateName(getNavbarProfileDisplayName(authenticatedUser, name));
     updateFlags(snapshot ?? {});
     XpBar.setXp(xp);
     updateAvatar({
