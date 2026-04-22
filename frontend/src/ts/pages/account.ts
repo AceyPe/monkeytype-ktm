@@ -21,7 +21,10 @@ import * as Skeleton from "../utils/skeleton";
 import type { ScaleChartOptions, LinearScaleOptions } from "chart.js";
 import * as ConfigEvent from "../observables/config-event";
 import * as ActivePage from "../states/active-page";
-import { getAuthenticatedUser } from "../firebase";
+import {
+  getAccountClaimsFromStoredToken,
+  getAuthenticatedUser,
+} from "../firebase";
 import * as Loader from "../elements/loader";
 import * as ResultBatches from "../elements/result-batches";
 import Format from "../utils/format";
@@ -49,6 +52,28 @@ let filteredResults: SnapshotResult<Mode>[] = [];
 let visibleTableLines = 0;
 let testActivityEl: HTMLElement | null;
 let historyTable: SortedTableWithLimit<SnapshotResult<Mode>>;
+
+function updateAccountIdentityFromJwt(): void {
+  const claims = getAccountClaimsFromStoredToken();
+  const details = $(".pageAccount .profile .details");
+  const jwtIdentity = details.find(".jwtIdentity");
+
+  if (claims === null) {
+    jwtIdentity.addClass("hidden");
+    return;
+  }
+
+  const fullName = [claims.firstName, claims.lastName]
+    .filter((part) => typeof part === "string" && part !== "")
+    .join(" ");
+  if (fullName !== "") {
+    details.find(".name").text(fullName);
+  }
+
+  jwtIdentity.find(".geocode").text(`Section: ${claims.geocode ?? "-"}`);
+  jwtIdentity.find(".grade").text(`Grade: ${claims.grade ?? "-"}`);
+  jwtIdentity.removeClass("hidden");
+}
 
 function loadMoreLines(lineIndex?: number): void {
   if (filteredResults === undefined || filteredResults.length === 0) return;
@@ -224,6 +249,7 @@ async function fillContent(): Promise<void> {
 
   PbTables.update(snapshot.personalBests);
   void Profile.update("account", snapshot);
+  updateAccountIdentityFromJwt();
 
   TestActivity.init(
     testActivityEl as HTMLElement,

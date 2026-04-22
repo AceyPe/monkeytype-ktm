@@ -49,8 +49,17 @@ type JwtSessionClaims = {
   email?: unknown;
   firstName?: unknown;
   lastName?: unknown;
+  geocode?: unknown;
+  grade?: unknown;
   avatarUrl?: unknown;
   exp?: unknown;
+};
+
+export type JwtAccountClaims = {
+  firstName?: string;
+  lastName?: string;
+  geocode?: string;
+  grade?: string;
 };
 
 function toAuthUser(sessionUser: SessionUser): User {
@@ -133,6 +142,28 @@ function normalizeMaybeString(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   if (value.trim() === "") return undefined;
   return value;
+}
+
+export function getAccountClaimsFromStoredToken(): JwtAccountClaims | null {
+  const token = getStoredToken();
+  if (token === null) return null;
+
+  const claims = decodeJwtPayload(token);
+  if (claims === null) return null;
+  if (
+    typeof claims.exp === "number" &&
+    claims.exp > 0 &&
+    claims.exp * 1000 <= Date.now()
+  ) {
+    return null;
+  }
+
+  return {
+    firstName: normalizeMaybeString(claims.firstName),
+    lastName: normalizeMaybeString(claims.lastName),
+    geocode: normalizeMaybeString(claims.geocode),
+    grade: normalizeMaybeString(claims.grade),
+  };
 }
 
 function readSessionUserFromToken(token: string | null): User | null {
