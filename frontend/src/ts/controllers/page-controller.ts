@@ -248,7 +248,7 @@ export async function change(
     //next page
     await nextPage?.beforeShow({
       params: options.params,
-      // @ts-expect-error for the future (i think)
+      // @ts-expect-error cross-page beforeShow data is intentionally untyped here
       data: options.data,
     });
 
