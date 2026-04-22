@@ -40,6 +40,7 @@ import Ape from "../ape";
 import { AccountChart } from "@monkeytype/schemas/configs";
 import { SortedTableWithLimit } from "../utils/sorted-table";
 import { getAvatarElement } from "../utils/discord-avatar";
+import { getSectionNameByGeocode } from "../constants/sections-by-geocode";
 
 let filterDebug = false;
 //toggle filterdebug
@@ -88,8 +89,9 @@ function updateAccountIdentityFromJwt(): void {
     details.find(".name").text(fullName);
   }
 
-  jwtIdentity.find(".geocode").text(`Section: ${claims.geocode ?? "-"}`);
-  jwtIdentity.find(".grade").text(`Grade: ${claims.grade ?? "-"}`);
+  const sectionName = getSectionNameByGeocode(claims.geocode);
+  jwtIdentity.find(".geocode").text(`${sectionName ?? claims.geocode ?? "-"}`);
+  // jwtIdentity.find(".grade").text(`Grade: ${claims.grade ?? "-"}`);
   jwtIdentity.removeClass("hidden");
 }
 
