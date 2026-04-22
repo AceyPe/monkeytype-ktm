@@ -13,7 +13,6 @@ import { animate } from "animejs";
 
 $(async (): Promise<void> => {
   await loadPromise;
-  await authPromise;
 
   //this line goes back to pretty much the beginning of the project and im pretty sure its here
   //to make sure the initial theme application doesnt animate the background color
@@ -30,6 +29,7 @@ $(async (): Promise<void> => {
     opacity: [0, 1],
     duration: Misc.applyReducedMotion(250),
   });
+  await authPromise;
   if (ConnectionState.get()) {
     void ServerConfiguration.sync().then(() => {
       if (!ServerConfiguration.get()?.users.signUp) {

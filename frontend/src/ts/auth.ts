@@ -21,6 +21,7 @@ import { startSamlSignIn } from "./utils/saml-sso";
 
 export const gmailProvider = {} as AuthProvider;
 export const githubProvider = {} as AuthProvider;
+let authStateChangeRunId = 0;
 
 async function sendVerificationEmail(): Promise<void> {
   if (!isAuthAvailable()) {
@@ -129,8 +130,10 @@ export async function onAuthStateChanged(
   user: unknown | null,
 ): Promise<void> {
   console.debug(`account controller ready`);
+  const runId = ++authStateChangeRunId;
 
   let userPromise: Promise<void> = Promise.resolve();
+  let userDataTimedOut = false;
   const isUserSignedIn = user !== null;
 
   if (authInitialisedAndConnected) {
@@ -169,7 +172,16 @@ export async function onAuthStateChanged(
         }
       },
       loadingPromise: async () => {
-        await userPromise;
+        await Promise.race([
+          userPromise,
+          (async () => {
+            await Misc.sleep(15000);
+            userDataTimedOut = true;
+            throw new Error(
+              "Timed out while downloading user data. Please try again.",
+            );
+          })(),
+        ]);
       },
       style: "bar",
       keyframes: keyframes,
@@ -180,6 +192,19 @@ export async function onAuthStateChanged(
     type: "authStateChanged",
     data: { isUserSignedIn: user !== null },
   });
+
+  if (userDataTimedOut && isUserSignedIn) {
+    void userPromise
+      .then(async () => {
+        // Skip stale retries if a newer auth state change already started.
+        if (runId !== authStateChangeRunId) return;
+        if (!isAuthenticated()) return;
+        await navigate(undefined, { force: true });
+      })
+      .catch(() => {
+        // keep original error handling path from loadUser/getDataAndInit
+      });
+  }
 }
 
 export async function signIn(_email: string, _password: string): Promise<void> {

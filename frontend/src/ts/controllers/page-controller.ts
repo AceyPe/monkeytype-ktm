@@ -205,21 +205,21 @@ export async function change(
   PageTransition.set(true);
   $(".page").removeClass("active");
 
-  //previous page
-  await previousPage?.beforeHide?.();
-  previousPage.element.removeClass("hidden").css("opacity", 1);
-  await Misc.promiseAnimate(previousPage.element[0] as HTMLElement, {
-    opacity: "0",
-    duration: totalDuration / 2,
-  });
-  previousPage.element.addClass("hidden");
-  await previousPage?.afterHide();
-
-  // we need to evaluate and store next page loading mode in case options.loadingOptions.loadingMode is sync
-  const nextPageLoadingMode = nextPage.loadingOptions?.loadingMode();
-
-  //show loading page if needed
   try {
+    //previous page
+    await previousPage?.beforeHide?.();
+    previousPage.element.removeClass("hidden").css("opacity", 1);
+    await Misc.promiseAnimate(previousPage.element[0] as HTMLElement, {
+      opacity: "0",
+      duration: totalDuration / 2,
+    });
+    previousPage.element.addClass("hidden");
+    await previousPage?.afterHide();
+
+    // we need to evaluate and store next page loading mode in case options.loadingOptions.loadingMode is sync
+    const nextPageLoadingMode = nextPage.loadingOptions?.loadingMode();
+
+    //show loading page if needed
     let syncLoadingOptions: LoadingOptions[] = [];
     if (options.loadingOptions?.loadingMode() === "sync") {
       syncLoadingOptions.push(options.loadingOptions);
@@ -239,6 +239,40 @@ export async function change(
     if (keyframeAbortController) {
       keyframeAbortController = null;
     }
+    //between
+    updateTitle(nextPage);
+    ActivePage.set(nextPage.id);
+    updateOpenGraphUrl();
+    Focus.set(false);
+
+    //next page
+    await nextPage?.beforeShow({
+      params: options.params,
+      // @ts-expect-error for the future (i think)
+      data: options.data,
+    });
+
+    if (
+      typeof nextPageLoadingMode === "object" &&
+      nextPageLoadingMode.mode === "async"
+    ) {
+      nextPageLoadingMode.beforeLoading();
+      void nextPage?.loadingOptions?.loadingPromise().then(() => {
+        nextPageLoadingMode.afterLoading();
+      });
+    }
+
+    nextPage.element.removeClass("hidden").css("opacity", 0);
+    await Misc.promiseAnimate(nextPage.element[0] as HTMLElement, {
+      opacity: "1",
+      duration: totalDuration / 2,
+    });
+    nextPage.element.addClass("active");
+    await nextPage?.afterShow();
+
+    //wrapup
+    void AdController.reinstate();
+    return true;
   } catch (error) {
     // Abort any running keyframe promises
     if (keyframeAbortController) {
@@ -246,6 +280,7 @@ export async function change(
       keyframeAbortController = null;
     }
 
+    pages.loading.element.removeClass("hidden").css("opacity", 1);
     pages.loading.element.addClass("active");
     ActivePage.set(pages.loading.id);
     Focus.set(false);
@@ -255,43 +290,8 @@ export async function change(
         error instanceof Error ? error.message : String(error)
       }`,
     );
-    PageTransition.set(false);
     return false;
+  } finally {
+    PageTransition.set(false);
   }
-
-  //between
-  updateTitle(nextPage);
-  ActivePage.set(nextPage.id);
-  updateOpenGraphUrl();
-  Focus.set(false);
-
-  //next page
-  await nextPage?.beforeShow({
-    params: options.params,
-    // @ts-expect-error for the future (i think)
-    data: options.data,
-  });
-
-  if (
-    typeof nextPageLoadingMode === "object" &&
-    nextPageLoadingMode.mode === "async"
-  ) {
-    nextPageLoadingMode.beforeLoading();
-    void nextPage?.loadingOptions?.loadingPromise().then(() => {
-      nextPageLoadingMode.afterLoading();
-    });
-  }
-
-  nextPage.element.removeClass("hidden").css("opacity", 0);
-  await Misc.promiseAnimate(nextPage.element[0] as HTMLElement, {
-    opacity: "1",
-    duration: totalDuration / 2,
-  });
-  nextPage.element.addClass("active");
-  await nextPage?.afterShow();
-
-  //wrapup
-  PageTransition.set(false);
-  void AdController.reinstate();
-  return true;
 }

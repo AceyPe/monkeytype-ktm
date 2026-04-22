@@ -40,6 +40,10 @@ import { Connection } from "@monkeytype/schemas/connections";
 let dbSnapshot: Snapshot | undefined;
 const firstDayOfTheWeek = getFirstDayOfTheWeek();
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 export class SnapshotInitError extends Error {
   constructor(
     message: string,
@@ -113,45 +117,44 @@ export async function initSnapshot(): Promise<Snapshot | false> {
         userResponse.status,
       );
     }
-    if (configResponse.status !== 200) {
-      throw new SnapshotInitError(
-        `${configResponse.body.message} (config)`,
-        configResponse.status,
-      );
-    }
-    if (presetsResponse.status !== 200) {
-      throw new SnapshotInitError(
-        `${presetsResponse.body.message} (presets)`,
-        presetsResponse.status,
-      );
-    }
-    if (connectionsResponse.status !== 200) {
-      throw new SnapshotInitError(
-        `${connectionsResponse.body.message} (connections)`,
-        connectionsResponse.status,
-      );
-    }
-
     const userData = userResponse.body.data;
     const configData = configResponse.body.data;
     const presetsData = presetsResponse.body.data;
     const connectionsData = connectionsResponse.body.data;
 
-    if (userData === null) {
+    if (!isRecord(userData)) {
       throw new SnapshotInitError(
-        `Request was successful but user data is null`,
+        `Request was successful but user data is invalid`,
         200,
       );
     }
 
-    if (configData !== null && "config" in configData) {
-      throw new Error(
-        "Config data is not in the correct format. Please refresh the page or contact support.",
-      );
+    if (configResponse.status !== 200) {
+      console.warn("Snapshot init: config request failed, using defaults");
+    }
+    if (presetsResponse.status !== 200) {
+      console.warn("Snapshot init: presets request failed, using defaults");
+    }
+    if (connectionsResponse.status !== 200) {
+      console.warn("Snapshot init: connections request failed, using defaults");
     }
 
-    snap.name = userData.name;
-    snap.personalBests = userData.personalBests;
+    const authenticatedUser = getAuthenticatedUser();
+    snap.name =
+      typeof userData.name === "string"
+        ? userData.name
+        : authenticatedUser?.uid;
+    snap.email =
+      typeof userData.email === "string"
+        ? userData.email
+        : (authenticatedUser?.email ?? "");
+    snap.uid =
+      typeof userData.uid === "string"
+        ? userData.uid
+        : (authenticatedUser?.uid ?? "");
+    snap.personalBests = isRecord(userData.personalBests)
+      ? (userData.personalBests as PersonalBests)
+      : undefined;
     snap.personalBests ??= {
       time: {},
       words: {},
@@ -164,48 +167,92 @@ export async function initSnapshot(): Promise<Snapshot | false> {
       snap.personalBests[mode as keyof PersonalBests] ??= {};
     }
 
-    snap.banned = userData.banned;
-    snap.lbOptOut = userData.lbOptOut;
-    snap.verified = userData.verified;
-    snap.discordId = userData.discordId;
-    snap.discordAvatar = userData.discordAvatar;
-    snap.needsToChangeName = userData.needsToChangeName;
+    snap.banned = userData.banned as Snapshot["banned"];
+    snap.lbOptOut = userData.lbOptOut as Snapshot["lbOptOut"];
+    snap.verified = userData.verified as Snapshot["verified"];
+    snap.discordId = userData.discordId as Snapshot["discordId"];
+    snap.discordAvatar = userData.discordAvatar as Snapshot["discordAvatar"];
+    snap.needsToChangeName = userData.needsToChangeName as
+      | Snapshot["needsToChangeName"]
+      | undefined;
     snap.typingStats = {
-      timeTyping: userData.timeTyping ?? 0,
-      startedTests: userData.startedTests ?? 0,
-      completedTests: userData.completedTests ?? 0,
+      timeTyping:
+        typeof userData.timeTyping === "number" ? userData.timeTyping : 0,
+      startedTests:
+        typeof userData.startedTests === "number" ? userData.startedTests : 0,
+      completedTests:
+        typeof userData.completedTests === "number"
+          ? userData.completedTests
+          : 0,
     };
-    snap.quoteMod = userData.quoteMod;
-    snap.favoriteQuotes = userData.favoriteQuotes ?? {};
-    snap.quoteRatings = userData.quoteRatings;
-    snap.details = userData.profileDetails;
-    snap.addedAt = userData.addedAt;
-    snap.inventory = userData.inventory;
-    snap.xp = userData.xp ?? 0;
-    snap.inboxUnreadSize = userData.inboxUnreadSize ?? 0;
-    snap.streak = userData?.streak?.length ?? 0;
-    snap.maxStreak = userData?.streak?.maxLength ?? 0;
-    snap.filterPresets = userData.resultFilterPresets ?? [];
-    snap.isPremium = userData?.isPremium ?? false;
-    snap.allTimeLbs = userData.allTimeLbs;
+    snap.quoteMod = userData.quoteMod as Snapshot["quoteMod"];
+    snap.favoriteQuotes = isRecord(userData.favoriteQuotes)
+      ? (userData.favoriteQuotes as Snapshot["favoriteQuotes"])
+      : {};
+    snap.quoteRatings = userData.quoteRatings as Snapshot["quoteRatings"];
+    snap.details = isRecord(userData.profileDetails)
+      ? (userData.profileDetails as Snapshot["details"])
+      : undefined;
+    snap.addedAt = typeof userData.addedAt === "number" ? userData.addedAt : 0;
+    snap.inventory = isRecord(userData.inventory)
+      ? (userData.inventory as Snapshot["inventory"])
+      : undefined;
+    snap.xp = typeof userData.xp === "number" ? userData.xp : 0;
+    snap.inboxUnreadSize =
+      typeof userData.inboxUnreadSize === "number"
+        ? userData.inboxUnreadSize
+        : 0;
+    snap.streak = isRecord(userData.streak)
+      ? typeof userData.streak.length === "number"
+        ? userData.streak.length
+        : 0
+      : 0;
+    snap.maxStreak = isRecord(userData.streak)
+      ? typeof userData.streak.maxLength === "number"
+        ? userData.streak.maxLength
+        : 0
+      : 0;
+    snap.filterPresets = Array.isArray(userData.resultFilterPresets)
+      ? (userData.resultFilterPresets as Snapshot["filterPresets"])
+      : [];
+    snap.isPremium = userData?.isPremium === true;
+    if (isRecord(userData.allTimeLbs)) {
+      snap.allTimeLbs = userData.allTimeLbs as Snapshot["allTimeLbs"];
+    }
 
-    if (userData.testActivity !== undefined) {
+    if (
+      isRecord(userData.testActivity) &&
+      Array.isArray(userData.testActivity.testsByDays)
+    ) {
       snap.testActivity = new ModifiableTestActivityCalendar(
         userData.testActivity.testsByDays,
-        new Date(userData.testActivity.lastDay),
+        new Date(
+          typeof userData.testActivity.lastDay === "number"
+            ? userData.testActivity.lastDay
+            : Date.now(),
+        ),
         firstDayOfTheWeek,
       );
     }
 
-    const hourOffset = userData?.streak?.hourOffset;
+    const hourOffset =
+      isRecord(userData.streak) &&
+      typeof userData.streak.hourOffset === "number"
+        ? userData.streak.hourOffset
+        : undefined;
     snap.streakHourOffset =
       hourOffset === undefined || hourOffset === null ? undefined : hourOffset;
 
-    if (userData.lbMemory !== undefined) {
+    if (isRecord(userData.lbMemory)) {
       snap.lbMemory = userData.lbMemory;
     }
 
-    if (configData === undefined || configData === null) {
+    if (
+      configResponse.status !== 200 ||
+      configData === undefined ||
+      configData === null ||
+      (isRecord(configData) && "config" in configData)
+    ) {
       snap.config = {
         ...getDefaultConfig(),
       };
@@ -213,7 +260,9 @@ export async function initSnapshot(): Promise<Snapshot | false> {
       snap.config = migrateConfig(configData);
     }
 
-    snap.customThemes = userData.customThemes ?? [];
+    snap.customThemes = Array.isArray(userData.customThemes)
+      ? (userData.customThemes as Snapshot["customThemes"])
+      : [];
 
     // const userDataTags: MonkeyTypes.UserTagWithDisplay[] = userData.tags ?? [];
 
@@ -234,11 +283,18 @@ export async function initSnapshot(): Promise<Snapshot | false> {
 
     // snap.tags = userDataTags;
 
-    snap.tags =
-      userData.tags?.map((tag) => ({
-        ...tag,
-        display: tag.name.replaceAll("_", " "),
-      })) ?? [];
+    snap.tags = Array.isArray(userData.tags)
+      ? userData.tags
+          .filter((tag): tag is Record<string, unknown> => isRecord(tag))
+          .map((tag) => ({
+            ...tag,
+            name: typeof tag.name === "string" ? tag.name : "",
+            display:
+              typeof tag.name === "string" ? tag.name.replaceAll("_", " ") : "",
+          }))
+          .filter((tag) => tag.name !== "")
+          .map((tag) => tag as SnapshotUserTag)
+      : [];
 
     snap.tags = snap.tags?.sort((a, b) => {
       if (a.name > b.name) {
@@ -250,13 +306,18 @@ export async function initSnapshot(): Promise<Snapshot | false> {
       }
     });
 
-    if (presetsData !== undefined && presetsData !== null) {
-      const presetsWithDisplay = presetsData.map((preset) => {
-        return {
-          ...preset,
-          display: preset.name.replace(/_/gi, " "),
-        };
-      }) as SnapshotPreset[];
+    if (presetsResponse.status === 200 && Array.isArray(presetsData)) {
+      const presetsWithDisplay = presetsData
+        .filter((preset): preset is Record<string, unknown> => isRecord(preset))
+        .map((preset) => {
+          const name = typeof preset.name === "string" ? preset.name : "";
+          return {
+            ...preset,
+            name,
+            display: name.replace(/_/gi, " "),
+          } as SnapshotPreset;
+        })
+        .filter((preset) => preset.name !== "");
       snap.presets = presetsWithDisplay;
 
       snap.presets = snap.presets?.sort(
@@ -1121,11 +1182,10 @@ export function mergeConnections(connections: Connection[]): void {
   setSnapshot(snapshot);
 }
 
-function convertConnections(
-  connectionsData: Connection[],
-): Snapshot["connections"] {
+function convertConnections(connectionsData: unknown): Snapshot["connections"] {
+  if (!Array.isArray(connectionsData)) return {};
   return Object.fromEntries(
-    connectionsData.map((connection) => {
+    (connectionsData as Connection[]).map((connection) => {
       const isMyRequest =
         getAuthenticatedUser()?.uid === connection.initiatorUid;
 
