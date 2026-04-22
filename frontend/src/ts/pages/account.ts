@@ -24,6 +24,7 @@ import * as ActivePage from "../states/active-page";
 import {
   getAccountClaimsFromStoredToken,
   getAuthenticatedUser,
+  getAvatarUrlFromStoredTokenGeocode,
 } from "../firebase";
 import * as Loader from "../elements/loader";
 import * as ResultBatches from "../elements/result-batches";
@@ -38,6 +39,7 @@ import { SnapshotResult } from "../constants/default-snapshot";
 import Ape from "../ape";
 import { AccountChart } from "@monkeytype/schemas/configs";
 import { SortedTableWithLimit } from "../utils/sorted-table";
+import { getAvatarElement } from "../utils/discord-avatar";
 
 let filterDebug = false;
 //toggle filterdebug
@@ -57,6 +59,22 @@ function updateAccountIdentityFromJwt(): void {
   const claims = getAccountClaimsFromStoredToken();
   const details = $(".pageAccount .profile .details");
   const jwtIdentity = details.find(".jwtIdentity");
+  const geocodeAvatarUrl =
+    getAvatarUrlFromStoredTokenGeocode() ??
+    getAuthenticatedUser()?.photoURL ??
+    null;
+
+  if (geocodeAvatarUrl !== null) {
+    const avatar = details.find(".avatarAndName .avatar");
+    avatar.replaceWith(
+      getAvatarElement(
+        {
+          avatarUrl: geocodeAvatarUrl,
+        },
+        { size: 256 },
+      ),
+    );
+  }
 
   if (claims === null) {
     jwtIdentity.addClass("hidden");
@@ -248,7 +266,7 @@ async function fillContent(): Promise<void> {
   if (!snapshot) return;
 
   PbTables.update(snapshot.personalBests);
-  void Profile.update("account", snapshot);
+  await Profile.update("account", snapshot);
   updateAccountIdentityFromJwt();
 
   TestActivity.init(

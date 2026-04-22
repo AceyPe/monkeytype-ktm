@@ -9,7 +9,11 @@ import { capitalizeFirstLetter } from "../utils/strings";
 import Ape from "../ape";
 import * as Notifications from "../elements/notifications";
 import Format from "../utils/format";
-import { getAuthenticatedUser, isAuthenticated } from "../firebase";
+import {
+  getAuthenticatedUser,
+  getAvatarUrlFromStoredTokenGeocode,
+  isAuthenticated,
+} from "../firebase";
 import * as DB from "../db";
 import {
   endOfDay,
@@ -482,9 +486,13 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
       )}<div class="sub">${format(entry.timestamp, "HH:mm")}</div></td>
     
   `;
+  const avatarEntry =
+    me && getAvatarUrlFromStoredTokenGeocode() !== null
+      ? { avatarUrl: getAvatarUrlFromStoredTokenGeocode() ?? undefined }
+      : entry;
   element
     .querySelector(".avatarPlaceholder")
-    ?.replaceWith(getAvatarElement(entry));
+    ?.replaceWith(getAvatarElement(avatarEntry));
   return element;
 }
 
@@ -546,9 +554,13 @@ function buildWeeklyTableRow(
       </td>
     </tr>
   `;
+  const avatarEntry =
+    me && getAvatarUrlFromStoredTokenGeocode() !== null
+      ? { avatarUrl: getAvatarUrlFromStoredTokenGeocode() ?? undefined }
+      : entry;
   element
     .querySelector(".avatarPlaceholder")
-    ?.replaceWith(getAvatarElement(entry));
+    ?.replaceWith(getAvatarElement(avatarEntry));
   return element;
 }
 

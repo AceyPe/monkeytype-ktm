@@ -31,6 +31,7 @@ type SessionUser = {
   email: string;
   firstName?: string;
   lastName?: string;
+  geocode?: string;
   avatarUrl?: string;
 };
 
@@ -62,16 +63,26 @@ export type JwtAccountClaims = {
   grade?: string;
 };
 
+function getAvatarUrlFromGeocode(geocode?: string): string | undefined {
+  if (geocode === undefined) return undefined;
+  const matched = /^R(10|[1-9])/i.exec(geocode.trim());
+  if (matched === null) return undefined;
+  return `/images/regons/${matched[1]}.webp`;
+}
+
 function toAuthUser(sessionUser: SessionUser): User {
   const displayName = [sessionUser.firstName, sessionUser.lastName]
     .filter((it) => typeof it === "string" && it !== "")
     .join(" ");
+  const geocodeAvatarUrl =
+    getAvatarUrlFromGeocode(sessionUser.geocode) ??
+    getAvatarUrlFromStoredTokenGeocode();
   return {
     uid: sessionUser.uid,
     email: sessionUser.email,
     emailVerified: true,
     displayName: displayName === "" ? null : displayName,
-    photoURL: sessionUser.avatarUrl ?? MOCK_AVATAR_URL,
+    photoURL: geocodeAvatarUrl ?? sessionUser.avatarUrl ?? MOCK_AVATAR_URL,
     providerData: [],
     delete: async () => {
       await Promise.resolve();
@@ -166,6 +177,12 @@ export function getAccountClaimsFromStoredToken(): JwtAccountClaims | null {
   };
 }
 
+export function getAvatarUrlFromStoredTokenGeocode(): string | null {
+  const geocode = getAccountClaimsFromStoredToken()?.geocode;
+  const avatarUrl = getAvatarUrlFromGeocode(geocode);
+  return avatarUrl ?? null;
+}
+
 function readSessionUserFromToken(token: string | null): User | null {
   if (token === null) {
     return null;
@@ -193,6 +210,7 @@ function readSessionUserFromToken(token: string | null): User | null {
     email,
     firstName: normalizeMaybeString(claims.firstName),
     lastName: normalizeMaybeString(claims.lastName),
+    geocode: normalizeMaybeString(claims.geocode),
     avatarUrl: normalizeMaybeString(claims.avatarUrl),
   });
 }
