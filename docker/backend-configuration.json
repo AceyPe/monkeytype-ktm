@@ -12,7 +12,7 @@
         "maxDailyBonus": 0,
         "minDailyBonus": 0,
         "streak": {
-          "enabled": false,
+          "enabled": true,
           "maxStreakDays": 0,
           "maxStreakMultiplier": 0
         }
@@ -45,7 +45,7 @@
       "scheduleRewardsModeRules": [],
       "topResultsToAnnounce": 1
     },
-    "leaderboards":{
+    "leaderboards": {
       "minTimeTyping": 0
     }
   }
