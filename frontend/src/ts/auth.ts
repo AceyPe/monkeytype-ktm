@@ -22,6 +22,7 @@ import { startSamlSignIn } from "./utils/saml-sso";
 export const gmailProvider = {} as AuthProvider;
 export const githubProvider = {} as AuthProvider;
 let authStateChangeRunId = 0;
+const USER_DATA_TIMEOUT_MS = 45000;
 
 async function sendVerificationEmail(): Promise<void> {
   if (!isAuthAvailable()) {
@@ -175,7 +176,7 @@ export async function onAuthStateChanged(
         await Promise.race([
           userPromise,
           (async () => {
-            await Misc.sleep(15000);
+            await Misc.sleep(USER_DATA_TIMEOUT_MS);
             userDataTimedOut = true;
             throw new Error(
               "Timed out while downloading user data. Please try again.",

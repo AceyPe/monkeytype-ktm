@@ -44,6 +44,43 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function getBodyData(body: unknown): unknown {
+  if (!isRecord(body)) return undefined;
+  return body["data"];
+}
+
+type SnapshotUserPayload = {
+  name?: unknown;
+  email?: unknown;
+  uid?: unknown;
+  personalBests?: unknown;
+  banned?: unknown;
+  lbOptOut?: unknown;
+  verified?: unknown;
+  discordId?: unknown;
+  discordAvatar?: unknown;
+  needsToChangeName?: unknown;
+  timeTyping?: unknown;
+  startedTests?: unknown;
+  completedTests?: unknown;
+  quoteMod?: unknown;
+  favoriteQuotes?: unknown;
+  quoteRatings?: unknown;
+  profileDetails?: unknown;
+  addedAt?: unknown;
+  inventory?: unknown;
+  xp?: unknown;
+  inboxUnreadSize?: unknown;
+  streak?: unknown;
+  resultFilterPresets?: unknown;
+  isPremium?: unknown;
+  allTimeLbs?: unknown;
+  testActivity?: unknown;
+  lbMemory?: unknown;
+  customThemes?: unknown;
+  tags?: unknown;
+};
+
 export class SnapshotInitError extends Error {
   constructor(
     message: string,
@@ -117,10 +154,10 @@ export async function initSnapshot(): Promise<Snapshot | false> {
         userResponse.status,
       );
     }
-    const userData = userResponse.body.data;
-    const configData = configResponse.body.data;
-    const presetsData = presetsResponse.body.data;
-    const connectionsData = connectionsResponse.body.data;
+    const userData = getBodyData(userResponse.body);
+    const configData = getBodyData(configResponse.body);
+    const presetsData = getBodyData(presetsResponse.body);
+    const connectionsData = getBodyData(connectionsResponse.body);
 
     if (!isRecord(userData)) {
       throw new SnapshotInitError(
@@ -128,6 +165,7 @@ export async function initSnapshot(): Promise<Snapshot | false> {
         200,
       );
     }
+    const safeUser = userData as SnapshotUserPayload;
 
     if (configResponse.status !== 200) {
       console.warn("Snapshot init: config request failed, using defaults");
@@ -141,94 +179,87 @@ export async function initSnapshot(): Promise<Snapshot | false> {
 
     const authenticatedUser = getAuthenticatedUser();
     snap.name =
-      typeof userData.name === "string"
-        ? userData.name
-        : authenticatedUser?.uid;
+      typeof safeUser.name === "string"
+        ? safeUser.name
+        : (authenticatedUser?.uid ?? "");
     snap.email =
-      typeof userData.email === "string"
-        ? userData.email
+      typeof safeUser.email === "string"
+        ? safeUser.email
         : (authenticatedUser?.email ?? "");
     snap.uid =
-      typeof userData.uid === "string"
-        ? userData.uid
+      typeof safeUser.uid === "string"
+        ? safeUser.uid
         : (authenticatedUser?.uid ?? "");
-    snap.personalBests = isRecord(userData.personalBests)
-      ? (userData.personalBests as PersonalBests)
-      : undefined;
-    snap.personalBests ??= {
-      time: {},
-      words: {},
-      quote: {},
-      zen: {},
-      custom: {},
-    };
+    if (isRecord(safeUser.personalBests)) {
+      snap.personalBests = safeUser.personalBests as PersonalBests;
+    }
 
     for (const mode of ["time", "words", "quote", "zen", "custom"]) {
       snap.personalBests[mode as keyof PersonalBests] ??= {};
     }
 
-    snap.banned = userData.banned as Snapshot["banned"];
-    snap.lbOptOut = userData.lbOptOut as Snapshot["lbOptOut"];
-    snap.verified = userData.verified as Snapshot["verified"];
-    snap.discordId = userData.discordId as Snapshot["discordId"];
-    snap.discordAvatar = userData.discordAvatar as Snapshot["discordAvatar"];
-    snap.needsToChangeName = userData.needsToChangeName as
+    snap.banned = safeUser.banned as Snapshot["banned"];
+    snap.lbOptOut = safeUser.lbOptOut as Snapshot["lbOptOut"];
+    snap.verified = safeUser.verified as Snapshot["verified"];
+    snap.discordId = safeUser.discordId as Snapshot["discordId"];
+    snap.discordAvatar = safeUser.discordAvatar as Snapshot["discordAvatar"];
+    snap.needsToChangeName = safeUser.needsToChangeName as
       | Snapshot["needsToChangeName"]
       | undefined;
     snap.typingStats = {
       timeTyping:
-        typeof userData.timeTyping === "number" ? userData.timeTyping : 0,
+        typeof safeUser.timeTyping === "number" ? safeUser.timeTyping : 0,
       startedTests:
-        typeof userData.startedTests === "number" ? userData.startedTests : 0,
+        typeof safeUser.startedTests === "number" ? safeUser.startedTests : 0,
       completedTests:
-        typeof userData.completedTests === "number"
-          ? userData.completedTests
+        typeof safeUser.completedTests === "number"
+          ? safeUser.completedTests
           : 0,
     };
-    snap.quoteMod = userData.quoteMod as Snapshot["quoteMod"];
-    snap.favoriteQuotes = isRecord(userData.favoriteQuotes)
-      ? (userData.favoriteQuotes as Snapshot["favoriteQuotes"])
+    snap.quoteMod = safeUser.quoteMod as Snapshot["quoteMod"];
+    snap.favoriteQuotes = isRecord(safeUser.favoriteQuotes)
+      ? (safeUser.favoriteQuotes as Snapshot["favoriteQuotes"])
       : {};
-    snap.quoteRatings = userData.quoteRatings as Snapshot["quoteRatings"];
-    snap.details = isRecord(userData.profileDetails)
-      ? (userData.profileDetails as Snapshot["details"])
+    snap.quoteRatings = safeUser.quoteRatings as Snapshot["quoteRatings"];
+    snap.details = isRecord(safeUser.profileDetails)
+      ? (safeUser.profileDetails as Snapshot["details"])
       : undefined;
-    snap.addedAt = typeof userData.addedAt === "number" ? userData.addedAt : 0;
-    snap.inventory = isRecord(userData.inventory)
-      ? (userData.inventory as Snapshot["inventory"])
+    snap.addedAt = typeof safeUser.addedAt === "number" ? safeUser.addedAt : 0;
+    snap.inventory = isRecord(safeUser.inventory)
+      ? (safeUser.inventory as Snapshot["inventory"])
       : undefined;
-    snap.xp = typeof userData.xp === "number" ? userData.xp : 0;
+    snap.xp = typeof safeUser.xp === "number" ? safeUser.xp : 0;
     snap.inboxUnreadSize =
-      typeof userData.inboxUnreadSize === "number"
-        ? userData.inboxUnreadSize
+      typeof safeUser.inboxUnreadSize === "number"
+        ? safeUser.inboxUnreadSize
         : 0;
-    snap.streak = isRecord(userData.streak)
-      ? typeof userData.streak.length === "number"
-        ? userData.streak.length
+    snap.streak = isRecord(safeUser.streak)
+      ? typeof safeUser.streak["length"] === "number"
+        ? (safeUser.streak["length"] as number)
         : 0
       : 0;
-    snap.maxStreak = isRecord(userData.streak)
-      ? typeof userData.streak.maxLength === "number"
-        ? userData.streak.maxLength
+    snap.maxStreak = isRecord(safeUser.streak)
+      ? typeof safeUser.streak["maxLength"] === "number"
+        ? (safeUser.streak["maxLength"] as number)
         : 0
       : 0;
-    snap.filterPresets = Array.isArray(userData.resultFilterPresets)
-      ? (userData.resultFilterPresets as Snapshot["filterPresets"])
+    snap.filterPresets = Array.isArray(safeUser.resultFilterPresets)
+      ? (safeUser.resultFilterPresets as Snapshot["filterPresets"])
       : [];
-    snap.isPremium = userData?.isPremium === true;
-    if (isRecord(userData.allTimeLbs)) {
-      snap.allTimeLbs = userData.allTimeLbs as Snapshot["allTimeLbs"];
+    snap.isPremium = safeUser.isPremium === true;
+    if (isRecord(safeUser.allTimeLbs)) {
+      snap.allTimeLbs = safeUser.allTimeLbs as Snapshot["allTimeLbs"];
     }
 
     if (
-      isRecord(userData.testActivity) &&
-      Array.isArray(userData.testActivity.testsByDays)
+      isRecord(safeUser.testActivity) &&
+      Array.isArray(safeUser.testActivity["testsByDays"])
     ) {
       snap.testActivity = new ModifiableTestActivityCalendar(
-        userData.testActivity.testsByDays,
+        safeUser.testActivity["testsByDays"] as number[],
         new Date(
-          typeof userData.testActivity.lastDay === "number"
-            ? userData.testActivity.lastDay
+          typeof safeUser.testActivity["lastDay"] === "number"
+            ? (safeUser.testActivity["lastDay"] as number)
             : Date.now(),
         ),
         firstDayOfTheWeek,
@@ -236,15 +267,15 @@ export async function initSnapshot(): Promise<Snapshot | false> {
     }
 
     const hourOffset =
-      isRecord(userData.streak) &&
-      typeof userData.streak.hourOffset === "number"
-        ? userData.streak.hourOffset
+      isRecord(safeUser.streak) &&
+      typeof safeUser.streak["hourOffset"] === "number"
+        ? (safeUser.streak["hourOffset"] as number)
         : undefined;
     snap.streakHourOffset =
       hourOffset === undefined || hourOffset === null ? undefined : hourOffset;
 
-    if (isRecord(userData.lbMemory)) {
-      snap.lbMemory = userData.lbMemory;
+    if (isRecord(safeUser.lbMemory)) {
+      snap.lbMemory = safeUser.lbMemory as Snapshot["lbMemory"];
     }
 
     if (
@@ -260,8 +291,8 @@ export async function initSnapshot(): Promise<Snapshot | false> {
       snap.config = migrateConfig(configData);
     }
 
-    snap.customThemes = Array.isArray(userData.customThemes)
-      ? (userData.customThemes as Snapshot["customThemes"])
+    snap.customThemes = Array.isArray(safeUser.customThemes)
+      ? (safeUser.customThemes as Snapshot["customThemes"])
       : [];
 
     // const userDataTags: MonkeyTypes.UserTagWithDisplay[] = userData.tags ?? [];
@@ -283,18 +314,21 @@ export async function initSnapshot(): Promise<Snapshot | false> {
 
     // snap.tags = userDataTags;
 
-    snap.tags = Array.isArray(userData.tags)
-      ? userData.tags
-          .filter((tag): tag is Record<string, unknown> => isRecord(tag))
-          .map((tag) => ({
-            ...tag,
-            name: typeof tag.name === "string" ? tag.name : "",
-            display:
-              typeof tag.name === "string" ? tag.name.replaceAll("_", " ") : "",
-          }))
-          .filter((tag) => tag.name !== "")
-          .map((tag) => tag as SnapshotUserTag)
+    const rawTags = Array.isArray(safeUser.tags)
+      ? (safeUser.tags as unknown[])
       : [];
+    snap.tags = rawTags
+      .map((tag) => {
+        if (!isRecord(tag)) return null;
+        const name = typeof tag["name"] === "string" ? tag["name"] : "";
+        if (name === "") return null;
+        return {
+          ...tag,
+          name,
+          display: name.replaceAll("_", " "),
+        } as SnapshotUserTag;
+      })
+      .filter((tag): tag is SnapshotUserTag => tag !== null);
 
     snap.tags = snap.tags?.sort((a, b) => {
       if (a.name > b.name) {
@@ -307,17 +341,21 @@ export async function initSnapshot(): Promise<Snapshot | false> {
     });
 
     if (presetsResponse.status === 200 && Array.isArray(presetsData)) {
-      const presetsWithDisplay = presetsData
-        .filter((preset): preset is Record<string, unknown> => isRecord(preset))
+      const presetsWithDisplay = (presetsData as unknown[])
         .map((preset) => {
-          const name = typeof preset.name === "string" ? preset.name : "";
+          if (!isRecord(preset)) return null;
+          const name =
+            typeof preset["name"] === "string"
+              ? (preset["name"] as string)
+              : "";
+          if (name === "") return null;
           return {
             ...preset,
             name,
             display: name.replace(/_/gi, " "),
           } as SnapshotPreset;
         })
-        .filter((preset) => preset.name !== "");
+        .filter((preset): preset is SnapshotPreset => preset !== null);
       snap.presets = presetsWithDisplay;
 
       snap.presets = snap.presets?.sort(
