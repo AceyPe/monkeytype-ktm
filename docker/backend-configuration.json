@@ -32,12 +32,117 @@
           "mode2": "15"
         },
         {
+          "language": "arabic",
+          "mode": "time",
+          "mode2": "15"
+        },
+        {
+          "language": "spanish",
+          "mode": "time",
+          "mode2": "15"
+        },
+        {
+          "language": "german",
+          "mode": "time",
+          "mode2": "15"
+        },
+        {
+          "language": "french",
+          "mode": "time",
+          "mode2": "15"
+        },
+        {
+          "language": "portuguese",
+          "mode": "time",
+          "mode2": "15"
+        },
+        {
+          "language": "indonesian",
+          "mode": "time",
+          "mode2": "15"
+        },
+        {
+          "language": "italian",
+          "mode": "time",
+          "mode2": "15"
+        },
+        {
           "language": "english",
           "mode": "time",
           "mode2": "60"
         },
         {
+          "language": "arabic",
+          "mode": "time",
+          "mode2": "60"
+        },
+        {
+          "language": "spanish",
+          "mode": "time",
+          "mode2": "60"
+        },
+        {
+          "language": "german",
+          "mode": "time",
+          "mode2": "60"
+        },
+        {
+          "language": "french",
+          "mode": "time",
+          "mode2": "60"
+        },
+        {
+          "language": "portuguese",
+          "mode": "time",
+          "mode2": "60"
+        },
+        {
+          "language": "indonesian",
+          "mode": "time",
+          "mode2": "60"
+        },
+        {
+          "language": "italian",
+          "mode": "time",
+          "mode2": "60"
+        },
+        {
           "language": "english",
+          "mode": "words",
+          "mode2": "10"
+        },
+        {
+          "language": "arabic",
+          "mode": "words",
+          "mode2": "10"
+        },
+        {
+          "language": "spanish",
+          "mode": "words",
+          "mode2": "10"
+        },
+        {
+          "language": "german",
+          "mode": "words",
+          "mode2": "10"
+        },
+        {
+          "language": "french",
+          "mode": "words",
+          "mode2": "10"
+        },
+        {
+          "language": "portuguese",
+          "mode": "words",
+          "mode2": "10"
+        },
+        {
+          "language": "indonesian",
+          "mode": "words",
+          "mode2": "10"
+        },
+        {
+          "language": "italian",
           "mode": "words",
           "mode2": "10"
         }
