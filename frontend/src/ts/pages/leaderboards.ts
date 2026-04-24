@@ -435,6 +435,7 @@ function updateJumpButtons(): void {
 }
 
 function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
+  const displayName = `${entry.firstName} ${entry.lastName}`;
   const formatted = {
     wpm: Format.typingSpeed(entry.wpm, { showDecimalPlaces: true }),
     acc: Format.percentage(entry.acc, { showDecimalPlaces: true }),
@@ -455,7 +456,7 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
           <div class="avatarPlaceholder"></div>
           <a href="${location.origin}/profile/${
             entry.uid
-          }?isUid" class="entryName" uid=${entry.uid} router-link>${entry.name}</a>
+          }?isUid" class="entryName" uid=${entry.uid} router-link>${displayName}</a>
           <div class="flagsAndBadge">
             ${getHtmlByUserFlags({
               ...entry,
@@ -500,6 +501,7 @@ function buildWeeklyTableRow(
   entry: XpLeaderboardEntry,
   me = false,
 ): HTMLElement {
+  const displayName = entry.name || entry.uid;
   const activeDiff = formatDistanceToNow(entry.lastActivityTimestamp, {
     addSuffix: true,
   });
@@ -516,7 +518,7 @@ function buildWeeklyTableRow(
           <div class="avatarPlaceholder"></div>
           <a href="${location.origin}/profile/${
             entry.uid
-          }?isUid" class="entryName" uid=${entry.uid} router-link>${entry.name}</a>
+          }?isUid" class="entryName" uid=${entry.uid} router-link>${displayName}</a>
           <div class="flagsAndBadge">
             ${getHtmlByUserFlags({
               ...entry,

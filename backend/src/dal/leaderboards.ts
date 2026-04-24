@@ -346,6 +346,9 @@ export async function update(
           [`${key}.timestamp`]: 1,
           uid: 1,
           name: 1,
+          firstName: 1,
+          lastName: 1,
+          geocode: 1,
           discordId: 1,
           discordAvatar: 1,
           inventory: 1,
@@ -355,8 +358,35 @@ export async function update(
 
       {
         $addFields: {
+          _leaderboardDisplayName: {
+            $let: {
+              vars: {
+                fullName: {
+                  $trim: {
+                    input: {
+                      $concat: [
+                        { $ifNull: ["$firstName", ""] },
+                        " ",
+                        { $ifNull: ["$lastName", ""] },
+                      ],
+                    },
+                  },
+                },
+              },
+              in: {
+                $cond: [
+                  { $ne: ["$$fullName", ""] },
+                  "$$fullName",
+                  { $ifNull: ["$name", "$uid"] },
+                ],
+              },
+            },
+          },
           "user.uid": "$uid",
-          "user.name": "$name",
+          "user.name": "$_leaderboardDisplayName",
+          "user.firstName": { $ifNull: ["$firstName", "$$REMOVE"] },
+          "user.lastName": { $ifNull: ["$lastName", "$$REMOVE"] },
+          "user.geocode": { $ifNull: ["$geocode", "$$REMOVE"] },
           "user.discordId": { $ifNull: ["$discordId", "$$REMOVE"] },
           "user.discordAvatar": { $ifNull: ["$discordAvatar", "$$REMOVE"] },
           [`${key}.consistency`]: {

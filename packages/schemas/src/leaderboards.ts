@@ -15,6 +15,9 @@ export const LeaderboardEntrySchema = z.object({
   consistency: z.number().nonnegative().optional(),
   uid: z.string(),
   name: z.string(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  geocode: z.string().optional(),
   discordId: z.string().optional(),
   discordAvatar: z.string().optional(),
   rank: z.number().nonnegative().int(),
@@ -35,6 +38,9 @@ export type RedisDailyLeaderboardEntry = z.infer<
 export const RedisXpLeaderboardEntrySchema = z.object({
   uid: z.string(),
   name: z.string(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  geocode: z.string().optional(),
   lastActivityTimestamp: z.number().int().nonnegative(),
   timeTypedSeconds: z.number().nonnegative(),
   // optionals
