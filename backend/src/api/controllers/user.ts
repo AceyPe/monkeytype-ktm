@@ -314,6 +314,16 @@ export async function acs(
   // Find or create user
   const uid = await findOrCreateUser(resolvedUid, normalizedEmail, emailRaw);
 
+  await UserDAL.updateSamlUserFields(uid, {
+    email: normalizedEmail,
+    geocode,
+    status,
+    ssoid,
+    firstName,
+    lastName,
+    grade,
+  });
+
   // Get user email for JWT token
   const user = await UserDAL.getPartialUser(uid, "saml acs", ["email"]);
   const userEmail = user.email ?? normalizedEmail;

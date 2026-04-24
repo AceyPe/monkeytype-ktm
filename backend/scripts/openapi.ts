@@ -4,8 +4,8 @@ import { writeFileSync, mkdirSync } from "fs";
 import { EndpointMetadata, PermissionId } from "@monkeytype/contracts/util/api";
 import type { OpenAPIObject, OperationObject } from "openapi3-ts";
 import {
+  limits,
   RateLimitIds,
-  getLimits,
   RateLimiterId,
   Window,
 } from "@monkeytype/contracts/rate-limit/index";
@@ -244,19 +244,35 @@ function addRateLimit(
 }
 
 function getRateLimitDescription(limit: RateLimiterId | RateLimitIds): string {
-  const limits = getLimits(limit);
+  const resolvedLimits = getLimits(limit);
 
   let result = `**Rate limit:** This operation can be called up to ${
-    limits.limiter.max
-  } times ${formatWindow(limits.limiter.window)} for regular users`;
+    resolvedLimits.limiter.max
+  } times ${formatWindow(resolvedLimits.limiter.window)} for regular users`;
 
-  if (limits.apeKeyLimiter !== undefined) {
-    result += ` and up to ${limits.apeKeyLimiter.max} times ${formatWindow(
-      limits.apeKeyLimiter.window,
+  if (resolvedLimits.apeKeyLimiter !== undefined) {
+    result += ` and up to ${resolvedLimits.apeKeyLimiter.max} times ${formatWindow(
+      resolvedLimits.apeKeyLimiter.window,
     )} with ApeKeys`;
   }
 
   return result + ".\n\n";
+}
+
+function getLimits(limit: RateLimiterId | RateLimitIds): {
+  limiter: { window: Window; max: number };
+  apeKeyLimiter?: { window: Window; max: number };
+} {
+  if (typeof limit === "object") {
+    return {
+      limiter: limits[limit.normal],
+      apeKeyLimiter: limits[limit.apeKey],
+    };
+  }
+
+  return {
+    limiter: limits[limit],
+  };
 }
 
 function formatWindow(window: Window): string {
