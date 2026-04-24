@@ -273,6 +273,12 @@
               }
             }
           }
+          td.section {
+            max-width: 20rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
 
           tr:nth-child(odd) td {
             background: var(--sub-alt-color);

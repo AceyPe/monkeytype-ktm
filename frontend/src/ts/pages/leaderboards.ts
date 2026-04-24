@@ -48,6 +48,7 @@ import { isSafeNumber } from "@monkeytype/util/numbers";
 import { Mode, Mode2, ModeSchema } from "@monkeytype/schemas/shared";
 import * as ServerConfiguration from "../ape/server-configuration";
 import { getAvatarElement } from "../utils/discord-avatar";
+import { getSectionNameByGeocode } from "../constants/sections-by-geocode";
 
 const LeaderboardTypeSchema = z.enum(["allTime", "weekly", "daily"]);
 type LeaderboardType = z.infer<typeof LeaderboardTypeSchema>;
@@ -73,6 +74,10 @@ function getRegionAvatarUrl(geocode?: string): string | undefined {
   const regionNumber = getRegionNumberFromGeocode(geocode);
   if (regionNumber === null) return undefined;
   return `/images/regons/${regionNumber}.webp`;
+}
+
+function getSectionCellText(geocode?: string): string {
+  return getSectionNameByGeocode(geocode) ?? "-";
 }
 
 type AllTimeState = {
@@ -456,15 +461,6 @@ function updateJumpButtons(): void {
 }
 
 function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
-  console.log(">>>>>>>>>>>>>>>.");
-  console.log(">>>>>>>>>>>>>>>.");
-  console.log(">>>>>>>>>>>>>>>.");
-  console.log(">>>>>>>>>>>>>>>.");
-  console.log(entry);
-  console.log(">>>>>>>>>>>>>>>.");
-  console.log(">>>>>>>>>>>>>>>.");
-  console.log(">>>>>>>>>>>>>>>.");
-  console.log(">>>>>>>>>>>>>>>.");
   const displayName =
     [entry.firstName, entry.lastName]
       .filter((it) => typeof it === "string" && it !== "")
@@ -473,6 +469,7 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
     entry.name ||
     entry.uid;
   const regionCellHtml = getRegionCellHtml(entry.geocode);
+  const sectionCellText = getSectionCellText(entry.geocode);
   const formatted = {
     wpm: Format.typingSpeed(entry.wpm, { showDecimalPlaces: true }),
     acc: Format.percentage(entry.acc, { showDecimalPlaces: true }),
@@ -523,6 +520,7 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
         "dd MMM yyyy",
       )}<div class="sub">${format(entry.timestamp, "HH:mm")}</div></td>
       <td class="region">${regionCellHtml}</td>
+      <td class="section">${sectionCellText}</td>
     
   `;
   const avatarEntry = {
@@ -545,6 +543,7 @@ function buildWeeklyTableRow(
   const activeDiff = formatDistanceToNow(entry.lastActivityTimestamp, {
     addSuffix: true,
   });
+  const sectionCellText = getSectionCellText(entry.geocode);
   const element = document.createElement("tr");
   if (me) {
     element.classList.add("me");
@@ -594,6 +593,7 @@ function buildWeeklyTableRow(
           ${format(entry.lastActivityTimestamp, "HH:mm")}
         </div>
       </td>
+      <td class="section">${sectionCellText}</td>
     </tr>
   `;
   const avatarEntry = {
