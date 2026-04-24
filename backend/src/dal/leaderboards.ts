@@ -19,6 +19,11 @@ export type DBLeaderboardEntry = LeaderboardEntry & {
   _id: ObjectId;
 };
 
+type LeaderboardIdentityFields = Pick<
+  DBUser,
+  "uid" | "firstName" | "lastName" | "geocode"
+>;
+
 function getCollectionName(key: {
   language: string;
   mode: string;
@@ -181,6 +186,8 @@ export async function get(
         .aggregate<DBLeaderboardEntry>(pipeline)
         .toArray();
     }
+    leaderboard = await hydrateLeaderboardIdentityFields(leaderboard);
+
     if (!premiumFeaturesEnabled) {
       leaderboard = leaderboard.map((it) => omit(it, ["isPremium"]));
     }
@@ -243,7 +250,9 @@ export async function getRank(
         uid,
       });
 
-      return entry;
+      if (entry === null) return null;
+      const [hydratedEntry] = await hydrateLeaderboardIdentityFields([entry]);
+      return hydratedEntry ?? null;
     } else {
       const results =
         await aggregateWithAcceptedConnections<DBLeaderboardEntry>(
@@ -261,7 +270,8 @@ export async function getRank(
             { $match: { uid } },
           ],
         );
-      return results[0] ?? null;
+      const [hydratedEntry] = await hydrateLeaderboardIdentityFields(results);
+      return hydratedEntry ?? null;
     }
   } catch (e) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -271,6 +281,35 @@ export async function getRank(
     }
     throw e;
   }
+}
+
+async function hydrateLeaderboardIdentityFields(
+  entries: DBLeaderboardEntry[],
+): Promise<DBLeaderboardEntry[]> {
+  if (entries.length === 0) return entries;
+
+  const users = await getUsersCollection()
+    .find(
+      { uid: { $in: entries.map((it) => it.uid) } },
+      { projection: { uid: 1, firstName: 1, lastName: 1, geocode: 1 } },
+    )
+    .toArray();
+
+  const byUid = new Map<string, LeaderboardIdentityFields>(
+    users.map((it) => [it.uid, it]),
+  );
+
+  return entries.map((entry) => {
+    const identity = byUid.get(entry.uid);
+    if (identity === undefined) return entry;
+
+    return {
+      ...entry,
+      firstName: identity.firstName ?? entry.firstName,
+      lastName: identity.lastName ?? entry.lastName,
+      geocode: identity.geocode ?? entry.geocode,
+    };
+  });
 }
 
 export async function update(

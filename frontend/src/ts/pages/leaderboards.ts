@@ -54,6 +54,27 @@ type LeaderboardType = z.infer<typeof LeaderboardTypeSchema>;
 const utcDateFormat = "EEEE, do MMMM yyyy";
 const localDateFormat = "EEEE, do MMMM yyyy HH:mm";
 
+function getRegionNumberFromGeocode(geocode?: string): number | null {
+  if (geocode === undefined || geocode.trim() === "") return null;
+  const firstDigit = geocode.match(/\d/)?.[0];
+  if (firstDigit === undefined) return null;
+  const n = Number(firstDigit);
+  if (!Number.isInteger(n) || n < 0 || n > 9) return null;
+  return n === 0 ? 10 : n;
+}
+
+function getRegionCellHtml(geocode?: string): string {
+  const regionNumber = getRegionNumberFromGeocode(geocode);
+  if (regionNumber === null) return "-";
+  return `<div class="regionCell"><span>${regionNumber}</span></div>`;
+}
+
+function getRegionAvatarUrl(geocode?: string): string | undefined {
+  const regionNumber = getRegionNumberFromGeocode(geocode);
+  if (regionNumber === null) return undefined;
+  return `/images/regons/${regionNumber}.webp`;
+}
+
 type AllTimeState = {
   type: "allTime";
   mode: "time";
@@ -435,7 +456,23 @@ function updateJumpButtons(): void {
 }
 
 function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
-  const displayName = `${entry.firstName} ${entry.lastName}`;
+  console.log(">>>>>>>>>>>>>>>.");
+  console.log(">>>>>>>>>>>>>>>.");
+  console.log(">>>>>>>>>>>>>>>.");
+  console.log(">>>>>>>>>>>>>>>.");
+  console.log(entry);
+  console.log(">>>>>>>>>>>>>>>.");
+  console.log(">>>>>>>>>>>>>>>.");
+  console.log(">>>>>>>>>>>>>>>.");
+  console.log(">>>>>>>>>>>>>>>.");
+  const displayName =
+    [entry.firstName, entry.lastName]
+      .filter((it) => typeof it === "string" && it !== "")
+      .join(" ")
+      .trim() ||
+    entry.name ||
+    entry.uid;
+  const regionCellHtml = getRegionCellHtml(entry.geocode);
   const formatted = {
     wpm: Format.typingSpeed(entry.wpm, { showDecimalPlaces: true }),
     acc: Format.percentage(entry.acc, { showDecimalPlaces: true }),
@@ -485,12 +522,15 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
         entry.timestamp,
         "dd MMM yyyy",
       )}<div class="sub">${format(entry.timestamp, "HH:mm")}</div></td>
+      <td class="region">${regionCellHtml}</td>
     
   `;
-  const avatarEntry =
-    me && getAvatarUrlFromStoredTokenGeocode() !== null
-      ? { avatarUrl: getAvatarUrlFromStoredTokenGeocode() ?? undefined }
-      : entry;
+  const avatarEntry = {
+    ...entry,
+    avatarUrl:
+      getRegionAvatarUrl(entry.geocode) ??
+      (me ? (getAvatarUrlFromStoredTokenGeocode() ?? undefined) : undefined),
+  };
   element
     .querySelector(".avatarPlaceholder")
     ?.replaceWith(getAvatarElement(avatarEntry));
@@ -556,10 +596,12 @@ function buildWeeklyTableRow(
       </td>
     </tr>
   `;
-  const avatarEntry =
-    me && getAvatarUrlFromStoredTokenGeocode() !== null
-      ? { avatarUrl: getAvatarUrlFromStoredTokenGeocode() ?? undefined }
-      : entry;
+  const avatarEntry = {
+    ...entry,
+    avatarUrl:
+      getRegionAvatarUrl(entry.geocode) ??
+      (me ? (getAvatarUrlFromStoredTokenGeocode() ?? undefined) : undefined),
+  };
   element
     .querySelector(".avatarPlaceholder")
     ?.replaceWith(getAvatarElement(avatarEntry));

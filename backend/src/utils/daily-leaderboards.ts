@@ -14,10 +14,18 @@ import {
 import MonkeyError from "./error";
 import { Mode, Mode2 } from "@monkeytype/schemas/shared";
 import { getCurrentDayTimestamp } from "@monkeytype/util/date-and-time";
+import { getUsersCollection } from "../dal/user";
 
 const dailyLeaderboardNamespace = "monkeytype:dailyleaderboard";
 const scoresNamespace = `${dailyLeaderboardNamespace}:scores`;
 const resultsNamespace = `${dailyLeaderboardNamespace}:results`;
+
+type LeaderboardIdentityFields = {
+  uid: string;
+  firstName?: string;
+  lastName?: string;
+  geocode?: string;
+};
 
 export class DailyLeaderboard {
   private leaderboardResultsKeyName: string;
@@ -186,6 +194,8 @@ export class DailyLeaderboard {
       },
     );
 
+    resultsWithRanks = await hydrateLeaderboardIdentityFields(resultsWithRanks);
+
     if (!premiumFeaturesEnabled) {
       resultsWithRanks = resultsWithRanks.map((it) => omit(it, ["isPremium"]));
     }
@@ -223,7 +233,7 @@ export class DailyLeaderboard {
     }
 
     try {
-      return {
+      const baseEntry: LeaderboardEntry = {
         ...parseJsonWithSchema(
           result ?? "null",
           RedisDailyLeaderboardEntrySchema,
@@ -231,6 +241,10 @@ export class DailyLeaderboard {
         rank: rank + 1,
         friendsRank: friendsRank !== undefined ? friendsRank + 1 : undefined,
       };
+      const [hydratedEntry] = await hydrateLeaderboardIdentityFields([
+        baseEntry,
+      ]);
+      return hydratedEntry ?? baseEntry;
     } catch (error) {
       throw new Error(
         `Failed to parse leaderboard entry: ${
@@ -239,6 +253,34 @@ export class DailyLeaderboard {
       );
     }
   }
+}
+
+async function hydrateLeaderboardIdentityFields(
+  entries: LeaderboardEntry[],
+): Promise<LeaderboardEntry[]> {
+  if (entries.length === 0) return entries;
+
+  const users = await getUsersCollection()
+    .find(
+      { uid: { $in: entries.map((it) => it.uid) } },
+      { projection: { uid: 1, firstName: 1, lastName: 1, geocode: 1 } },
+    )
+    .toArray();
+
+  const byUid = new Map<string, LeaderboardIdentityFields>(
+    users.map((it) => [it.uid, it]),
+  );
+
+  return entries.map((entry) => {
+    const identity = byUid.get(entry.uid);
+    if (identity === undefined) return entry;
+    return {
+      ...entry,
+      firstName: identity.firstName ?? entry.firstName,
+      lastName: identity.lastName ?? entry.lastName,
+      geocode: identity.geocode ?? entry.geocode,
+    };
+  });
 }
 
 export async function purgeUserFromDailyLeaderboards(
