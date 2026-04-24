@@ -39,6 +39,7 @@
     .tableAndUser {
       grid-area: table;
       font-size: 1rem;
+      min-width: 0;
 
       & > .divider {
         height: 0.25rem;
@@ -147,7 +148,8 @@
         }
       }
       table {
-        width: 100%;
+        width: max-content;
+        min-width: 100%;
         border-spacing: 0;
         border-collapse: collapse;
 
@@ -292,6 +294,13 @@
               calc(var(--roundness) / 2) 0;
           }
         }
+      }
+      .tableWrapper {
+        width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
       }
       & > .loading {
         display: grid;
