@@ -461,13 +461,6 @@ function updateJumpButtons(): void {
 }
 
 function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
-  console.log(">>>>>>>>>>>");
-  console.log(">>>>>>>>>>>");
-  console.log(">>>>>>>>>>>");
-  console.log(entry);
-  console.log(">>>>>>>>>>>");
-  console.log(">>>>>>>>>>>");
-  console.log(">>>>>>>>>>>");
   const displayName =
     [entry.firstName, entry.lastName]
       .filter((it) => typeof it === "string" && it !== "")
@@ -513,7 +506,6 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
       ${formatted.wpm}
         <div class="sub">${formatted.acc}</div>
       </td>
-      </td>
       <td class="stat narrow rawAndConsistency">
       ${formatted.raw}
         <div class="sub">${formatted.con}</div>
@@ -549,7 +541,13 @@ function buildWeeklyTableRow(
   entry: XpLeaderboardEntry,
   me = false,
 ): HTMLElement {
-  const displayName = entry.name || entry.uid;
+  const displayName =
+    [entry.firstName, entry.lastName]
+      .filter((it) => typeof it === "string" && it !== "")
+      .join(" ")
+      .trim() ||
+    entry.name ||
+    entry.uid;
   const activeDiff = formatDistanceToNow(entry.lastActivityTimestamp, {
     addSuffix: true,
   });
@@ -595,7 +593,7 @@ function buildWeeklyTableRow(
         true,
         true,
         ":",
-      )}</td>
+      )}</div>
       </td>
       <td class="date" data-balloon-pos="left"  aria-label="${activeDiff}">
         ${format(entry.lastActivityTimestamp, "dd MMM yyyy")}
