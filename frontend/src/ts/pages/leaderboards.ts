@@ -461,6 +461,13 @@ function updateJumpButtons(): void {
 }
 
 function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
+  console.log(">>>>>>>>>>>");
+  console.log(">>>>>>>>>>>");
+  console.log(">>>>>>>>>>>");
+  console.log(entry);
+  console.log(">>>>>>>>>>>");
+  console.log(">>>>>>>>>>>");
+  console.log(">>>>>>>>>>>");
   const displayName =
     [entry.firstName, entry.lastName]
       .filter((it) => typeof it === "string" && it !== "")
@@ -521,6 +528,9 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
       )}<div class="sub">${format(entry.timestamp, "HH:mm")}</div></td>
       <td class="region">${regionCellHtml}</td>
       <td class="section">${sectionCellText}</td>
+      <td class="stat">${formatRank(entry.rank)}</td>
+      <td class="stat">${formatRank(entry.regionRank)}</td>
+      <td class="stat">${formatRank(entry.sectionRank)}</td>
     
   `;
   const avatarEntry = {
@@ -628,7 +638,7 @@ function fillTable(): void {
   }
 
   if (state.data === null || state.data.length === 0) {
-    table.append(`<tr><td colspan="7" class="empty">No data</td></tr>`);
+    table.append(`<tr><td colspan="16" class="empty">No data</td></tr>`);
     $(".page.pageLeaderboards table").removeClass("hidden");
     return;
   }

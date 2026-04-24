@@ -364,6 +364,53 @@ export async function update(
       {
         $addFields: {
           _lbRankSort: lbWindowSortKeyExpr(key),
+          _normalizedGeocode: {
+            $let: {
+              vars: {
+                g: {
+                  $toUpper: { $trim: { input: { $ifNull: ["$geocode", ""] } } },
+                },
+              },
+              in: {
+                $cond: [{ $ne: ["$$g", ""] }, "$$g", "__unknown"],
+              },
+            },
+          },
+          _regionCode: {
+            $let: {
+              vars: {
+                firstDigit: {
+                  $ifNull: [
+                    {
+                      $getField: {
+                        field: "match",
+                        input: {
+                          $regexFind: {
+                            input: { $ifNull: ["$geocode", ""] },
+                            regex: "[0-9]",
+                          },
+                        },
+                      },
+                    },
+                    "",
+                  ],
+                },
+              },
+              in: {
+                $cond: [
+                  { $eq: ["$$firstDigit", ""] },
+                  "__unknown",
+                  {
+                    $cond: [
+                      { $eq: ["$$firstDigit", "0"] },
+                      "10",
+                      "$$firstDigit",
+                    ],
+                  },
+                ],
+              },
+            },
+          },
         },
       },
       {
@@ -375,9 +422,29 @@ export async function update(
         },
       },
       {
+        $setWindowFields: {
+          partitionBy: "$_regionCode",
+          sortBy: { _lbRankSort: 1 },
+          output: {
+            regionRank: { $documentNumber: {} },
+          },
+        },
+      },
+      {
+        $setWindowFields: {
+          partitionBy: "$_normalizedGeocode",
+          sortBy: { _lbRankSort: 1 },
+          output: {
+            sectionRank: { $documentNumber: {} },
+          },
+        },
+      },
+      {
         $project: {
           _id: 0,
           rank: 1,
+          regionRank: 1,
+          sectionRank: 1,
           [`${key}.wpm`]: 1,
           [`${key}.acc`]: 1,
           [`${key}.raw`]: 1,
@@ -433,6 +500,20 @@ export async function update(
           },
           calculated: {
             rank: "$rank",
+            regionRank: {
+              $cond: [
+                { $ne: ["$_regionCode", "__unknown"] },
+                "$regionRank",
+                "$$REMOVE",
+              ],
+            },
+            sectionRank: {
+              $cond: [
+                { $ne: ["$_normalizedGeocode", "__unknown"] },
+                "$sectionRank",
+                "$$REMOVE",
+              ],
+            },
             badgeId: {
               $let: {
                 vars: {

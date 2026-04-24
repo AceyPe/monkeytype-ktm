@@ -21,6 +21,8 @@ export const LeaderboardEntrySchema = z.object({
   discordId: z.string().optional(),
   discordAvatar: z.string().optional(),
   rank: z.number().nonnegative().int(),
+  regionRank: z.number().nonnegative().int().optional(),
+  sectionRank: z.number().nonnegative().int().optional(),
   friendsRank: FriendsRankSchema,
   badgeId: z.number().int().optional(),
   isPremium: z.boolean().optional(),
