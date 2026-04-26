@@ -87,10 +87,31 @@ export const BASE_CONFIGURATION: Configuration = {
     },
   },
   dailyLeaderboards: {
-    enabled: false,
-    maxResults: 0,
-    leaderboardExpirationTimeInDays: 0,
-    validModeRules: [],
+    enabled: true,
+    maxResults: 250,
+    leaderboardExpirationTimeInDays: 1,
+    validModeRules: [
+      {
+        language: "english",
+        mode: "time",
+        mode2: "15",
+      },
+      {
+        language: "english",
+        mode: "time",
+        mode2: "60",
+      },
+      {
+        language: "arabic",
+        mode: "time",
+        mode2: "15",
+      },
+      {
+        language: "arabic",
+        mode: "time",
+        mode2: "60",
+      },
+    ],
     scheduleRewardsModeRules: [],
     topResultsToAnnounce: 1, // This should never be 0. Setting to zero will announce all results.
     xpRewardBrackets: [],
