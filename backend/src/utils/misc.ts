@@ -193,12 +193,12 @@ export function isDevEnvironment(): boolean {
 }
 
 export function getFrontendUrl(): string {
-  return isDevEnvironment()
-    ? // ? "http://localhost:3000"
-      "https://ieeektm.org"
-    : process.env["FRONTEND_URL"] !== undefined
-      ? process.env["FRONTEND_URL"]
-      : "https://ieeektm.org";
+  const fromEnv = process.env["FRONTEND_URL"];
+  if (fromEnv !== undefined && fromEnv !== "") {
+    return fromEnv;
+  }
+  //   return "http://localhost:3000";
+  return "https://ieeektm.org";
 }
 
 /**

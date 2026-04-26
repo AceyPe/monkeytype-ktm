@@ -41,14 +41,20 @@ function buildElement(url: string | null, options?: Options): HTMLElement {
 
 export function getAvatarElement(
   {
+    avatarUrl,
     discordId,
     discordAvatar,
   }: {
+    avatarUrl?: string;
     discordId?: string;
     discordAvatar?: string;
   },
   options?: Options,
 ): HTMLElement {
+  if (avatarUrl !== undefined && avatarUrl !== "") {
+    return buildElement(avatarUrl, options);
+  }
+
   if (
     discordId === undefined ||
     discordId === "" ||

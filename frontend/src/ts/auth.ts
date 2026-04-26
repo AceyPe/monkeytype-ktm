@@ -5,24 +5,11 @@ import * as Misc from "./utils/misc";
 import * as DB from "./db";
 import * as Loader from "./elements/loader";
 import * as LoginPage from "./pages/login";
-import * as RegisterCaptchaModal from "./modals/register-captcha";
-import {
-  GoogleAuthProvider,
-  GithubAuthProvider,
-  updateProfile,
-  linkWithPopup,
-  User as UserType,
-  AuthProvider,
-} from "firebase/auth";
+import type { AuthProvider } from "./auth-types";
 import {
   isAuthAvailable,
-  getAuthenticatedUser,
   isAuthenticated,
   signOut as authSignOut,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  resetIgnoreAuthCallback,
 } from "./firebase";
 import * as ConnectionState from "./states/connection";
 import { navigate } from "./controllers/route-controller";
@@ -32,8 +19,10 @@ import { tryCatch } from "@monkeytype/util/trycatch";
 import * as AuthEvent from "./observables/auth-event";
 import { startSamlSignIn } from "./utils/saml-sso";
 
-export const gmailProvider = new GoogleAuthProvider();
-export const githubProvider = new GithubAuthProvider();
+export const gmailProvider = {} as AuthProvider;
+export const githubProvider = {} as AuthProvider;
+let authStateChangeRunId = 0;
+const USER_DATA_TIMEOUT_MS = 45000;
 
 async function sendVerificationEmail(): Promise<void> {
   if (!isAuthAvailable()) {
@@ -129,7 +118,7 @@ async function getDataAndInit(): Promise<boolean> {
   }
 }
 
-export async function loadUser(_user: UserType): Promise<void> {
+export async function loadUser(_user: unknown): Promise<void> {
   if (!(await getDataAndInit())) {
     signOut();
     return;
@@ -139,23 +128,28 @@ export async function loadUser(_user: UserType): Promise<void> {
 
 export async function onAuthStateChanged(
   authInitialisedAndConnected: boolean,
-  user: UserType | null,
+  user: unknown | null,
 ): Promise<void> {
   console.debug(`account controller ready`);
+  const runId = ++authStateChangeRunId;
 
   let userPromise: Promise<void> = Promise.resolve();
+  let userDataTimedOut = false;
+  const isUserSignedIn = user !== null;
 
   if (authInitialisedAndConnected) {
-    console.debug(`auth state changed, user ${user ? "true" : "false"}`);
+    console.debug(
+      `auth state changed, user ${isUserSignedIn ? "true" : "false"}`,
+    );
     console.debug(user);
-    if (user) {
+    if (isUserSignedIn) {
       userPromise = loadUser(user);
     } else {
       DB.setSnapshot(undefined);
     }
   }
 
-  if (!authInitialisedAndConnected || !user) {
+  if (!authInitialisedAndConnected || !isUserSignedIn) {
     void Sentry.clearUser();
   }
 
@@ -179,7 +173,16 @@ export async function onAuthStateChanged(
         }
       },
       loadingPromise: async () => {
-        await userPromise;
+        await Promise.race([
+          userPromise,
+          (async () => {
+            await Misc.sleep(USER_DATA_TIMEOUT_MS);
+            userDataTimedOut = true;
+            throw new Error(
+              "Timed out while downloading user data. Please try again.",
+            );
+          })(),
+        ]);
       },
       style: "bar",
       keyframes: keyframes,
@@ -190,9 +193,22 @@ export async function onAuthStateChanged(
     type: "authStateChanged",
     data: { isUserSignedIn: user !== null },
   });
+
+  if (userDataTimedOut && isUserSignedIn) {
+    void userPromise
+      .then(async () => {
+        // Skip stale retries if a newer auth state change already started.
+        if (runId !== authStateChangeRunId) return;
+        if (!isAuthenticated()) return;
+        await navigate(undefined, { force: true });
+      })
+      .catch(() => {
+        // keep original error handling path from loadUser/getDataAndInit
+      });
+  }
 }
 
-export async function signIn(email: string, password: string): Promise<void> {
+export async function signIn(_email: string, _password: string): Promise<void> {
   if (!isAuthAvailable()) {
     Notifications.add("Authentication uninitialized", -1);
     return;
@@ -208,112 +224,13 @@ export async function signIn(email: string, password: string): Promise<void> {
   LoginPage.disableInputs();
   LoginPage.disableSignUpButton();
 
-  if (email === "" || password === "") {
-    Notifications.add("Please fill in all fields", 0);
-    LoginPage.hidePreloader();
-    LoginPage.enableInputs();
-    LoginPage.enableSignUpButton();
-    return;
-  }
-
-  const rememberMe = $(".pageLogin .login #rememberMe input").prop(
-    "checked",
-  ) as boolean;
-
-  const { error } = await tryCatch(
-    signInWithEmailAndPassword(email, password, rememberMe),
-  );
-
+  const { error } = await tryCatch(startSamlSignIn());
   if (error !== null) {
     Notifications.add(error.message, -1);
     LoginPage.hidePreloader();
     LoginPage.enableInputs();
     LoginPage.updateSignupButton();
     return;
-  }
-}
-
-async function signInWithProvider(provider: AuthProvider): Promise<void> {
-  if (!isAuthAvailable()) {
-    Notifications.add("Authentication uninitialized", -1, {
-      duration: 3,
-    });
-    return;
-  }
-  if (!ConnectionState.get()) {
-    Notifications.add("You are offline", 0, {
-      duration: 2,
-    });
-    return;
-  }
-
-  LoginPage.showPreloader();
-  LoginPage.disableInputs();
-  LoginPage.disableSignUpButton();
-  const rememberMe = $(".pageLogin .login #rememberMe input").prop(
-    "checked",
-  ) as boolean;
-
-  const { error } = await tryCatch(signInWithPopup(provider, rememberMe));
-
-  if (error !== null) {
-    if (error.message !== "") {
-      Notifications.add(error.message, -1);
-    }
-    LoginPage.hidePreloader();
-    LoginPage.enableInputs();
-    LoginPage.updateSignupButton();
-    return;
-  }
-}
-
-async function signInWithGoogle(): Promise<void> {
-  return signInWithProvider(gmailProvider);
-}
-
-async function signInWithGitHub(): Promise<void> {
-  return signInWithProvider(githubProvider);
-}
-
-async function addGoogleAuth(): Promise<void> {
-  return addAuthProvider("Google", gmailProvider);
-}
-
-async function addGithubAuth(): Promise<void> {
-  return addAuthProvider("GitHub", githubProvider);
-}
-
-async function addAuthProvider(
-  providerName: string,
-  provider: AuthProvider,
-): Promise<void> {
-  if (!ConnectionState.get()) {
-    Notifications.add("You are offline", 0, {
-      duration: 2,
-    });
-    return;
-  }
-  if (!isAuthAvailable()) {
-    Notifications.add("Authentication uninitialized", -1, {
-      duration: 3,
-    });
-    return;
-  }
-  Loader.show();
-  const user = getAuthenticatedUser();
-  if (!user) return;
-  try {
-    await linkWithPopup(user, provider);
-    Loader.hide();
-    Notifications.add(`${providerName} authentication added`, 1);
-    AuthEvent.dispatch({ type: "authConfigUpdated" });
-  } catch (error) {
-    Loader.hide();
-    const message = Misc.createErrorMessage(
-      error,
-      `Failed to add ${providerName} authentication`,
-    );
-    Notifications.add(message, -1);
   }
 }
 
@@ -329,82 +246,10 @@ export function signOut(): void {
 }
 
 async function signUp(): Promise<void> {
-  if (!isAuthAvailable()) {
-    Notifications.add("Authentication uninitialized", -1, {
-      duration: 3,
-    });
-    return;
-  }
-  if (!ConnectionState.get()) {
-    Notifications.add("You are offline", 0, {
-      duration: 2,
-    });
-    return;
-  }
-  await RegisterCaptchaModal.show();
-  const captchaToken = await RegisterCaptchaModal.promise;
-  if (captchaToken === undefined || captchaToken === "") {
-    Notifications.add("Please complete the captcha", -1);
-    return;
-  }
-  LoginPage.disableInputs();
-  LoginPage.disableSignUpButton();
-  LoginPage.showPreloader();
-
-  const signupData = LoginPage.getSignupData();
-  if (signupData === false) {
-    LoginPage.hidePreloader();
-    LoginPage.enableInputs();
-    LoginPage.updateSignupButton();
-    Notifications.add("Please fill in all fields", 0);
-    return;
-  }
-  const { name: nname, email, password } = signupData;
-
-  try {
-    const createdAuthUser = await createUserWithEmailAndPassword(
-      email,
-      password,
-    );
-
-    const signInResponse = await Ape.users.create({
-      body: {
-        name: nname,
-        captcha: captchaToken,
-        email,
-        uid: createdAuthUser.user.uid,
-      },
-    });
-    if (signInResponse.status !== 200) {
-      throw new Error(`Failed to sign in: ${signInResponse.body.message}`);
-    }
-
-    await updateProfile(createdAuthUser.user, { displayName: nname });
-    await sendVerificationEmail();
-    LoginPage.hidePreloader();
-    await onAuthStateChanged(true, createdAuthUser.user);
-    resetIgnoreAuthCallback();
-
-    Notifications.add("Account created", 1);
-  } catch (e) {
-    let message = Misc.createErrorMessage(e, "Failed to create account");
-
-    if (e instanceof Error) {
-      if ("code" in e && e.code === "auth/email-already-in-use") {
-        message = Misc.createErrorMessage(
-          { message: "Email already in use" },
-          "Failed to create account",
-        );
-      }
-    }
-
-    Notifications.add(message, -1);
-    LoginPage.hidePreloader();
-    LoginPage.enableInputs();
-    LoginPage.updateSignupButton();
-    signOut();
-    return;
-  }
+  Notifications.add(
+    "Sign up is disabled. Please sign in with your SAML provider.",
+    0,
+  );
 }
 
 $(".pageLogin .login form").on("submit", (e) => {
@@ -417,11 +262,11 @@ $(".pageLogin .login form").on("submit", (e) => {
 });
 
 $(".pageLogin .login button.signInWithGoogle").on("click", () => {
-  void signInWithGoogle();
+  void startSamlSignIn();
 });
 
 $(".pageLogin .login button.signInWithGitHub").on("click", () => {
-  void signInWithGitHub();
+  void startSamlSignIn();
 });
 
 $("nav").on("click", "a.textButton.view-login", (e) => {
@@ -445,10 +290,10 @@ $(".pageLogin .register form").on("submit", (e) => {
 });
 
 $(".pageAccountSettings").on("click", "#addGoogleAuth", () => {
-  void addGoogleAuth();
+  Notifications.add("Additional auth providers are disabled in JWT mode.", 0);
 });
 $(".pageAccountSettings").on("click", "#addGithubAuth", () => {
-  void addGithubAuth();
+  Notifications.add("Additional auth providers are disabled in JWT mode.", 0);
 });
 
 $(".pageAccount").on("click", ".sendVerificationEmail", () => {

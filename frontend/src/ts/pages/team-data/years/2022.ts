@@ -184,6 +184,12 @@ export const year2022: TeamSection[] = [
         imagePath: "/images/team/2022/Rewan-Sadek.webp",
         linkedin: "https://www.linkedin.com/in/rewan-sadek-780a0b18b/",
       },
+      {
+        name: "Mohamed Ashraf",
+        title: "Volunteer",
+        imagePath: "/images/team/2022/Mohamed-ashraf.webp",
+        linkedin: "https://www.linkedin.com/in/mohamed-ashraf20/",
+      },
     ],
   },
 ];

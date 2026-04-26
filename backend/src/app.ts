@@ -20,7 +20,13 @@ function buildApp(): express.Application {
 
   app.use(urlencoded({ extended: true }));
   app.use(json());
-  app.use(cors({ exposedHeaders: [COMPATIBILITY_CHECK_HEADER] }));
+  app.use(
+    cors({
+      exposedHeaders: [COMPATIBILITY_CHECK_HEADER],
+      credentials: true,
+      origin: true,
+    }),
+  );
   app.use(helmet());
 
   app.set("trust proxy", 1);

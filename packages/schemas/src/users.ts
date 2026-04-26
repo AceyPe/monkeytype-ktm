@@ -274,6 +274,12 @@ export const UserSchema = z.object({
   name: UserNameSchema,
   email: UserEmailSchema,
   uid: z.string(), //defined by firebase, no validation should be applied
+  geocode: z.string().optional(),
+  status: z.string().optional(),
+  ssoid: z.string().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  grade: z.string().optional(),
   addedAt: z.number().int().nonnegative(),
   personalBests: PersonalBestsSchema,
   lastReultHashes: z.array(z.string()).optional(), //todo: fix typo (its in the db too)

@@ -14,6 +14,14 @@ import MonkeyError from "./error";
 export type DecodedIdToken = {
   uid: string;
   email: string;
+  geocode?: string;
+  status?: string;
+  ssoid?: string;
+  firstName?: string;
+  lastName?: string;
+  lastname?: string;
+  grade?: string;
+  avatarUrl?: string;
   iat: number;
   exp: number;
   type: string;
@@ -83,6 +91,13 @@ export async function verifyIdToken(
     }) as jwt.JwtPayload & {
       uid: string;
       email: string;
+      geocode?: string;
+      status?: string;
+      ssoid?: string;
+      firstName?: string;
+      lastName?: string;
+      lastname?: string;
+      grade?: string;
       iat: number;
       exp: number;
       type: string;
@@ -112,6 +127,21 @@ export async function verifyIdToken(
     const decodedToken: DecodedIdToken = {
       uid: decoded.uid,
       email: decoded.email,
+      geocode:
+        typeof decoded.geocode === "string" ? decoded.geocode : undefined,
+      status: typeof decoded.status === "string" ? decoded.status : undefined,
+      ssoid: typeof decoded.ssoid === "string" ? decoded.ssoid : undefined,
+      firstName:
+        typeof decoded.firstName === "string" ? decoded.firstName : undefined,
+      lastName:
+        typeof decoded.lastName === "string" ? decoded.lastName : undefined,
+      lastname:
+        typeof decoded.lastname === "string" ? decoded.lastname : undefined,
+      grade: typeof decoded.grade === "string" ? decoded.grade : undefined,
+      avatarUrl:
+        typeof decoded["avatarUrl"] === "string"
+          ? decoded["avatarUrl"]
+          : undefined,
       iat: typeof decoded.iat === "number" ? decoded.iat : 0,
       exp: typeof decoded.exp === "number" ? decoded.exp : 0,
       type: typeof decoded.type === "string" ? decoded.type : "Bearer",
@@ -166,6 +196,17 @@ export function generateJwtToken(
   uid: string,
   email: string,
   expiresIn: string = "1h",
+  claims?: {
+    geocode?: string;
+    status?: string;
+    ssoid?: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    lastname?: string;
+    grade?: string;
+    avatarUrl?: string;
+  },
 ): string {
   const secret = getJwtSecret();
   const now = Math.floor(Date.now() / 1000);
@@ -173,6 +214,7 @@ export function generateJwtToken(
   const payload = {
     uid,
     email,
+    ...claims,
     iat: now,
     type: "Bearer",
   };

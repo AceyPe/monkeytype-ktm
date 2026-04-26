@@ -107,13 +107,26 @@ class ChartWithUpdateColors<
   }
 }
 
+/** Chart.js throws if the canvas is missing; some charts target optional DOM. */
+function chartCanvasOrStub(selector: string): HTMLCanvasElement {
+  const el = document.querySelector(selector);
+  if (el instanceof HTMLCanvasElement) {
+    return el;
+  }
+  const stub = document.createElement("canvas");
+  stub.width = 1;
+  stub.height = 1;
+  stub.setAttribute("data-chart-stub", selector);
+  return stub;
+}
+
 let prevTi: TooltipItem<"line" | "scatter"> | undefined;
 export const result = new ChartWithUpdateColors<
   "line" | "scatter",
   number[],
   string,
   "wpm" | "raw" | "error" | "burst"
->(document.querySelector("#wpmChart") as HTMLCanvasElement, {
+>(chartCanvasOrStub("#wpmChart"), {
   type: "line",
   data: {
     labels: [],
@@ -353,613 +366,591 @@ export const accountHistory = new ChartWithUpdateColors<
   | "accAvgTen"
   | "wpmAvgHundred"
   | "accAvgHundred"
->(
-  document.querySelector(
-    ".pageAccount #accountHistoryChart",
-  ) as HTMLCanvasElement,
-  {
-    type: "line",
-    data: {
-      datasets: [
-        {
-          yAxisID: "wpm",
-          data: [],
-          fill: false,
-          borderWidth: 0,
-          order: 3,
-        },
-        {
-          yAxisID: "pb",
-          data: [],
-          fill: false,
-          stepped: true,
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          order: 4,
-        },
-        {
-          yAxisID: "acc",
-          fill: false,
-          data: [],
-          pointStyle: "triangle",
-          borderWidth: 0,
-          pointRadius: 3.5,
-          order: 3,
-        },
-        {
-          yAxisID: "wpmAvgTen",
-          data: [],
-          fill: false,
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          order: 2,
-        },
-        {
-          yAxisID: "accAvgTen",
-          data: [],
-          fill: false,
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          order: 2,
-        },
-        {
-          yAxisID: "wpmAvgHundred",
-          data: [],
-          fill: false,
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          order: 1,
-        },
-        {
-          yAxisID: "accAvgHundred",
-          label: "accAvgHundred",
-          data: [],
-          fill: false,
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          order: 1,
-        },
-      ],
+>(chartCanvasOrStub(".pageAccount #accountHistoryChart"), {
+  type: "line",
+  data: {
+    datasets: [
+      {
+        yAxisID: "wpm",
+        data: [],
+        fill: false,
+        borderWidth: 0,
+        order: 3,
+      },
+      {
+        yAxisID: "pb",
+        data: [],
+        fill: false,
+        stepped: true,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        order: 4,
+      },
+      {
+        yAxisID: "acc",
+        fill: false,
+        data: [],
+        pointStyle: "triangle",
+        borderWidth: 0,
+        pointRadius: 3.5,
+        order: 3,
+      },
+      {
+        yAxisID: "wpmAvgTen",
+        data: [],
+        fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        order: 2,
+      },
+      {
+        yAxisID: "accAvgTen",
+        data: [],
+        fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        order: 2,
+      },
+      {
+        yAxisID: "wpmAvgHundred",
+        data: [],
+        fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        order: 1,
+      },
+      {
+        yAxisID: "accAvgHundred",
+        label: "accAvgHundred",
+        data: [],
+        fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        order: 1,
+      },
+    ],
+  },
+  options: {
+    // responsive: true,
+    maintainAspectRatio: false,
+    hover: {
+      mode: "nearest",
+      intersect: false,
     },
-    options: {
-      // responsive: true,
-      maintainAspectRatio: false,
-      hover: {
-        mode: "nearest",
+    scales: {
+      x: {
+        axis: "x",
+        type: "linear",
+        reverse: true,
+        min: 0,
+        ticks: {
+          stepSize: 10,
+        },
+        display: false,
+        grid: {
+          display: false,
+        },
+      },
+      wpm: {
+        axis: "y",
+        type: "linear",
+        beginAtZero: true,
+        min: 0,
+        ticks: {
+          stepSize: 10,
+        },
+        display: true,
+        title: {
+          display: true,
+          text: "Words per Minute",
+        },
+        position: "right",
+      },
+      pb: {
+        axis: "y",
+        beginAtZero: true,
+        min: 0,
+        ticks: {
+          stepSize: 10,
+        },
+        display: false,
+      },
+      acc: {
+        axis: "y",
+        beginAtZero: true,
+        min: 0,
+        max: 100,
+        reverse: true,
+        ticks: {
+          stepSize: 10,
+        },
+        display: true,
+        title: {
+          display: true,
+          text: "Accuracy",
+        },
+        grid: {
+          display: false,
+        },
+        position: "left",
+      },
+      wpmAvgTen: {
+        axis: "y",
+        beginAtZero: true,
+        min: 0,
+        ticks: {
+          stepSize: 10,
+        },
+        display: false,
+        grid: {
+          display: false,
+        },
+      },
+      accAvgTen: {
+        axis: "y",
+        beginAtZero: true,
+        min: 0,
+        max: 100,
+        reverse: true,
+        ticks: {
+          stepSize: 10,
+        },
+        display: false,
+        grid: {
+          display: false,
+        },
+      },
+      wpmAvgHundred: {
+        axis: "y",
+        beginAtZero: true,
+        min: 0,
+        ticks: {
+          stepSize: 10,
+        },
+        display: false,
+        grid: {
+          display: false,
+        },
+      },
+      accAvgHundred: {
+        axis: "y",
+        beginAtZero: true,
+        min: 0,
+        max: 100,
+        reverse: true,
+        ticks: {
+          stepSize: 10,
+        },
+        display: false,
+        grid: {
+          display: false,
+        },
+      },
+    },
+
+    plugins: {
+      annotation: {
+        annotations: [],
+      },
+      tooltip: {
+        animation: { duration: 250 },
+        // Disable the on-canvas tooltip
+        enabled: true,
+
         intersect: false,
-      },
-      scales: {
-        x: {
-          axis: "x",
-          type: "linear",
-          reverse: true,
-          min: 0,
-          ticks: {
-            stepSize: 10,
-          },
-          display: false,
-          grid: {
-            display: false,
-          },
+        external: function (ctx): void {
+          if (ctx === undefined) return;
+          ctx.tooltip.options.displayColors = false;
         },
-        wpm: {
-          axis: "y",
-          type: "linear",
-          beginAtZero: true,
-          min: 0,
-          ticks: {
-            stepSize: 10,
-          },
-          display: true,
-          title: {
-            display: true,
-            text: "Words per Minute",
-          },
-          position: "right",
+        filter: function (tooltipItem): boolean {
+          return (
+            tooltipItem.datasetIndex !== 1 &&
+            tooltipItem.datasetIndex !== 3 &&
+            tooltipItem.datasetIndex !== 4 &&
+            tooltipItem.datasetIndex !== 5 &&
+            tooltipItem.datasetIndex !== 6
+          );
         },
-        pb: {
-          axis: "y",
-          beginAtZero: true,
-          min: 0,
-          ticks: {
-            stepSize: 10,
+        callbacks: {
+          title: function (): string {
+            return "";
           },
-          display: false,
-        },
-        acc: {
-          axis: "y",
-          beginAtZero: true,
-          min: 0,
-          max: 100,
-          reverse: true,
-          ticks: {
-            stepSize: 10,
-          },
-          display: true,
-          title: {
-            display: true,
-            text: "Accuracy",
-          },
-          grid: {
-            display: false,
-          },
-          position: "left",
-        },
-        wpmAvgTen: {
-          axis: "y",
-          beginAtZero: true,
-          min: 0,
-          ticks: {
-            stepSize: 10,
-          },
-          display: false,
-          grid: {
-            display: false,
-          },
-        },
-        accAvgTen: {
-          axis: "y",
-          beginAtZero: true,
-          min: 0,
-          max: 100,
-          reverse: true,
-          ticks: {
-            stepSize: 10,
-          },
-          display: false,
-          grid: {
-            display: false,
-          },
-        },
-        wpmAvgHundred: {
-          axis: "y",
-          beginAtZero: true,
-          min: 0,
-          ticks: {
-            stepSize: 10,
-          },
-          display: false,
-          grid: {
-            display: false,
-          },
-        },
-        accAvgHundred: {
-          axis: "y",
-          beginAtZero: true,
-          min: 0,
-          max: 100,
-          reverse: true,
-          ticks: {
-            stepSize: 10,
-          },
-          display: false,
-          grid: {
-            display: false,
-          },
-        },
-      },
 
-      plugins: {
-        annotation: {
-          annotations: [],
-        },
-        tooltip: {
-          animation: { duration: 250 },
-          // Disable the on-canvas tooltip
-          enabled: true,
-
-          intersect: false,
-          external: function (ctx): void {
-            if (ctx === undefined) return;
-            ctx.tooltip.options.displayColors = false;
-          },
-          filter: function (tooltipItem): boolean {
-            return (
-              tooltipItem.datasetIndex !== 1 &&
-              tooltipItem.datasetIndex !== 3 &&
-              tooltipItem.datasetIndex !== 4 &&
-              tooltipItem.datasetIndex !== 5 &&
-              tooltipItem.datasetIndex !== 6
-            );
-          },
-          callbacks: {
-            title: function (): string {
-              return "";
-            },
-
-            beforeLabel: function (tooltipItem): string {
-              if (tooltipItem.datasetIndex !== 0) {
-                const resultData = tooltipItem.dataset.data[
-                  tooltipItem.dataIndex
-                ] as AccChartData;
-                return `error rate: ${Numbers.roundTo2(
-                  resultData.errorRate,
-                )}%\nacc: ${Numbers.roundTo2(100 - resultData.errorRate)}%`;
-              }
+          beforeLabel: function (tooltipItem): string {
+            if (tooltipItem.datasetIndex !== 0) {
               const resultData = tooltipItem.dataset.data[
                 tooltipItem.dataIndex
-              ] as HistoryChartData;
-              let label =
-                `${Config.typingSpeedUnit}: ${resultData.wpm}` +
-                "\n" +
-                `raw: ${resultData.raw}` +
-                "\n" +
-                `acc: ${resultData.acc}` +
-                "\n\n" +
-                `mode: ${resultData.mode} `;
+              ] as AccChartData;
+              return `error rate: ${Numbers.roundTo2(
+                resultData.errorRate,
+              )}%\nacc: ${Numbers.roundTo2(100 - resultData.errorRate)}%`;
+            }
+            const resultData = tooltipItem.dataset.data[
+              tooltipItem.dataIndex
+            ] as HistoryChartData;
+            let label =
+              `${Config.typingSpeedUnit}: ${resultData.wpm}` +
+              "\n" +
+              `raw: ${resultData.raw}` +
+              "\n" +
+              `acc: ${resultData.acc}` +
+              "\n\n" +
+              `mode: ${resultData.mode} `;
 
-              if (resultData.mode === "time") {
-                label += resultData.mode2;
-              } else if (resultData.mode === "words") {
-                label += resultData.mode2;
-              }
+            if (resultData.mode === "time") {
+              label += resultData.mode2;
+            } else if (resultData.mode === "words") {
+              label += resultData.mode2;
+            }
 
-              let diff = resultData.difficulty;
-              if (diff === undefined) {
-                diff = "normal";
-              }
-              label += `\ndifficulty: ${diff}`;
+            let diff = resultData.difficulty;
+            if (diff === undefined) {
+              diff = "normal";
+            }
+            label += `\ndifficulty: ${diff}`;
 
-              label +=
-                "\n" +
-                `punctuation: ${resultData.punctuation}` +
-                "\n" +
-                `language: ${resultData.language}` +
-                `${resultData.isPb ? "\n\nnew personal best" : ""}` +
-                "\n\n" +
-                `date: ${format(
-                  new Date(resultData.timestamp),
-                  "dd MMM yyyy HH:mm",
-                )}`;
+            label +=
+              "\n" +
+              `punctuation: ${resultData.punctuation}` +
+              "\n" +
+              `language: ${resultData.language}` +
+              `${resultData.isPb ? "\n\nnew personal best" : ""}` +
+              "\n\n" +
+              `date: ${format(
+                new Date(resultData.timestamp),
+                "dd MMM yyyy HH:mm",
+              )}`;
 
-              return label;
-            },
-            label: function (): string {
-              return "";
-            },
-            afterLabel: function (tooltip): string {
-              accountHistoryActiveIndex = tooltip.dataIndex;
-              return "";
-            },
+            return label;
+          },
+          label: function (): string {
+            return "";
+          },
+          afterLabel: function (tooltip): string {
+            accountHistoryActiveIndex = tooltip.dataIndex;
+            return "";
           },
         },
       },
     },
   },
-);
+});
 
 export const accountActivity = new ChartWithUpdateColors<
   "bar" | "line",
   ActivityChartDataPoint[],
   string,
   "count" | "avgWpm"
->(
-  document.querySelector(
-    ".pageAccount #accountActivityChart",
-  ) as HTMLCanvasElement,
-  {
-    type: "bar",
-    data: {
-      labels: [],
-      datasets: [
-        {
-          yAxisID: "count",
-          label: "Seconds",
-          data: [],
-          trendlineLinear: {
-            style: "rgba(255,105,180, .8)",
-            lineStyle: "dotted",
-            width: 2,
-          },
-          order: 3,
+>(chartCanvasOrStub(".pageAccount #accountActivityChart"), {
+  type: "bar",
+  data: {
+    labels: [],
+    datasets: [
+      {
+        yAxisID: "count",
+        label: "Seconds",
+        data: [],
+        trendlineLinear: {
+          style: "rgba(255,105,180, .8)",
+          lineStyle: "dotted",
+          width: 2,
         },
-        {
-          yAxisID: "avgWpm",
-          label: "Average Wpm",
-          data: [],
-          type: "line",
-          order: 2,
-          tension: 0,
-          fill: false,
-        },
-      ],
+        order: 3,
+      },
+      {
+        yAxisID: "avgWpm",
+        label: "Average Wpm",
+        data: [],
+        type: "line",
+        order: 2,
+        tension: 0,
+        fill: false,
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    hover: {
+      mode: "nearest",
+      intersect: false,
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      hover: {
-        mode: "nearest",
+    scales: {
+      x: {
+        axis: "x",
+        ticks: {
+          autoSkip: true,
+          autoSkipPadding: 20,
+        },
+        type: "time",
+        time: {
+          unit: "day",
+          displayFormats: {
+            day: "d MMM",
+          },
+        },
+        bounds: "ticks",
+        display: true,
+        title: {
+          display: false,
+          text: "Date",
+        },
+        offset: true,
+      },
+      count: {
+        axis: "y",
+        beginAtZero: true,
+        min: 0,
+        ticks: {
+          autoSkip: true,
+          autoSkipPadding: 20,
+          stepSize: 1,
+        },
+        display: true,
+        title: {
+          display: true,
+          text: "Time typing (minutes)",
+        },
+      },
+      avgWpm: {
+        axis: "y",
+        beginAtZero: true,
+        min: 0,
+        ticks: {
+          autoSkip: true,
+          autoSkipPadding: 20,
+          stepSize: 10,
+        },
+        display: true,
+        position: "right",
+        title: {
+          display: true,
+          text: "Average Wpm",
+        },
+        grid: {
+          display: false,
+        },
+      },
+    },
+    plugins: {
+      annotation: {
+        annotations: [],
+      },
+      tooltip: {
+        animation: { duration: 250 },
         intersect: false,
-      },
-      scales: {
-        x: {
-          axis: "x",
-          ticks: {
-            autoSkip: true,
-            autoSkipPadding: 20,
-          },
-          type: "time",
-          time: {
-            unit: "day",
-            displayFormats: {
-              day: "d MMM",
-            },
-          },
-          bounds: "ticks",
-          display: true,
-          title: {
-            display: false,
-            text: "Date",
-          },
-          offset: true,
+        mode: "index",
+        filter: (tooltipItem): boolean => {
+          return tooltipItem.datasetIndex === 0;
         },
-        count: {
-          axis: "y",
-          beginAtZero: true,
-          min: 0,
-          ticks: {
-            autoSkip: true,
-            autoSkipPadding: 20,
-            stepSize: 1,
+        callbacks: {
+          title: function (tooltipItem): string {
+            const firstItem = tooltipItem[0] as TooltipItem<"bar" | "line">;
+            const resultData = firstItem.dataset.data[
+              firstItem.dataIndex
+            ] as ActivityChartDataPoint;
+            return format(new Date(resultData.x), "dd MMM yyyy");
           },
-          display: true,
-          title: {
-            display: true,
-            text: "Time typing (minutes)",
+          beforeLabel: function (tooltipItem): string {
+            const resultData = tooltipItem.dataset.data[
+              tooltipItem.dataIndex
+            ] as ActivityChartDataPoint;
+            const typingSpeedUnit = getTypingSpeedUnit(Config.typingSpeedUnit);
+            return `Time Typing: ${DateTime.secondsToString(
+              Math.round(resultData.y * 60),
+              true,
+              true,
+            )}\nTests Completed: ${
+              resultData.amount
+            }\nRestarts per test: ${Numbers.roundTo2(
+              (resultData.restarts ?? 0) / (resultData.amount ?? 0),
+            )}\nHighest ${Config.typingSpeedUnit.toUpperCase()}: ${Numbers.roundTo2(
+              typingSpeedUnit.fromWpm(resultData.maxWpm ?? 0),
+            )}\nAverage ${Config.typingSpeedUnit.toUpperCase()}: ${Numbers.roundTo2(
+              typingSpeedUnit.fromWpm(resultData.avgWpm ?? 0),
+            )}\nAverage Accuracy: ${Numbers.roundTo2(
+              resultData.avgAcc ?? 0,
+            )}%\nAverage Consistency: ${Numbers.roundTo2(
+              resultData.avgCon ?? 0,
+            )}%`;
           },
-        },
-        avgWpm: {
-          axis: "y",
-          beginAtZero: true,
-          min: 0,
-          ticks: {
-            autoSkip: true,
-            autoSkipPadding: 20,
-            stepSize: 10,
-          },
-          display: true,
-          position: "right",
-          title: {
-            display: true,
-            text: "Average Wpm",
-          },
-          grid: {
-            display: false,
-          },
-        },
-      },
-      plugins: {
-        annotation: {
-          annotations: [],
-        },
-        tooltip: {
-          animation: { duration: 250 },
-          intersect: false,
-          mode: "index",
-          filter: (tooltipItem): boolean => {
-            return tooltipItem.datasetIndex === 0;
-          },
-          callbacks: {
-            title: function (tooltipItem): string {
-              const firstItem = tooltipItem[0] as TooltipItem<"bar" | "line">;
-              const resultData = firstItem.dataset.data[
-                firstItem.dataIndex
-              ] as ActivityChartDataPoint;
-              return format(new Date(resultData.x), "dd MMM yyyy");
-            },
-            beforeLabel: function (tooltipItem): string {
-              const resultData = tooltipItem.dataset.data[
-                tooltipItem.dataIndex
-              ] as ActivityChartDataPoint;
-              const typingSpeedUnit = getTypingSpeedUnit(
-                Config.typingSpeedUnit,
-              );
-              return `Time Typing: ${DateTime.secondsToString(
-                Math.round(resultData.y * 60),
-                true,
-                true,
-              )}\nTests Completed: ${
-                resultData.amount
-              }\nRestarts per test: ${Numbers.roundTo2(
-                (resultData.restarts ?? 0) / (resultData.amount ?? 0),
-              )}\nHighest ${Config.typingSpeedUnit.toUpperCase()}: ${Numbers.roundTo2(
-                typingSpeedUnit.fromWpm(resultData.maxWpm ?? 0),
-              )}\nAverage ${Config.typingSpeedUnit.toUpperCase()}: ${Numbers.roundTo2(
-                typingSpeedUnit.fromWpm(resultData.avgWpm ?? 0),
-              )}\nAverage Accuracy: ${Numbers.roundTo2(
-                resultData.avgAcc ?? 0,
-              )}%\nAverage Consistency: ${Numbers.roundTo2(
-                resultData.avgCon ?? 0,
-              )}%`;
-            },
-            label: function (): string {
-              return "";
-            },
+          label: function (): string {
+            return "";
           },
         },
       },
     },
   },
-);
+});
 
 export const accountHistogram = new ChartWithUpdateColors<
   "bar",
   ActivityChartDataPoint[],
   string,
   "count"
->(
-  document.querySelector(
-    ".pageAccount #accountHistogramChart",
-  ) as HTMLCanvasElement,
-  {
-    type: "bar",
-    data: {
-      labels: [],
-      datasets: [
-        {
-          yAxisID: "count",
-          label: "Tests",
-          data: [],
-        },
-      ],
+>(chartCanvasOrStub(".pageAccount #accountHistogramChart"), {
+  type: "bar",
+  data: {
+    labels: [],
+    datasets: [
+      {
+        yAxisID: "count",
+        label: "Tests",
+        data: [],
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    hover: {
+      mode: "nearest",
+      intersect: false,
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      hover: {
-        mode: "nearest",
+    scales: {
+      x: {
+        axis: "x",
+        // ticks: {
+        //   autoSkip: true,
+        //   autoSkipPadding: 20,
+        // },
+        bounds: "ticks",
+        display: true,
+        title: {
+          display: false,
+          text: "Bucket",
+        },
+        offset: true,
+      },
+      count: {
+        axis: "y",
+        beginAtZero: true,
+        min: 0,
+        ticks: {
+          autoSkip: true,
+          autoSkipPadding: 20,
+          stepSize: 10,
+        },
+        display: true,
+        title: {
+          display: true,
+          text: "Tests",
+        },
+      },
+    },
+    plugins: {
+      annotation: {
+        annotations: [],
+      },
+      tooltip: {
+        animation: { duration: 250 },
         intersect: false,
-      },
-      scales: {
-        x: {
-          axis: "x",
-          // ticks: {
-          //   autoSkip: true,
-          //   autoSkipPadding: 20,
-          // },
-          bounds: "ticks",
-          display: true,
-          title: {
-            display: false,
-            text: "Bucket",
-          },
-          offset: true,
-        },
-        count: {
-          axis: "y",
-          beginAtZero: true,
-          min: 0,
-          ticks: {
-            autoSkip: true,
-            autoSkipPadding: 20,
-            stepSize: 10,
-          },
-          display: true,
-          title: {
-            display: true,
-            text: "Tests",
-          },
-        },
-      },
-      plugins: {
-        annotation: {
-          annotations: [],
-        },
-        tooltip: {
-          animation: { duration: 250 },
-          intersect: false,
-          mode: "index",
-          // callbacks: {
-          //   title: function (tooltipItem): string {
-          //     const resultData = tooltipItem[0].dataset.data[
-          //       tooltipItem[0].dataIndex
-          //     ] as MonkeyTypes.ActivityChartDataPoint;
-          //     return format(new Date(resultData.x), "dd MMM yyyy");
-          //   },
-          //   beforeLabel: function (tooltipItem): string {
-          //     const resultData = tooltipItem.dataset.data[
-          //       tooltipItem.dataIndex
-          //     ] as MonkeyTypes.ActivityChartDataPoint;
-          //     switch (tooltipItem.datasetIndex) {
-          //       case 0:
-          //         return `Time Typing: ${DateTime.secondsToString(
-          //           Math.round(resultData.y),
-          //           true,
-          //           true
-          //         )}\nTests Completed: ${resultData.amount}`;
-          //       case 1:
-          //         return `Average ${
-          //           Config.typingSpeedUnit
-          //         }: ${Numbers.roundTo2(resultData.y)}`;
-          //       default:
-          //         return "";
-          //     }
-          //   },
-          //   label: function (): string {
-          //     return "";
-          //   },
-          // },
-        },
+        mode: "index",
+        // callbacks: {
+        //   title: function (tooltipItem): string {
+        //     const resultData = tooltipItem[0].dataset.data[
+        //       tooltipItem[0].dataIndex
+        //     ] as MonkeyTypes.ActivityChartDataPoint;
+        //     return format(new Date(resultData.x), "dd MMM yyyy");
+        //   },
+        //   beforeLabel: function (tooltipItem): string {
+        //     const resultData = tooltipItem.dataset.data[
+        //       tooltipItem.dataIndex
+        //     ] as MonkeyTypes.ActivityChartDataPoint;
+        //     switch (tooltipItem.datasetIndex) {
+        //       case 0:
+        //         return `Time Typing: ${DateTime.secondsToString(
+        //           Math.round(resultData.y),
+        //           true,
+        //           true
+        //         )}\nTests Completed: ${resultData.amount}`;
+        //       case 1:
+        //         return `Average ${
+        //           Config.typingSpeedUnit
+        //         }: ${Numbers.roundTo2(resultData.y)}`;
+        //       default:
+        //         return "";
+        //     }
+        //   },
+        //   label: function (): string {
+        //     return "";
+        //   },
+        // },
       },
     },
   },
-);
+});
 
 export const globalSpeedHistogram = new ChartWithUpdateColors<
   "bar",
   ActivityChartDataPoint[],
   string,
   "count"
->(
-  document.querySelector(
-    ".pageAbout #publicStatsHistogramChart",
-  ) as HTMLCanvasElement,
-  {
-    type: "bar",
-    data: {
-      labels: [],
-      datasets: [
-        {
-          yAxisID: "count",
-          label: "Users",
-          data: [],
-        },
-      ],
+>(chartCanvasOrStub(".pageAbout #publicStatsHistogramChart"), {
+  type: "bar",
+  data: {
+    labels: [],
+    datasets: [
+      {
+        yAxisID: "count",
+        label: "Users",
+        data: [],
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    hover: {
+      mode: "nearest",
+      intersect: false,
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      hover: {
-        mode: "nearest",
+    scales: {
+      x: {
+        axis: "x",
+        bounds: "ticks",
+        display: true,
+        title: {
+          display: false,
+          text: "Bucket",
+        },
+        offset: true,
+      },
+      count: {
+        axis: "y",
+        beginAtZero: true,
+        min: 0,
+        ticks: {
+          autoSkip: true,
+          autoSkipPadding: 20,
+          stepSize: 10,
+        },
+        display: true,
+        title: {
+          display: true,
+          text: "Users",
+        },
+      },
+    },
+    plugins: {
+      annotation: {
+        annotations: [],
+      },
+      tooltip: {
+        animation: { duration: 250 },
         intersect: false,
-      },
-      scales: {
-        x: {
-          axis: "x",
-          bounds: "ticks",
-          display: true,
-          title: {
-            display: false,
-            text: "Bucket",
-          },
-          offset: true,
-        },
-        count: {
-          axis: "y",
-          beginAtZero: true,
-          min: 0,
-          ticks: {
-            autoSkip: true,
-            autoSkipPadding: 20,
-            stepSize: 10,
-          },
-          display: true,
-          title: {
-            display: true,
-            text: "Users",
-          },
-        },
-      },
-      plugins: {
-        annotation: {
-          annotations: [],
-        },
-        tooltip: {
-          animation: { duration: 250 },
-          intersect: false,
-          mode: "index",
-        },
+        mode: "index",
       },
     },
   },
-);
+});
 
 export const miniResult = new ChartWithUpdateColors<
   "line" | "scatter",
   number[],
   string,
   "wpm" | "burst" | "error"
->(document.querySelector("#miniResultChartModal canvas") as HTMLCanvasElement, {
+>(chartCanvasOrStub("#miniResultChartModal canvas"), {
   type: "line",
   data: {
     labels: [],

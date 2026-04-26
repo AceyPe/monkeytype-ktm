@@ -3,11 +3,22 @@ import * as Loader from "../elements/loader";
 import * as Notifications from "../elements/notifications";
 import * as Misc from "./misc";
 import { tryCatch } from "@monkeytype/util/trycatch";
+import { isAuthenticated } from "../firebase";
 // eslint-disable-next-line import/no-unresolved
 import { envConfig } from "virtual:env-config";
 
-/** SAML initiate uses this host instead of `backendUrl` (temporary). */
-const SAML_SSO_INITIATE_URL = "https://api.ieeektm.org/users/login";
+function getNormalizedBackendUrl(): string {
+  const backendUrl =
+    typeof envConfig.backendUrl === "string" && envConfig.backendUrl !== ""
+      ? envConfig.backendUrl
+      : "https://api.ieeektm.org";
+  if (/^https?:\/\//i.test(backendUrl)) {
+    return backendUrl.replace(/\/$/, "");
+  }
+  return `${window.location.protocol}//${backendUrl.replace(/\/$/, "")}`;
+}
+
+const SAML_SSO_INITIATE_URL = `${getNormalizedBackendUrl()}/users/login`;
 
 /** Normalize pathname without a trailing slash (except `/`). */
 function normalizedPathname(): string {
@@ -33,6 +44,11 @@ function replaceLoginHistoryEntryWithHome(): void {
 
 /** Returns true when redirecting to the IdP; false on error or offline. */
 export async function startSamlSignIn(): Promise<boolean> {
+  if (isAuthenticated()) {
+    window.location.assign("/account");
+    return true;
+  }
+
   if (!ConnectionState.get()) {
     Notifications.add("You are offline", 0, {
       duration: 2,
@@ -51,7 +67,6 @@ export async function startSamlSignIn(): Promise<boolean> {
         method: "GET",
         headers: {
           Accept: "application/json",
-          "X-Client-Version": envConfig.clientVersion,
         },
       });
       const body = (await res.json()) as {

@@ -67,7 +67,7 @@ export function getPublicApiBaseUrlFromExpressRequest(req: {
       : req.secure === true
         ? "https"
         : (req.protocol ?? "http");
-  const host = getSamlRequestHostFromHeaders(req.headers) ?? "localhost";
+  const host = getSamlRequestHostFromHeaders(req.headers) ?? "ieeektm.org";
   return `${proto}://${host}`;
 }
 
@@ -186,9 +186,11 @@ export async function getSamlInitiateNavigateUrl(
 }
 
 export type SamlProfile = {
+  ssoid?: string;
   email?: string;
   firstName?: string;
   lastName?: string;
+  grade?: string;
   nameID?: string;
   nameIDFormat?: string;
   [key: string]: unknown;

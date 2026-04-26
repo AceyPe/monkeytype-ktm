@@ -1,33 +1,37 @@
-import {
-  Analytics as AnalyticsType,
-  logEvent,
-  setAnalyticsCollectionEnabled,
-} from "firebase/analytics";
-import { getAnalytics } from "../firebase";
 import { createErrorMessage } from "../utils/misc";
 
-let analytics: AnalyticsType;
+let activated = false;
+
+declare global {
+  // `interface` is required here so `Window` merges with the DOM lib; `type` cannot augment.
+  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+  interface Window {
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+  }
+}
 
 export async function log(
   eventName: string,
   params?: Record<string, string>,
 ): Promise<void> {
   try {
-    logEvent(analytics, eventName, params);
-  } catch (e) {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", eventName, params ?? {});
+    }
+  } catch {
     console.log("Analytics unavailable");
   }
 }
 
 export function activateAnalytics(): void {
-  if (analytics !== undefined) {
+  if (activated) {
     console.warn("Analytics already activated");
     return;
   }
+  activated = true;
   console.log("Activating Analytics");
   try {
-    analytics = getAnalytics();
-    setAnalyticsCollectionEnabled(analytics, true);
     $("body").append(`
     <script
     async

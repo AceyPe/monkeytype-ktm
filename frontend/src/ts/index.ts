@@ -8,8 +8,6 @@ import "./event-handlers/account";
 import "./event-handlers/leaderboards";
 import "./event-handlers/login";
 
-import "./modals/google-sign-up";
-
 import { init } from "./firebase";
 import * as Logger from "./utils/logger";
 import * as DB from "./db";
@@ -48,6 +46,7 @@ import "./elements/psa";
 import "./utils/url-handler";
 import "./modals/last-signed-out-result";
 import { applyEngineSettings } from "./anim";
+import * as ServerConfiguration from "./ape/server-configuration";
 
 // Lock Math.random
 Object.defineProperty(Math, "random", {
@@ -71,6 +70,7 @@ Object.defineProperty(window, "Math", {
 applyEngineSettings();
 void loadFromLocalStorage();
 void VersionButton.update();
+void ServerConfiguration.sync();
 Focus.set(true, true);
 void init(onAuthStateChanged);
 

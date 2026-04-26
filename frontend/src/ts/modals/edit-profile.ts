@@ -130,6 +130,10 @@ function buildUpdatesFromInputs(): UserProfileDetails {
   const showActivityOnPublicProfile =
     showActivityOnPublicProfileInput.checked ?? false;
 
+  // Legacy profile fields intentionally disabled:
+  // const name = "";
+  // const avatar = "";
+  // const page = "";
   const profileUpdates: UserProfileDetails = {
     bio,
     keyboard,

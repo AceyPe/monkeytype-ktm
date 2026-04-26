@@ -19,6 +19,11 @@ export type DBLeaderboardEntry = LeaderboardEntry & {
   _id: ObjectId;
 };
 
+type LeaderboardIdentityFields = Pick<
+  DBUser,
+  "uid" | "firstName" | "lastName" | "geocode"
+>;
+
 function getCollectionName(key: {
   language: string;
   mode: string;
@@ -181,6 +186,8 @@ export async function get(
         .aggregate<DBLeaderboardEntry>(pipeline)
         .toArray();
     }
+    leaderboard = await hydrateLeaderboardIdentityFields(leaderboard);
+
     if (!premiumFeaturesEnabled) {
       leaderboard = leaderboard.map((it) => omit(it, ["isPremium"]));
     }
@@ -243,7 +250,9 @@ export async function getRank(
         uid,
       });
 
-      return entry;
+      if (entry === null) return null;
+      const [hydratedEntry] = await hydrateLeaderboardIdentityFields([entry]);
+      return hydratedEntry ?? null;
     } else {
       const results =
         await aggregateWithAcceptedConnections<DBLeaderboardEntry>(
@@ -261,7 +270,8 @@ export async function getRank(
             { $match: { uid } },
           ],
         );
-      return results[0] ?? null;
+      const [hydratedEntry] = await hydrateLeaderboardIdentityFields(results);
+      return hydratedEntry ?? null;
     }
   } catch (e) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -271,6 +281,35 @@ export async function getRank(
     }
     throw e;
   }
+}
+
+async function hydrateLeaderboardIdentityFields(
+  entries: DBLeaderboardEntry[],
+): Promise<DBLeaderboardEntry[]> {
+  if (entries.length === 0) return entries;
+
+  const users = await getUsersCollection()
+    .find(
+      { uid: { $in: entries.map((it) => it.uid) } },
+      { projection: { uid: 1, firstName: 1, lastName: 1, geocode: 1 } },
+    )
+    .toArray();
+
+  const byUid = new Map<string, LeaderboardIdentityFields>(
+    users.map((it) => [it.uid, it]),
+  );
+
+  return entries.map((entry) => {
+    const identity = byUid.get(entry.uid);
+    if (identity === undefined) return entry;
+
+    return {
+      ...entry,
+      firstName: identity.firstName ?? entry.firstName,
+      lastName: identity.lastName ?? entry.lastName,
+      geocode: identity.geocode ?? entry.geocode,
+    };
+  });
 }
 
 export async function update(
@@ -325,6 +364,53 @@ export async function update(
       {
         $addFields: {
           _lbRankSort: lbWindowSortKeyExpr(key),
+          _normalizedGeocode: {
+            $let: {
+              vars: {
+                g: {
+                  $toUpper: { $trim: { input: { $ifNull: ["$geocode", ""] } } },
+                },
+              },
+              in: {
+                $cond: [{ $ne: ["$$g", ""] }, "$$g", "__unknown"],
+              },
+            },
+          },
+          _regionCode: {
+            $let: {
+              vars: {
+                firstDigit: {
+                  $ifNull: [
+                    {
+                      $getField: {
+                        field: "match",
+                        input: {
+                          $regexFind: {
+                            input: { $ifNull: ["$geocode", ""] },
+                            regex: "[0-9]",
+                          },
+                        },
+                      },
+                    },
+                    "",
+                  ],
+                },
+              },
+              in: {
+                $cond: [
+                  { $eq: ["$$firstDigit", ""] },
+                  "__unknown",
+                  {
+                    $cond: [
+                      { $eq: ["$$firstDigit", "0"] },
+                      "10",
+                      "$$firstDigit",
+                    ],
+                  },
+                ],
+              },
+            },
+          },
         },
       },
       {
@@ -336,9 +422,29 @@ export async function update(
         },
       },
       {
+        $setWindowFields: {
+          partitionBy: "$_regionCode",
+          sortBy: { _lbRankSort: 1 },
+          output: {
+            regionRank: { $documentNumber: {} },
+          },
+        },
+      },
+      {
+        $setWindowFields: {
+          partitionBy: "$_normalizedGeocode",
+          sortBy: { _lbRankSort: 1 },
+          output: {
+            sectionRank: { $documentNumber: {} },
+          },
+        },
+      },
+      {
         $project: {
           _id: 0,
           rank: 1,
+          regionRank: 1,
+          sectionRank: 1,
           [`${key}.wpm`]: 1,
           [`${key}.acc`]: 1,
           [`${key}.raw`]: 1,
@@ -346,6 +452,9 @@ export async function update(
           [`${key}.timestamp`]: 1,
           uid: 1,
           name: 1,
+          firstName: 1,
+          lastName: 1,
+          geocode: 1,
           discordId: 1,
           discordAvatar: 1,
           inventory: 1,
@@ -355,8 +464,35 @@ export async function update(
 
       {
         $addFields: {
+          _leaderboardDisplayName: {
+            $let: {
+              vars: {
+                fullName: {
+                  $trim: {
+                    input: {
+                      $concat: [
+                        { $ifNull: ["$firstName", ""] },
+                        " ",
+                        { $ifNull: ["$lastName", ""] },
+                      ],
+                    },
+                  },
+                },
+              },
+              in: {
+                $cond: [
+                  { $ne: ["$$fullName", ""] },
+                  "$$fullName",
+                  { $ifNull: ["$name", "$uid"] },
+                ],
+              },
+            },
+          },
           "user.uid": "$uid",
-          "user.name": "$name",
+          "user.name": "$_leaderboardDisplayName",
+          "user.firstName": { $ifNull: ["$firstName", "$$REMOVE"] },
+          "user.lastName": { $ifNull: ["$lastName", "$$REMOVE"] },
+          "user.geocode": { $ifNull: ["$geocode", "$$REMOVE"] },
           "user.discordId": { $ifNull: ["$discordId", "$$REMOVE"] },
           "user.discordAvatar": { $ifNull: ["$discordAvatar", "$$REMOVE"] },
           [`${key}.consistency`]: {
@@ -364,6 +500,20 @@ export async function update(
           },
           calculated: {
             rank: "$rank",
+            regionRank: {
+              $cond: [
+                { $ne: ["$_regionCode", "__unknown"] },
+                "$regionRank",
+                "$$REMOVE",
+              ],
+            },
+            sectionRank: {
+              $cond: [
+                { $ne: ["$_normalizedGeocode", "__unknown"] },
+                "$sectionRank",
+                "$$REMOVE",
+              ],
+            },
             badgeId: {
               $let: {
                 vars: {

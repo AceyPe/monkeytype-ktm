@@ -14,10 +14,36 @@ import {
 import MonkeyError from "./error";
 import { Mode, Mode2 } from "@monkeytype/schemas/shared";
 import { getCurrentDayTimestamp } from "@monkeytype/util/date-and-time";
+import { getUsersCollection } from "../dal/user";
 
 const dailyLeaderboardNamespace = "monkeytype:dailyleaderboard";
 const scoresNamespace = `${dailyLeaderboardNamespace}:scores`;
 const resultsNamespace = `${dailyLeaderboardNamespace}:results`;
+
+type LeaderboardIdentityFields = {
+  uid: string;
+  firstName?: string;
+  lastName?: string;
+  geocode?: string;
+};
+
+type RankMaps = {
+  regionRankByUid: Map<string, number>;
+  sectionRankByUid: Map<string, number>;
+};
+
+function normalizeGeocode(geocode?: string): string | null {
+  if (geocode === undefined) return null;
+  const normalized = geocode.trim().toUpperCase();
+  return normalized === "" ? null : normalized;
+}
+
+function getRegionCodeFromGeocode(geocode?: string): string | null {
+  const firstDigit = geocode?.match(/\d/)?.[0];
+  if (firstDigit === undefined) return null;
+  if (firstDigit === "0") return "10";
+  return firstDigit;
+}
 
 export class DailyLeaderboard {
   private leaderboardResultsKeyName: string;
@@ -186,6 +212,16 @@ export class DailyLeaderboard {
       },
     );
 
+    resultsWithRanks = await hydrateLeaderboardIdentityFields(resultsWithRanks);
+    const rankMaps = await this.buildGlobalRegionAndSectionRanks(
+      dailyLeaderboardsConfig,
+    );
+    resultsWithRanks = resultsWithRanks.map((entry) => ({
+      ...entry,
+      regionRank: rankMaps.regionRankByUid.get(entry.uid),
+      sectionRank: rankMaps.sectionRankByUid.get(entry.uid),
+    }));
+
     if (!premiumFeaturesEnabled) {
       resultsWithRanks = resultsWithRanks.map((it) => omit(it, ["isPremium"]));
     }
@@ -223,13 +259,25 @@ export class DailyLeaderboard {
     }
 
     try {
-      return {
+      const baseEntry: LeaderboardEntry = {
         ...parseJsonWithSchema(
           result ?? "null",
           RedisDailyLeaderboardEntrySchema,
         ),
         rank: rank + 1,
         friendsRank: friendsRank !== undefined ? friendsRank + 1 : undefined,
+      };
+      const [hydratedEntry] = await hydrateLeaderboardIdentityFields([
+        baseEntry,
+      ]);
+      const entry = hydratedEntry ?? baseEntry;
+      const rankMaps = await this.buildGlobalRegionAndSectionRanks(
+        dailyLeaderboardsConfig,
+      );
+      return {
+        ...entry,
+        regionRank: rankMaps.regionRankByUid.get(entry.uid),
+        sectionRank: rankMaps.sectionRankByUid.get(entry.uid),
       };
     } catch (error) {
       throw new Error(
@@ -239,6 +287,96 @@ export class DailyLeaderboard {
       );
     }
   }
+
+  private async buildGlobalRegionAndSectionRanks(
+    dailyLeaderboardsConfig: Configuration["dailyLeaderboards"],
+  ): Promise<RankMaps> {
+    const connection = RedisClient.getConnection();
+    if (!connection || !dailyLeaderboardsConfig.enabled) {
+      return {
+        regionRankByUid: new Map<string, number>(),
+        sectionRankByUid: new Map<string, number>(),
+      };
+    }
+
+    const { leaderboardScoresKey, leaderboardResultsKey } =
+      this.getTodaysLeaderboardKeys();
+    const maxRank = Math.max(0, dailyLeaderboardsConfig.maxResults - 1);
+    const [results] = await connection.getResults(
+      2,
+      leaderboardScoresKey,
+      leaderboardResultsKey,
+      0,
+      maxRank,
+      "false",
+      "",
+    );
+
+    if (results === undefined || results.length === 0) {
+      return {
+        regionRankByUid: new Map<string, number>(),
+        sectionRankByUid: new Map<string, number>(),
+      };
+    }
+
+    const parsedEntries = results.map((resultJSON, index) => ({
+      ...parseJsonWithSchema(resultJSON, RedisDailyLeaderboardEntrySchema),
+      rank: index + 1,
+    }));
+    const hydratedEntries =
+      await hydrateLeaderboardIdentityFields(parsedEntries);
+
+    const regionCounter = new Map<string, number>();
+    const sectionCounter = new Map<string, number>();
+    const regionRankByUid = new Map<string, number>();
+    const sectionRankByUid = new Map<string, number>();
+
+    for (const entry of hydratedEntries) {
+      const regionCode = getRegionCodeFromGeocode(entry.geocode);
+      if (regionCode !== null) {
+        const nextRegionRank = (regionCounter.get(regionCode) ?? 0) + 1;
+        regionCounter.set(regionCode, nextRegionRank);
+        regionRankByUid.set(entry.uid, nextRegionRank);
+      }
+
+      const sectionCode = normalizeGeocode(entry.geocode);
+      if (sectionCode !== null) {
+        const nextSectionRank = (sectionCounter.get(sectionCode) ?? 0) + 1;
+        sectionCounter.set(sectionCode, nextSectionRank);
+        sectionRankByUid.set(entry.uid, nextSectionRank);
+      }
+    }
+
+    return { regionRankByUid, sectionRankByUid };
+  }
+}
+
+async function hydrateLeaderboardIdentityFields(
+  entries: LeaderboardEntry[],
+): Promise<LeaderboardEntry[]> {
+  if (entries.length === 0) return entries;
+
+  const users = await getUsersCollection()
+    .find(
+      { uid: { $in: entries.map((it) => it.uid) } },
+      { projection: { uid: 1, firstName: 1, lastName: 1, geocode: 1 } },
+    )
+    .toArray();
+
+  const byUid = new Map<string, LeaderboardIdentityFields>(
+    users.map((it) => [it.uid, it]),
+  );
+
+  return entries.map((entry) => {
+    const identity = byUid.get(entry.uid);
+    if (identity === undefined) return entry;
+    return {
+      ...entry,
+      firstName: identity.firstName ?? entry.firstName,
+      lastName: identity.lastName ?? entry.lastName,
+      geocode: identity.geocode ?? entry.geocode,
+    };
+  });
 }
 
 export async function purgeUserFromDailyLeaderboards(

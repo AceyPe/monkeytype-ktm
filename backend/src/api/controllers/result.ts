@@ -65,6 +65,15 @@ import { getFunbox, checkCompatibility } from "@monkeytype/funbox";
 import { tryCatch } from "@monkeytype/util/trycatch";
 import { getCachedConfiguration } from "../../init/configuration";
 
+function getLeaderboardDisplayName(
+  user: Pick<UserDAL.DBUser, "uid" | "name" | "firstName" | "lastName">,
+): string {
+  const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+  if (fullName !== "") return fullName;
+  if (user.name !== undefined && user.name !== "") return user.name;
+  return user.uid;
+}
+
 try {
   if (!anticheatImplemented()) throw new Error("undefined");
   Logger.success("Anticheat module loaded");
@@ -525,6 +534,7 @@ export async function addResult(
     (await UserDAL.checkIfUserIsPremium(user.uid, user)) || undefined;
 
   if (dailyLeaderboard && validResultCriteria) {
+    const leaderboardName = getLeaderboardDisplayName(user);
     incrementDailyLeaderboard(
       completedEvent.mode,
       completedEvent.mode2,
@@ -532,7 +542,10 @@ export async function addResult(
     );
     dailyLeaderboardRank = await dailyLeaderboard.addResult(
       {
-        name: user.name,
+        name: leaderboardName,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        geocode: user.geocode,
         wpm: completedEvent.wpm,
         raw: completedEvent.rawWpm,
         acc: completedEvent.acc,
@@ -615,12 +628,16 @@ export async function addResult(
     weeklyXpLeaderboardConfig,
   );
   if (userEligibleForLeaderboard && xpGained.xp > 0 && weeklyXpLeaderboard) {
+    const leaderboardName = getLeaderboardDisplayName(user);
     weeklyXpLeaderboardRank = await weeklyXpLeaderboard.addResult(
       weeklyXpLeaderboardConfig,
       {
         entry: {
           uid,
-          name: user.name,
+          name: leaderboardName,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          geocode: user.geocode,
           discordAvatar: user.discordAvatar,
           discordId: user.discordId,
           badgeId: selectedBadgeId,

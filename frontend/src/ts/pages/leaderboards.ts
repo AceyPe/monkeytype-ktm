@@ -9,7 +9,11 @@ import { capitalizeFirstLetter } from "../utils/strings";
 import Ape from "../ape";
 import * as Notifications from "../elements/notifications";
 import Format from "../utils/format";
-import { getAuthenticatedUser, isAuthenticated } from "../firebase";
+import {
+  getAuthenticatedUser,
+  getAvatarUrlFromStoredTokenGeocode,
+  isAuthenticated,
+} from "../firebase";
 import * as DB from "../db";
 import {
   endOfDay,
@@ -44,11 +48,37 @@ import { isSafeNumber } from "@monkeytype/util/numbers";
 import { Mode, Mode2, ModeSchema } from "@monkeytype/schemas/shared";
 import * as ServerConfiguration from "../ape/server-configuration";
 import { getAvatarElement } from "../utils/discord-avatar";
+import { getSectionNameByGeocode } from "../constants/sections-by-geocode";
 
 const LeaderboardTypeSchema = z.enum(["allTime", "weekly", "daily"]);
 type LeaderboardType = z.infer<typeof LeaderboardTypeSchema>;
 const utcDateFormat = "EEEE, do MMMM yyyy";
 const localDateFormat = "EEEE, do MMMM yyyy HH:mm";
+
+function getRegionNumberFromGeocode(geocode?: string): number | null {
+  if (geocode === undefined || geocode.trim() === "") return null;
+  const firstDigit = geocode.match(/\d/)?.[0];
+  if (firstDigit === undefined) return null;
+  const n = Number(firstDigit);
+  if (!Number.isInteger(n) || n < 0 || n > 9) return null;
+  return n === 0 ? 10 : n;
+}
+
+function getRegionCellHtml(geocode?: string): string {
+  const regionNumber = getRegionNumberFromGeocode(geocode);
+  if (regionNumber === null) return "-";
+  return `<div class="regionCell"><span>${regionNumber}</span></div>`;
+}
+
+function getRegionAvatarUrl(geocode?: string): string | undefined {
+  const regionNumber = getRegionNumberFromGeocode(geocode);
+  if (regionNumber === null) return undefined;
+  return `/images/regons/${regionNumber}.webp`;
+}
+
+function getSectionCellText(geocode?: string): string {
+  return getSectionNameByGeocode(geocode) ?? "-";
+}
 
 type AllTimeState = {
   type: "allTime";
@@ -431,6 +461,15 @@ function updateJumpButtons(): void {
 }
 
 function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
+  const displayName =
+    [entry.firstName, entry.lastName]
+      .filter((it) => typeof it === "string" && it !== "")
+      .join(" ")
+      .trim() ||
+    entry.name ||
+    entry.uid;
+  const regionCellHtml = getRegionCellHtml(entry.geocode);
+  const sectionCellText = getSectionCellText(entry.geocode);
   const formatted = {
     wpm: Format.typingSpeed(entry.wpm, { showDecimalPlaces: true }),
     acc: Format.percentage(entry.acc, { showDecimalPlaces: true }),
@@ -451,7 +490,7 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
           <div class="avatarPlaceholder"></div>
           <a href="${location.origin}/profile/${
             entry.uid
-          }?isUid" class="entryName" uid=${entry.uid} router-link>${entry.name}</a>
+          }?isUid" class="entryName" uid=${entry.uid} router-link>${displayName}</a>
           <div class="flagsAndBadge">
             ${getHtmlByUserFlags({
               ...entry,
@@ -467,7 +506,6 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
       ${formatted.wpm}
         <div class="sub">${formatted.acc}</div>
       </td>
-      </td>
       <td class="stat narrow rawAndConsistency">
       ${formatted.raw}
         <div class="sub">${formatted.con}</div>
@@ -480,11 +518,22 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
         entry.timestamp,
         "dd MMM yyyy",
       )}<div class="sub">${format(entry.timestamp, "HH:mm")}</div></td>
+      <td class="region">${regionCellHtml}</td>
+      <td class="section">${sectionCellText}</td>
+      <td class="stat">${formatRank(entry.rank)}</td>
+      <td class="stat">${formatRank(entry.regionRank)}</td>
+      <td class="stat">${formatRank(entry.sectionRank)}</td>
     
   `;
+  const avatarEntry = {
+    ...entry,
+    avatarUrl:
+      getRegionAvatarUrl(entry.geocode) ??
+      (me ? (getAvatarUrlFromStoredTokenGeocode() ?? undefined) : undefined),
+  };
   element
     .querySelector(".avatarPlaceholder")
-    ?.replaceWith(getAvatarElement(entry));
+    ?.replaceWith(getAvatarElement(avatarEntry));
   return element;
 }
 
@@ -492,9 +541,17 @@ function buildWeeklyTableRow(
   entry: XpLeaderboardEntry,
   me = false,
 ): HTMLElement {
+  const displayName =
+    [entry.firstName, entry.lastName]
+      .filter((it) => typeof it === "string" && it !== "")
+      .join(" ")
+      .trim() ||
+    entry.name ||
+    entry.uid;
   const activeDiff = formatDistanceToNow(entry.lastActivityTimestamp, {
     addSuffix: true,
   });
+  const sectionCellText = getSectionCellText(entry.geocode);
   const element = document.createElement("tr");
   if (me) {
     element.classList.add("me");
@@ -508,7 +565,7 @@ function buildWeeklyTableRow(
           <div class="avatarPlaceholder"></div>
           <a href="${location.origin}/profile/${
             entry.uid
-          }?isUid" class="entryName" uid=${entry.uid} router-link>${entry.name}</a>
+          }?isUid" class="entryName" uid=${entry.uid} router-link>${displayName}</a>
           <div class="flagsAndBadge">
             ${getHtmlByUserFlags({
               ...entry,
@@ -536,7 +593,7 @@ function buildWeeklyTableRow(
         true,
         true,
         ":",
-      )}</td>
+      )}</div>
       </td>
       <td class="date" data-balloon-pos="left"  aria-label="${activeDiff}">
         ${format(entry.lastActivityTimestamp, "dd MMM yyyy")}
@@ -544,11 +601,18 @@ function buildWeeklyTableRow(
           ${format(entry.lastActivityTimestamp, "HH:mm")}
         </div>
       </td>
+      <td class="section">${sectionCellText}</td>
     </tr>
   `;
+  const avatarEntry = {
+    ...entry,
+    avatarUrl:
+      getRegionAvatarUrl(entry.geocode) ??
+      (me ? (getAvatarUrlFromStoredTokenGeocode() ?? undefined) : undefined),
+  };
   element
     .querySelector(".avatarPlaceholder")
-    ?.replaceWith(getAvatarElement(entry));
+    ?.replaceWith(getAvatarElement(avatarEntry));
   return element;
 }
 
@@ -572,7 +636,7 @@ function fillTable(): void {
   }
 
   if (state.data === null || state.data.length === 0) {
-    table.append(`<tr><td colspan="7" class="empty">No data</td></tr>`);
+    table.append(`<tr><td colspan="16" class="empty">No data</td></tr>`);
     $(".page.pageLeaderboards table").removeClass("hidden");
     return;
   }

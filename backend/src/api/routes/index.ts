@@ -26,7 +26,7 @@ import {
   Response,
   static as expressStatic,
 } from "express";
-import { isDevEnvironment } from "../../utils/misc";
+import { isDevEnvironment, getFrontendUrl } from "../../utils/misc";
 import { getLiveConfiguration } from "../../init/configuration";
 import Logger from "../../utils/logger";
 import { createExpressEndpoints, initServer } from "@ts-rest/express";
@@ -36,8 +36,9 @@ import { authenticateTsRestRequest } from "../../middlewares/auth";
 import { rateLimitRequest } from "../../middlewares/rate-limit";
 import { verifyPermissions } from "../../middlewares/permission";
 import { verifyRequiredConfiguration } from "../../middlewares/configuration";
-import { ExpressRequestWithContext } from "../types";
+import { ExpressRequestWithContext, TsRestRequest } from "../types";
 import * as SamlUtils from "../../utils/saml";
+import * as UserController from "../controllers/user";
 
 const pathOverride = process.env["API_PATH_OVERRIDE"];
 const BASE_ROUTE = pathOverride !== undefined ? `/${pathOverride}` : "";
@@ -48,6 +49,7 @@ const API_ROUTE_MAP = {
 };
 
 const s = initServer();
+
 const router = s.router(contract, {
   admin,
   apeKeys,
@@ -200,6 +202,37 @@ function applyApiRoutes(app: Application): void {
     } catch (error) {
       next(error);
     }
+  });
+
+  app.post(
+    `${BASE_ROUTE}/users/acs`,
+    async (req: ExpressRequestWithContext, res, next) => {
+      try {
+        const acsResponse = await UserController.acs({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          body: req.body,
+          query: undefined,
+          params: undefined,
+          raw: req as unknown as TsRestRequest,
+          ctx: req.ctx,
+        });
+
+        const token = acsResponse.data?.token;
+        if (token === undefined || token === "") {
+          throw new Error("SAML token missing from ACS response");
+        }
+
+        const frontendUrl = getFrontendUrl().replace(/\/$/, "");
+        const tokenFragment = `mt_auth_token=${encodeURIComponent(token)}`;
+        res.redirect(302, `${frontendUrl}/account#${tokenFragment}`);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  app.post(`${BASE_ROUTE}/users/logout`, (_req, res) => {
+    res.status(200).json(new MonkeyResponse("Logged out", null));
   });
 
   for (const [route, router] of Object.entries(API_ROUTE_MAP)) {

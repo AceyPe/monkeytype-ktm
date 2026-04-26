@@ -2,7 +2,7 @@ import * as Misc from "./utils/misc";
 import * as MonkeyPower from "./elements/monkey-power";
 import * as MerchBanner from "./elements/merch-banner";
 import * as ConnectionState from "./states/connection";
-import * as AccountButton from "./elements/account-button";
+// import * as AccountButton from "./elements/account-button";
 //@ts-expect-error no types for this package
 import Konami from "konami";
 import * as ServerConfiguration from "./ape/server-configuration";
@@ -13,7 +13,6 @@ import { animate } from "animejs";
 
 $(async (): Promise<void> => {
   await loadPromise;
-  await authPromise;
 
   //this line goes back to pretty much the beginning of the project and im pretty sure its here
   //to make sure the initial theme application doesnt animate the background color
@@ -30,12 +29,11 @@ $(async (): Promise<void> => {
     opacity: [0, 1],
     duration: Misc.applyReducedMotion(250),
   });
+  await authPromise;
   if (ConnectionState.get()) {
     void ServerConfiguration.sync().then(() => {
       if (!ServerConfiguration.get()?.users.signUp) {
-        AccountButton.hide();
         $(".register").addClass("hidden");
-        $(".login").addClass("hidden");
         $(".disabledNotification").removeClass("hidden");
       }
       if (!ServerConfiguration.get()?.connections.enabled) {

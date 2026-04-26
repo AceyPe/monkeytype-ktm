@@ -40,6 +40,47 @@ import { Connection } from "@monkeytype/schemas/connections";
 let dbSnapshot: Snapshot | undefined;
 const firstDayOfTheWeek = getFirstDayOfTheWeek();
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function getBodyData(body: unknown): unknown {
+  if (!isRecord(body)) return undefined;
+  return body["data"];
+}
+
+type SnapshotUserPayload = {
+  name?: unknown;
+  email?: unknown;
+  uid?: unknown;
+  personalBests?: unknown;
+  banned?: unknown;
+  lbOptOut?: unknown;
+  verified?: unknown;
+  discordId?: unknown;
+  discordAvatar?: unknown;
+  needsToChangeName?: unknown;
+  timeTyping?: unknown;
+  startedTests?: unknown;
+  completedTests?: unknown;
+  quoteMod?: unknown;
+  favoriteQuotes?: unknown;
+  quoteRatings?: unknown;
+  profileDetails?: unknown;
+  addedAt?: unknown;
+  inventory?: unknown;
+  xp?: unknown;
+  inboxUnreadSize?: unknown;
+  streak?: unknown;
+  resultFilterPresets?: unknown;
+  isPremium?: unknown;
+  allTimeLbs?: unknown;
+  testActivity?: unknown;
+  lbMemory?: unknown;
+  customThemes?: unknown;
+  tags?: unknown;
+};
+
 export class SnapshotInitError extends Error {
   constructor(
     message: string,
@@ -113,99 +154,136 @@ export async function initSnapshot(): Promise<Snapshot | false> {
         userResponse.status,
       );
     }
-    if (configResponse.status !== 200) {
-      throw new SnapshotInitError(
-        `${configResponse.body.message} (config)`,
-        configResponse.status,
-      );
-    }
-    if (presetsResponse.status !== 200) {
-      throw new SnapshotInitError(
-        `${presetsResponse.body.message} (presets)`,
-        presetsResponse.status,
-      );
-    }
-    if (connectionsResponse.status !== 200) {
-      throw new SnapshotInitError(
-        `${connectionsResponse.body.message} (connections)`,
-        connectionsResponse.status,
-      );
-    }
+    const userData = getBodyData(userResponse.body);
+    const configData = getBodyData(configResponse.body);
+    const presetsData = getBodyData(presetsResponse.body);
+    const connectionsData = getBodyData(connectionsResponse.body);
 
-    const userData = userResponse.body.data;
-    const configData = configResponse.body.data;
-    const presetsData = presetsResponse.body.data;
-    const connectionsData = connectionsResponse.body.data;
-
-    if (userData === null) {
+    if (!isRecord(userData)) {
       throw new SnapshotInitError(
-        `Request was successful but user data is null`,
+        `Request was successful but user data is invalid`,
         200,
       );
     }
+    const safeUser = userData as SnapshotUserPayload;
 
-    if (configData !== null && "config" in configData) {
-      throw new Error(
-        "Config data is not in the correct format. Please refresh the page or contact support.",
-      );
+    if (configResponse.status !== 200) {
+      console.warn("Snapshot init: config request failed, using defaults");
+    }
+    if (presetsResponse.status !== 200) {
+      console.warn("Snapshot init: presets request failed, using defaults");
+    }
+    if (connectionsResponse.status !== 200) {
+      console.warn("Snapshot init: connections request failed, using defaults");
     }
 
-    snap.name = userData.name;
-    snap.personalBests = userData.personalBests;
-    snap.personalBests ??= {
-      time: {},
-      words: {},
-      quote: {},
-      zen: {},
-      custom: {},
-    };
+    const authenticatedUser = getAuthenticatedUser();
+    snap.name =
+      typeof safeUser.name === "string"
+        ? safeUser.name
+        : (authenticatedUser?.uid ?? "");
+    snap.email =
+      typeof safeUser.email === "string"
+        ? safeUser.email
+        : (authenticatedUser?.email ?? "");
+    snap.uid =
+      typeof safeUser.uid === "string"
+        ? safeUser.uid
+        : (authenticatedUser?.uid ?? "");
+    if (isRecord(safeUser.personalBests)) {
+      snap.personalBests = safeUser.personalBests as PersonalBests;
+    }
 
     for (const mode of ["time", "words", "quote", "zen", "custom"]) {
       snap.personalBests[mode as keyof PersonalBests] ??= {};
     }
 
-    snap.banned = userData.banned;
-    snap.lbOptOut = userData.lbOptOut;
-    snap.verified = userData.verified;
-    snap.discordId = userData.discordId;
-    snap.discordAvatar = userData.discordAvatar;
-    snap.needsToChangeName = userData.needsToChangeName;
+    snap.banned = safeUser.banned as Snapshot["banned"];
+    snap.lbOptOut = safeUser.lbOptOut as Snapshot["lbOptOut"];
+    snap.verified = safeUser.verified as Snapshot["verified"];
+    snap.discordId = safeUser.discordId as Snapshot["discordId"];
+    snap.discordAvatar = safeUser.discordAvatar as Snapshot["discordAvatar"];
+    snap.needsToChangeName = safeUser.needsToChangeName as
+      | Snapshot["needsToChangeName"]
+      | undefined;
     snap.typingStats = {
-      timeTyping: userData.timeTyping ?? 0,
-      startedTests: userData.startedTests ?? 0,
-      completedTests: userData.completedTests ?? 0,
+      timeTyping:
+        typeof safeUser.timeTyping === "number" ? safeUser.timeTyping : 0,
+      startedTests:
+        typeof safeUser.startedTests === "number" ? safeUser.startedTests : 0,
+      completedTests:
+        typeof safeUser.completedTests === "number"
+          ? safeUser.completedTests
+          : 0,
     };
-    snap.quoteMod = userData.quoteMod;
-    snap.favoriteQuotes = userData.favoriteQuotes ?? {};
-    snap.quoteRatings = userData.quoteRatings;
-    snap.details = userData.profileDetails;
-    snap.addedAt = userData.addedAt;
-    snap.inventory = userData.inventory;
-    snap.xp = userData.xp ?? 0;
-    snap.inboxUnreadSize = userData.inboxUnreadSize ?? 0;
-    snap.streak = userData?.streak?.length ?? 0;
-    snap.maxStreak = userData?.streak?.maxLength ?? 0;
-    snap.filterPresets = userData.resultFilterPresets ?? [];
-    snap.isPremium = userData?.isPremium ?? false;
-    snap.allTimeLbs = userData.allTimeLbs;
+    snap.quoteMod = safeUser.quoteMod as Snapshot["quoteMod"];
+    snap.favoriteQuotes = isRecord(safeUser.favoriteQuotes)
+      ? (safeUser.favoriteQuotes as Snapshot["favoriteQuotes"])
+      : {};
+    snap.quoteRatings = safeUser.quoteRatings as Snapshot["quoteRatings"];
+    snap.details = isRecord(safeUser.profileDetails)
+      ? (safeUser.profileDetails as Snapshot["details"])
+      : undefined;
+    snap.addedAt = typeof safeUser.addedAt === "number" ? safeUser.addedAt : 0;
+    snap.inventory = isRecord(safeUser.inventory)
+      ? (safeUser.inventory as Snapshot["inventory"])
+      : undefined;
+    snap.xp = typeof safeUser.xp === "number" ? safeUser.xp : 0;
+    snap.inboxUnreadSize =
+      typeof safeUser.inboxUnreadSize === "number"
+        ? safeUser.inboxUnreadSize
+        : 0;
+    snap.streak = isRecord(safeUser.streak)
+      ? typeof safeUser.streak["length"] === "number"
+        ? (safeUser.streak["length"] as number)
+        : 0
+      : 0;
+    snap.maxStreak = isRecord(safeUser.streak)
+      ? typeof safeUser.streak["maxLength"] === "number"
+        ? (safeUser.streak["maxLength"] as number)
+        : 0
+      : 0;
+    snap.filterPresets = Array.isArray(safeUser.resultFilterPresets)
+      ? (safeUser.resultFilterPresets as Snapshot["filterPresets"])
+      : [];
+    snap.isPremium = safeUser.isPremium === true;
+    if (isRecord(safeUser.allTimeLbs)) {
+      snap.allTimeLbs = safeUser.allTimeLbs as Snapshot["allTimeLbs"];
+    }
 
-    if (userData.testActivity !== undefined) {
+    if (
+      isRecord(safeUser.testActivity) &&
+      Array.isArray(safeUser.testActivity["testsByDays"])
+    ) {
       snap.testActivity = new ModifiableTestActivityCalendar(
-        userData.testActivity.testsByDays,
-        new Date(userData.testActivity.lastDay),
+        safeUser.testActivity["testsByDays"] as number[],
+        new Date(
+          typeof safeUser.testActivity["lastDay"] === "number"
+            ? (safeUser.testActivity["lastDay"] as number)
+            : Date.now(),
+        ),
         firstDayOfTheWeek,
       );
     }
 
-    const hourOffset = userData?.streak?.hourOffset;
+    const hourOffset =
+      isRecord(safeUser.streak) &&
+      typeof safeUser.streak["hourOffset"] === "number"
+        ? (safeUser.streak["hourOffset"] as number)
+        : undefined;
     snap.streakHourOffset =
       hourOffset === undefined || hourOffset === null ? undefined : hourOffset;
 
-    if (userData.lbMemory !== undefined) {
-      snap.lbMemory = userData.lbMemory;
+    if (isRecord(safeUser.lbMemory)) {
+      snap.lbMemory = safeUser.lbMemory as Snapshot["lbMemory"];
     }
 
-    if (configData === undefined || configData === null) {
+    if (
+      configResponse.status !== 200 ||
+      configData === undefined ||
+      configData === null ||
+      (isRecord(configData) && "config" in configData)
+    ) {
       snap.config = {
         ...getDefaultConfig(),
       };
@@ -213,7 +291,9 @@ export async function initSnapshot(): Promise<Snapshot | false> {
       snap.config = migrateConfig(configData);
     }
 
-    snap.customThemes = userData.customThemes ?? [];
+    snap.customThemes = Array.isArray(safeUser.customThemes)
+      ? (safeUser.customThemes as Snapshot["customThemes"])
+      : [];
 
     // const userDataTags: MonkeyTypes.UserTagWithDisplay[] = userData.tags ?? [];
 
@@ -234,11 +314,21 @@ export async function initSnapshot(): Promise<Snapshot | false> {
 
     // snap.tags = userDataTags;
 
-    snap.tags =
-      userData.tags?.map((tag) => ({
-        ...tag,
-        display: tag.name.replaceAll("_", " "),
-      })) ?? [];
+    const rawTags = Array.isArray(safeUser.tags)
+      ? (safeUser.tags as unknown[])
+      : [];
+    snap.tags = rawTags
+      .map((tag) => {
+        if (!isRecord(tag)) return null;
+        const name = typeof tag["name"] === "string" ? tag["name"] : "";
+        if (name === "") return null;
+        return {
+          ...tag,
+          name,
+          display: name.replaceAll("_", " "),
+        } as SnapshotUserTag;
+      })
+      .filter((tag): tag is SnapshotUserTag => tag !== null);
 
     snap.tags = snap.tags?.sort((a, b) => {
       if (a.name > b.name) {
@@ -250,13 +340,22 @@ export async function initSnapshot(): Promise<Snapshot | false> {
       }
     });
 
-    if (presetsData !== undefined && presetsData !== null) {
-      const presetsWithDisplay = presetsData.map((preset) => {
-        return {
-          ...preset,
-          display: preset.name.replace(/_/gi, " "),
-        };
-      }) as SnapshotPreset[];
+    if (presetsResponse.status === 200 && Array.isArray(presetsData)) {
+      const presetsWithDisplay = (presetsData as unknown[])
+        .map((preset) => {
+          if (!isRecord(preset)) return null;
+          const name =
+            typeof preset["name"] === "string"
+              ? (preset["name"] as string)
+              : "";
+          if (name === "") return null;
+          return {
+            ...preset,
+            name,
+            display: name.replace(/_/gi, " "),
+          } as SnapshotPreset;
+        })
+        .filter((preset): preset is SnapshotPreset => preset !== null);
       snap.presets = presetsWithDisplay;
 
       snap.presets = snap.presets?.sort(
@@ -1121,11 +1220,10 @@ export function mergeConnections(connections: Connection[]): void {
   setSnapshot(snapshot);
 }
 
-function convertConnections(
-  connectionsData: Connection[],
-): Snapshot["connections"] {
+function convertConnections(connectionsData: unknown): Snapshot["connections"] {
+  if (!Array.isArray(connectionsData)) return {};
   return Object.fromEntries(
-    connectionsData.map((connection) => {
+    (connectionsData as Connection[]).map((connection) => {
       const isMyRequest =
         getAuthenticatedUser()?.uid === connection.initiatorUid;
 

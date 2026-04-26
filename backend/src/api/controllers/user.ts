@@ -77,6 +77,7 @@ import {
   RemoveResultFilterPresetPathParams,
   ReportUserRequest,
   SamlInitiateResponse,
+  SessionResponse,
   SetStreakHourOffsetRequest,
   TagIdPathParams,
   UpdateEmailRequest,
@@ -118,6 +119,26 @@ export async function samlInitiate(
   return new MonkeyResponse("SAML SSO URL generated", { url });
 }
 
+export async function getSession(req: MonkeyRequest): Promise<SessionResponse> {
+  const decodedToken = req.ctx.decodedToken;
+  if (decodedToken.type !== "Bearer" || decodedToken.uid === "") {
+    return new MonkeyResponse("No active session", {
+      authenticated: false,
+      user: null,
+    });
+  }
+  return new MonkeyResponse("Session is active", {
+    authenticated: true,
+    user: {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      firstName: decodedToken.firstName,
+      lastName: decodedToken.lastName,
+      avatarUrl: decodedToken.avatarUrl,
+    },
+  });
+}
+
 const SAML_IDP_DEBUG_SEPARATOR = "*****************************";
 
 function logSamlIdpDebugPayload(label: string, payload: unknown): void {
@@ -136,6 +157,23 @@ function logSamlIdpDebugPayload(label: string, payload: unknown): void {
  */
 function generateUidFromEmail(email: string): string {
   return crypto.createHash("sha256").update(email.toLowerCase()).digest("hex");
+}
+
+function getProfileString(
+  profile: SamlUtils.SamlProfile,
+  keys: string[],
+): string | undefined {
+  const attributes =
+    typeof profile["attributes"] === "object" && profile["attributes"] !== null
+      ? (profile["attributes"] as Record<string, unknown>)
+      : undefined;
+  for (const key of keys) {
+    const value = profile[key] ?? attributes?.[key];
+    if (typeof value === "string" && value.trim() !== "") {
+      return value;
+    }
+  }
+  return undefined;
 }
 
 async function generateAvailableUsername(
@@ -169,14 +207,10 @@ async function generateAvailableUsername(
 // }
 
 async function findOrCreateUser(
+  uid: string,
   normalizedEmail: string,
   emailRaw: string,
-  // firstName: string,
-  // lastName: string,
 ): Promise<string> {
-  // Generate deterministic UID from email
-  const uid = generateUidFromEmail(normalizedEmail);
-
   // Check if user exists in database
   try {
     await UserDAL.getUser(uid, "saml acs check");
@@ -220,21 +254,50 @@ export async function acs(
   const emailRaw =
     profile.email ??
     profile.nameID ??
-    (profile[
-      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-    ] as string | undefined);
-  // const firstName =
-  //   profile.firstName ??
-  //   (profile["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"] as
-  //     | string
-  //     | undefined) ??
-  //   "";
-  // const lastName =
-  //   profile.lastName ??
-  //   (profile["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"] as
-  //     | string
-  //     | undefined) ??
-  //   "";
+    getProfileString(profile, [
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+      "Email",
+      "email",
+      "mail",
+    ]);
+
+  const firstName = getProfileString(profile, [
+    "FirstName",
+    "firstName",
+    "givenName",
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+  ]);
+
+  const lastName = getProfileString(profile, [
+    "LastName",
+    "lastname",
+    "lastName",
+    "sn",
+    "surname",
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
+  ]);
+
+  const geocode = getProfileString(profile, ["geocode", "Geocode"]);
+  const status = getProfileString(profile, ["status", "Status"]);
+  const grade = getProfileString(profile, ["grade", "Grade"]);
+  const ssoid = getProfileString(profile, [
+    "ieeeId",
+    "ieeeid",
+    "ieee_id",
+    "ssoid",
+    "ssoId",
+    "SSOID",
+    "uid",
+    "employeeNumber",
+  ]);
+  const avatarUrl = getProfileString(profile, [
+    "picture",
+    "photo",
+    "photoURL",
+    "avatar",
+    "thumbnailPhoto",
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/picture",
+  ]);
 
   if (emailRaw === undefined || emailRaw === null || emailRaw === "") {
     throw new MonkeyError(400, "Email not found in SAML response");
@@ -243,20 +306,40 @@ export async function acs(
   // Normalize email
   const normalizedEmail = emailRaw.toLowerCase();
 
+  // Prefer IEEE/SAML identifier as uid; fall back to deterministic email hash.
+  const uidFromSaml = (ssoid ?? "").trim();
+  const resolvedUid =
+    uidFromSaml === "" ? generateUidFromEmail(normalizedEmail) : uidFromSaml;
+
   // Find or create user
-  const uid = await findOrCreateUser(
-    normalizedEmail,
-    emailRaw,
-    // firstName,
-    // lastName,
-  );
+  const uid = await findOrCreateUser(resolvedUid, normalizedEmail, emailRaw);
+
+  await UserDAL.updateSamlUserFields(uid, {
+    email: normalizedEmail,
+    geocode,
+    status,
+    ssoid,
+    firstName,
+    lastName,
+    grade,
+  });
 
   // Get user email for JWT token
   const user = await UserDAL.getPartialUser(uid, "saml acs", ["email"]);
   const userEmail = user.email ?? normalizedEmail;
 
   // Generate JWT token with security standards
-  const token = AuthUtil.generateJwtToken(uid, userEmail, "1h");
+  const token = AuthUtil.generateJwtToken(uid, userEmail, "1h", {
+    geocode,
+    status,
+    ssoid,
+    email: userEmail,
+    firstName,
+    lastName,
+    lastname: lastName,
+    grade,
+    avatarUrl,
+  });
 
   return new MonkeyResponse("SAML authentication successful", {
     token,
@@ -1100,12 +1183,13 @@ export async function updateProfile(
   const profileDetailsUpdates: Partial<UserProfileDetails> = {
     bio: sanitizeString(bio),
     keyboard: sanitizeString(keyboard),
-    socialProfiles: Object.fromEntries(
-      Object.entries(socialProfiles ?? {}).map(([key, value]) => [
-        key,
-        sanitizeString(value),
-      ]),
-    ),
+    // Only allow these explicit profile links.
+    // Legacy fields like `page` are intentionally ignored.
+    socialProfiles: {
+      linkedin: sanitizeString(socialProfiles?.linkedin),
+      github: sanitizeString(socialProfiles?.github),
+      website: sanitizeString(socialProfiles?.website),
+    },
     showActivityOnPublicProfile,
   };
 

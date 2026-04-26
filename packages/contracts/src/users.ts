@@ -338,6 +338,22 @@ export const SamlInitiateResponseSchema = responseWithData(
 );
 export type SamlInitiateResponse = z.infer<typeof SamlInitiateResponseSchema>;
 
+export const SessionResponseSchema = responseWithData(
+  z.object({
+    authenticated: z.boolean(),
+    user: z
+      .object({
+        uid: z.string(),
+        email: z.string(),
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        avatarUrl: z.string().optional(),
+      })
+      .nullable(),
+  }),
+);
+export type SessionResponse = z.infer<typeof SessionResponseSchema>;
+
 export const AcsRequestSchema = z.object({
   SAMLResponse: z.string(),
   RelayState: z.string().optional(),
@@ -983,6 +999,19 @@ export const usersContract = c.router(
       metadata: meta({
         authenticationOptions: { isPublic: true },
         rateLimit: "userSamlInitiate",
+      }),
+    },
+    session: {
+      summary: "session",
+      description: "Get current auth session from cookie or bearer token",
+      method: "GET",
+      path: "/session",
+      responses: {
+        200: SessionResponseSchema,
+      },
+      metadata: meta({
+        authenticationOptions: { isPublic: true },
+        rateLimit: "userGet",
       }),
     },
     acs: {

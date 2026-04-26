@@ -5,6 +5,18 @@
     },
     "users": {
       "signUp": false,
+      "xp": {
+        "enabled": true,
+        "funboxBonus": 0,
+        "gainMultiplier": 1,
+        "maxDailyBonus": 0,
+        "minDailyBonus": 0,
+        "streak": {
+          "enabled": false,
+          "maxStreakDays": 0,
+          "maxStreakMultiplier": 0
+        }
+      },
       "profiles": {
         "enabled": false
       }
@@ -96,41 +108,6 @@
         },
         {
           "language": "english",
-          "mode": "words",
-          "mode2": "10"
-        },
-        {
-          "language": "arabic",
-          "mode": "words",
-          "mode2": "10"
-        },
-        {
-          "language": "spanish",
-          "mode": "words",
-          "mode2": "10"
-        },
-        {
-          "language": "german",
-          "mode": "words",
-          "mode2": "10"
-        },
-        {
-          "language": "french",
-          "mode": "words",
-          "mode2": "10"
-        },
-        {
-          "language": "portuguese",
-          "mode": "words",
-          "mode2": "10"
-        },
-        {
-          "language": "indonesian",
-          "mode": "words",
-          "mode2": "10"
-        },
-        {
-          "language": "italian",
           "mode": "words",
           "mode2": "10"
         }

@@ -243,6 +243,45 @@ export async function updateEmail(
   return true;
 }
 
+type SamlUserFields = {
+  email: string;
+  geocode?: string;
+  status?: string;
+  ssoid?: string;
+  firstName?: string;
+  lastName?: string;
+  grade?: string;
+};
+
+export async function updateSamlUserFields(
+  uid: string,
+  fields: SamlUserFields,
+): Promise<void> {
+  const setFields: Partial<
+    Pick<
+      DBUser,
+      | "email"
+      | "geocode"
+      | "status"
+      | "ssoid"
+      | "firstName"
+      | "lastName"
+      | "grade"
+    >
+  > = {
+    email: fields.email,
+  };
+
+  if (fields.geocode !== undefined) setFields.geocode = fields.geocode;
+  if (fields.status !== undefined) setFields.status = fields.status;
+  if (fields.ssoid !== undefined) setFields.ssoid = fields.ssoid;
+  if (fields.firstName !== undefined) setFields.firstName = fields.firstName;
+  if (fields.lastName !== undefined) setFields.lastName = fields.lastName;
+  if (fields.grade !== undefined) setFields.grade = fields.grade;
+
+  await getUsersCollection().updateOne({ uid }, { $set: setFields });
+}
+
 export async function getUser(uid: string, stack: string): Promise<DBUser> {
   const user = await getUsersCollection().findOne({ uid });
   if (!user) throw new MonkeyError(404, "User not found", stack);

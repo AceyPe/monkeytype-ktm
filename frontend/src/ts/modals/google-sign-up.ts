@@ -1,10 +1,5 @@
 import * as Notifications from "../elements/notifications";
-import {
-  sendEmailVerification,
-  updateProfile,
-  UserCredential,
-  getAdditionalUserInfo,
-} from "firebase/auth";
+import type { UserCredential } from "../auth-types";
 import Ape from "../ape";
 import { createErrorMessage } from "../utils/misc";
 import * as LoginPage from "../pages/login";
@@ -17,6 +12,25 @@ import { resetIgnoreAuthCallback } from "../firebase";
 import { ValidatedHtmlInputElement } from "../elements/input-validation";
 import { UserNameSchema } from "@monkeytype/schemas/users";
 import { remoteValidation } from "../utils/remote-validation";
+
+function getAdditionalUserInfo(
+  _credential: UserCredential,
+): { isNewUser: boolean } | null {
+  return { isNewUser: false };
+}
+
+async function updateProfile(
+  _user: UserCredential["user"],
+  _profile: { displayName?: string | null },
+): Promise<void> {
+  await Promise.resolve();
+}
+
+async function sendEmailVerification(
+  _user: UserCredential["user"],
+): Promise<void> {
+  await Promise.resolve();
+}
 
 let signedInUser: UserCredential | undefined = undefined;
 

@@ -205,7 +205,9 @@ async function update(options: UpdateOptions): Promise<void> {
       $(".page.pageProfile .error .message").text(message);
     } else if (response.status === 200) {
       const profile = response.body.data;
-      window.history.replaceState(null, "", `/profile/${profile.name}`);
+      if (window.location.pathname !== "/profile") {
+        window.history.replaceState(null, "", `/profile/${profile.name}`);
+      }
       await Profile.update("profile", profile);
       // this cast is fine because pb tables can handle the partial data inside user profiles
       PbTables.update(profile.personalBests as unknown as PersonalBests, true);
