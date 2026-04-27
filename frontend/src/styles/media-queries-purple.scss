@@ -33,7 +33,9 @@
         .avatarNameBadge .flagsAndBadge .badge .text {
           display: none;
         }
-        tbody td:nth-child(2) {
+        // Keep the name column flexible on small screens.
+        // nth-child(2) is a rank column and forcing it to 100% breaks layout.
+        tbody td:nth-child(3) {
           width: 100%;
         }
       }

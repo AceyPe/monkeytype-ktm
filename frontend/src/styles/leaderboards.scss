@@ -320,6 +320,18 @@
       color: var(--sub-color);
       padding: 1em;
     }
+    table thead tr .mobileLbStats,
+    table tbody tr .mobileLbStats {
+      display: none;
+      width: 0;
+      padding: 0;
+      vertical-align: middle;
+      .viewLbStatsButton {
+        font-size: 0.75em;
+        padding: 0.35em 0.5em;
+        white-space: nowrap;
+      }
+    }
     .sideButtons {
       align-content: start;
       align-items: start;
@@ -345,6 +357,72 @@
         display: grid;
         gap: 1em;
       }
+    }
+  }
+}
+
+@media only screen and (max-width: calc(1280px + 5rem)) {
+  .pageLeaderboards .content table thead.allTimeAndDaily tr .mobileLbStats,
+  .pageLeaderboards .content table tbody tr .mobileLbStats {
+    display: table-cell;
+    width: 1%;
+    padding: 1em 0.75rem;
+  }
+
+  .pageLeaderboards .content table.mobileStatsInModal {
+    thead.allTimeAndDaily tr {
+      td:nth-child(5),
+      td:nth-child(10),
+      td:nth-child(11),
+      td:nth-child(12),
+      td:nth-child(13),
+      td:nth-child(14),
+      td:nth-child(15) {
+        display: none;
+      }
+    }
+    tbody tr {
+      td:nth-child(5),
+      td:nth-child(10),
+      td:nth-child(11),
+      td:nth-child(12),
+      td:nth-child(13),
+      td:nth-child(14),
+      td:nth-child(15) {
+        display: none;
+      }
+    }
+  }
+}
+
+#leaderboardEntryStatsModal {
+  .modal.leaderboardEntryStatsModal {
+    max-width: min(22rem, 92vw);
+    gap: 1.25rem;
+    .title {
+      margin: 0;
+    }
+    .lbStatsModalGrid {
+      display: grid;
+      gap: 0.65rem 1rem;
+    }
+    .lbStatsModalRow {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.5em 1.25em;
+      align-items: baseline;
+      .label {
+        color: var(--sub-color);
+        font-size: 0.85em;
+      }
+      .value {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+    }
+    .textButton {
+      justify-self: center;
+      margin-top: 0.25rem;
     }
   }
 }

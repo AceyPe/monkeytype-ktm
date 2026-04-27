@@ -80,6 +80,112 @@ function getSectionCellText(geocode?: string): string {
   return getSectionNameByGeocode(geocode) ?? "-";
 }
 
+type LeaderboardEntryStatsForModal = {
+  raw: string;
+  consistency: string;
+  date: string;
+  region: string;
+  section: string;
+  globalRank: string;
+  regionRank: string;
+  sectionRank: string;
+};
+
+function getLeaderboardEntryStatsForModal(
+  entry: LeaderboardEntry,
+  formatted: { raw: string; con: string },
+): LeaderboardEntryStatsForModal {
+  const regionNumber = getRegionNumberFromGeocode(entry.geocode);
+  return {
+    raw: formatted.raw,
+    consistency: formatted.con,
+    date: `${format(entry.timestamp, "dd MMM yyyy")} ${format(
+      entry.timestamp,
+      "HH:mm",
+    )}`,
+    region: regionNumber === null ? "-" : String(regionNumber),
+    section: getSectionCellText(entry.geocode),
+    globalRank: formatRankText(entry.rank),
+    regionRank: formatRankText(entry.regionRank),
+    sectionRank: formatRankText(entry.sectionRank),
+  };
+}
+
+function encodeLeaderboardEntryStatsPayload(
+  stats: LeaderboardEntryStatsForModal,
+): string {
+  return encodeURIComponent(JSON.stringify(stats));
+}
+
+function renderLeaderboardEntryStatsModal(
+  stats: LeaderboardEntryStatsForModal,
+): void {
+  const body = $("#leaderboardEntryStatsModalBody");
+  body.empty();
+  const rows: [string, string][] = [
+    ["raw", stats.raw],
+    ["consistency", stats.consistency],
+    ["date", stats.date],
+    ["region", stats.region],
+    ["section", stats.section],
+    ["global rank", stats.globalRank],
+    ["region rank", stats.regionRank],
+    ["section rank", stats.sectionRank],
+  ];
+  for (const [label, value] of rows) {
+    const row = $("<div>", { class: "lbStatsModalRow" });
+    row.append($("<span>", { class: "label" }).text(label));
+    row.append($("<span>", { class: "value" }).text(value));
+    body.append(row);
+  }
+}
+
+function setupLeaderboardEntryStatsModal(): void {
+  const dlg = document.getElementById(
+    "leaderboardEntryStatsModal",
+  ) as HTMLDialogElement | null;
+  if (dlg === null || dlg.dataset["lbStatsBound"] === "true") return;
+  dlg.dataset["lbStatsBound"] = "true";
+  dlg.addEventListener("click", (e) => {
+    if (e.target === dlg) {
+      closeLeaderboardEntryStatsModal();
+    }
+  });
+  dlg.addEventListener("close", () => {
+    dlg.classList.add("hidden");
+  });
+  $("#leaderboardEntryStatsModalClose").on("click", () => {
+    closeLeaderboardEntryStatsModal();
+  });
+}
+
+function openLeaderboardEntryStatsModal(encoded: string): void {
+  setupLeaderboardEntryStatsModal();
+  let stats: LeaderboardEntryStatsForModal;
+  try {
+    stats = JSON.parse(
+      decodeURIComponent(encoded),
+    ) as LeaderboardEntryStatsForModal;
+  } catch {
+    return;
+  }
+  renderLeaderboardEntryStatsModal(stats);
+  const dlg = document.getElementById(
+    "leaderboardEntryStatsModal",
+  ) as HTMLDialogElement | null;
+  if (dlg === null) return;
+  dlg.classList.remove("hidden");
+  dlg.showModal();
+}
+
+function closeLeaderboardEntryStatsModal(): void {
+  const dlg = document.getElementById(
+    "leaderboardEntryStatsModal",
+  ) as HTMLDialogElement | null;
+  if (dlg === null) return;
+  dlg.close();
+}
+
 type AllTimeState = {
   type: "allTime";
   mode: "time";
@@ -476,6 +582,9 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
     raw: Format.typingSpeed(entry.raw, { showDecimalPlaces: true }),
     con: Format.percentage(entry.consistency, { showDecimalPlaces: true }),
   };
+  const statsPayload = encodeLeaderboardEntryStatsPayload(
+    getLeaderboardEntryStatsForModal(entry, formatted),
+  );
 
   const element = document.createElement("tr");
   if (me) {
@@ -523,6 +632,17 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
       <td class="stat">${formatRank(entry.rank)}</td>
       <td class="stat">${formatRank(entry.regionRank)}</td>
       <td class="stat">${formatRank(entry.sectionRank)}</td>
+      <td class="mobileLbStats">
+        <button
+          type="button"
+          class="textButton viewLbStatsButton"
+          data-action="viewLbStats"
+          aria-haspopup="dialog"
+          data-lb-stats="${statsPayload}"
+        >
+          view stats
+        </button>
+      </td>
     
   `;
   const avatarEntry = {
@@ -618,6 +738,7 @@ function buildWeeklyTableRow(
 
 function fillTable(): void {
   const table = $(".page.pageLeaderboards table tbody");
+  const tableElement = $(".page.pageLeaderboards table");
   table.empty();
 
   if (state.friendsOnly) {
@@ -628,15 +749,17 @@ function fillTable(): void {
 
   $(".page.pageLeaderboards table thead").addClass("hidden");
   if (state.type === "allTime" || state.type === "daily") {
+    tableElement.addClass("mobileStatsInModal");
     $(".page.pageLeaderboards table thead.allTimeAndDaily").removeClass(
       "hidden",
     );
   } else if (state.type === "weekly") {
+    tableElement.removeClass("mobileStatsInModal");
     $(".page.pageLeaderboards table thead.weekly").removeClass("hidden");
   }
 
   if (state.data === null || state.data.length === 0) {
-    table.append(`<tr><td colspan="16" class="empty">No data</td></tr>`);
+    table.append(`<tr><td colspan="99" class="empty">No data</td></tr>`);
     $(".page.pageLeaderboards table").removeClass("hidden");
     return;
   }
@@ -1443,8 +1566,13 @@ function updateTimeText(
 
 function formatRank(rank: number | undefined): string {
   if (rank === undefined) return "";
-  if (rank === 1) return '<i class="fas fa-fw fa-crown"></i>';
+  if (rank === 1) return '<i class="fas fa-crown"></i>';
 
+  return rank.toString();
+}
+
+function formatRankText(rank: number | undefined): string {
+  if (rank === undefined) return "-";
   return rank.toString();
 }
 
@@ -1583,6 +1711,18 @@ export const page = new PageWithUrlParams({
 $(async () => {
   Skeleton.save("pageLeaderboards");
 });
+
+$(document).on(
+  "click",
+  "#pageLeaderboards [data-action='viewLbStats']",
+  function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const encoded = $(this).attr("data-lb-stats");
+    if (encoded === undefined) return;
+    openLeaderboardEntryStatsModal(encoded);
+  },
+);
 
 ConfigEvent.subscribe((eventKey) => {
   if (ActivePage.get() === "leaderboards" && eventKey === "typingSpeedUnit") {

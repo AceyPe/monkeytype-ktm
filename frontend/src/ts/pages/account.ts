@@ -197,7 +197,7 @@ function buildResultRow(result: SnapshotResult<Mode>): HTMLTableRowElement {
 
   let pb = "";
   if (result.isPb) {
-    pb = '<i class="fas fa-fw fa-crown"></i>';
+    pb = '<i class="fas fa-crown"></i>';
   } else {
     pb = "";
   }
