@@ -22,6 +22,12 @@ export const year2025: TeamSection[] = [
         imagePath: "/images/team/2025/Tarek-Elsayed.webp",
         linkedin: "https://www.linkedin.com/in/tarek-abdeldayem-214006343",
       },
+      {
+        name: "Mostafa Habiballah",
+        title: "Secretary",
+        imagePath: "/images/team/2025/Mostafa-Habiballah.webp",
+        linkedin: "https://www.linkedin.com/in/moustafa-habiballah-5ab056312/",
+      },
     ],
   },
   {

@@ -12,7 +12,7 @@ export const year2022: TeamSection[] = [
       },
       {
         name: "Mostafa Arafa",
-        title: "Vice-Chair",
+        title: "Secretary",
         imagePath: "/images/team/2022/Mostafa-Arafa.webp",
         linkedin: "https://www.linkedin.com/in/mostafa-arafa-ai-developer/",
       },
@@ -79,7 +79,7 @@ export const year2022: TeamSection[] = [
         name: "Mohamed Ashraf",
         title: "Volunteer",
         imagePath: "/images/team/2022/Mohamed-Ashraf.webp",
-        linkedin: "",
+        linkedin: "https://www.linkedin.com/in/mohamed-ashraf20/",
       },
       {
         name: "Menna Tarek",
@@ -183,12 +183,6 @@ export const year2022: TeamSection[] = [
         title: "Volunteer",
         imagePath: "/images/team/2022/Rewan-Sadek.webp",
         linkedin: "https://www.linkedin.com/in/rewan-sadek-780a0b18b/",
-      },
-      {
-        name: "Mohamed Ashraf",
-        title: "Volunteer",
-        imagePath: "/images/team/2022/Mohamed-ashraf.webp",
-        linkedin: "https://www.linkedin.com/in/mohamed-ashraf20/",
       },
     ],
   },
