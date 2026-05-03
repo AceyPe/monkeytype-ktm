@@ -323,8 +323,6 @@
     table thead tr .mobileLbStats,
     table tbody tr .mobileLbStats {
       display: none;
-      width: 0;
-      padding: 0;
       vertical-align: middle;
       .viewLbStatsButton {
         font-size: 0.75em;
@@ -376,8 +374,7 @@
       td:nth-child(11),
       td:nth-child(12),
       td:nth-child(13),
-      td:nth-child(14),
-      td:nth-child(15) {
+      td:nth-child(14) {
         display: none;
       }
     }
@@ -387,8 +384,7 @@
       td:nth-child(11),
       td:nth-child(12),
       td:nth-child(13),
-      td:nth-child(14),
-      td:nth-child(15) {
+      td:nth-child(14) {
         display: none;
       }
     }
