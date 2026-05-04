@@ -65,28 +65,28 @@ function initCountdown(bannerId: number): void {
 
 export function showIfNotClosedBefore(): void {
   // Check if April 1st has already passed
-  const now = new Date();
-  const year = now.getFullYear();
-  const aprilFirstThisYear = new Date(year, 3, 1, 0, 0, 0, 0); // month is 0-based; 3 = April
+  // const now = new Date();
+  // const year = now.getFullYear();
+  // const aprilFirstThisYear = new Date(year, 3, 1, 0, 0, 0, 0); // month is 0-based; 3 = April
 
   // If we're on or past April 1st, don't show the banner
-  if (now >= aprilFirstThisYear) {
-    return;
-  }
+  // if (now >= aprilFirstThisYear) {
+  //   return;
+  // }
 
   // Check if banner was closed in this session
   const isClosed = sessionStorage.getItem(SESSION_STORAGE_KEY) === "true";
   if (isClosed) {
     return;
   }
+  // <div>
+  //           Contest mode opens in <b class="countdown-counter"></b>.
+  //           <a href="/login">Register here!</a>
+  //         </div>
 
   const bannerMessage = `
     <div style="text-align: center">
-      <div>
-        Contest mode opens in <b class="countdown-counter"></b>.
-        <a href="/login">Register here!</a>
-      </div>
-      <a href="https://collabratec.ieee.org">
+              <a href="https://ieee-collabratec.ieee.org/app/community/1387/activities@207382630162438">
         Join our IEEE Collabratec Community!
       </a>
     </div>
