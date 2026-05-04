@@ -629,7 +629,6 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
       )}<div class="sub">${format(entry.timestamp, "HH:mm")}</div></td>
       <td class="region">${regionCellHtml}</td>
       <td class="section">${sectionCellText}</td>
-      <td class="stat">${formatRank(entry.rank)}</td>
       <td class="stat">${formatRank(entry.regionRank)}</td>
       <td class="stat">${formatRank(entry.sectionRank)}</td>
       <td class="mobileLbStats">
@@ -643,8 +642,9 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
           view stats
         </button>
       </td>
-    
+
   `;
+
   const avatarEntry = {
     ...entry,
     avatarUrl:
@@ -929,8 +929,22 @@ function fillUser(): void {
             "dd MMM yyyy HH:mm",
           )}</div>
         </div>
-
-
+        <div class="stat wide">
+          <div class="title">region</div>
+          <div class="value">${getRegionNumberFromGeocode(userData.geocode) ?? "-"}</div>
+        </div>
+        <div class="stat wide">
+          <div class="title">section</div>
+          <div class="value">${getSectionCellText(userData.geocode)}</div>
+        </div>
+        <div class="stat wide">
+          <div class="title">region rank</div>
+          <div class="value">${formatRankText(userData.regionRank)}</div>
+        </div>
+        <div class="stat wide">
+          <div class="title">section rank</div>
+          <div class="value">${formatRankText(userData.sectionRank)}</div>
+        </div>
         <div class="stat narrow">
           <div>${formatted.wpm}</div>
           <div class="sub">${formatted.acc}</div>
