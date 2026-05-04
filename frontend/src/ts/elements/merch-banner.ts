@@ -86,7 +86,7 @@ export function showIfNotClosedBefore(): void {
 
   const bannerMessage = `
     <div style="text-align: center">
-              <a href="https://ieee-collabratec.ieee.org/app/community/1387/activities@207382630162438">
+              <a href="https://ieee-collabratec.ieee.org/app/community/1387/activities@207382630162438" target="_blank">
         Join our IEEE Collabratec Community!
       </a>
     </div>
