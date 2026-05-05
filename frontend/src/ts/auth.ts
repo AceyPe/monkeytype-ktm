@@ -246,10 +246,7 @@ export function signOut(): void {
 }
 
 async function signUp(): Promise<void> {
-  Notifications.add(
-    "Sign up is disabled. Please sign in with your SAML provider.",
-    0,
-  );
+  Notifications.add("Sign up is disabled. Please sign in.", 0);
 }
 
 $(".pageLogin .login form").on("submit", (e) => {

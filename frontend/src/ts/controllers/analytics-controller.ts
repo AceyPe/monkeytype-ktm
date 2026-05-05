@@ -35,7 +35,7 @@ export function activateAnalytics(): void {
     $("body").append(`
     <script
     async
-    src="https://www.googletagmanager.com/gtag/js?id=UA-165993088-1"
+    src="https://www.googletagmanager.com/gtag/js?id=G-WF9JS7N5VT"
   ></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -44,7 +44,7 @@ export function activateAnalytics(): void {
     }
     gtag("js", new Date());
 
-    gtag("config", "UA-165993088-1");
+    gtag("config", "G-WF9JS7N5VT");
   </script>`);
   } catch (e) {
     console.error(createErrorMessage(e, "Failed to activate analytics"));
