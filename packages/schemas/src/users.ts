@@ -350,6 +350,7 @@ export const UserProfileSchema = UserSchema.pick({
   testActivity: true,
 })
   .extend({
+    mongoId: z.string().optional(),
     typingStats: TypingStatsSchema,
     personalBests: PersonalBestsSchema.pick({ time: true, words: true }),
     streak: z.number().int().nonnegative(),

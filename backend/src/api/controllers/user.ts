@@ -1120,6 +1120,7 @@ export async function getProfile(
   };
 
   const baseProfile = {
+    mongoId: user._id.toHexString(),
     name,
     geocode,
     firstName,

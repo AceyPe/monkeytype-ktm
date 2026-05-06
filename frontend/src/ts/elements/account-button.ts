@@ -92,7 +92,7 @@ export function update(): void {
 
     $("nav .accountButtonAndMenu .menu .items .goToProfile").attr(
       "href",
-      `/profile/${name}`,
+      "/profile",
     );
     void Misc.swapElements(
       document.querySelector("nav .textButton.view-login") as HTMLElement,

@@ -12,6 +12,7 @@ import * as TestActivity from "../elements/test-activity";
 import { TestActivityCalendar } from "../elements/test-activity-calendar";
 import { getFirstDayOfTheWeek } from "../utils/date-and-time";
 import { addFriend } from "./friends";
+import { getAuthenticatedUser, isAuthenticated } from "../firebase";
 
 const firstDayOfTheWeek = getFirstDayOfTheWeek();
 
@@ -182,7 +183,12 @@ type UpdateOptions = {
 };
 
 async function update(options: UpdateOptions): Promise<void> {
-  const isUid = checkIfGetParameterExists("isUid");
+  const uidOrName = options.uidOrName ?? "";
+  const isUid =
+    checkIfGetParameterExists("isUid") ||
+    (isAuthenticated() &&
+      uidOrName !== "" &&
+      uidOrName === getAuthenticatedUser()?.uid);
   const isMongoId = checkIfGetParameterExists("id");
   if (options.data) {
     $(".page.pageProfile .preloader").addClass("hidden");
@@ -210,6 +216,14 @@ async function update(options: UpdateOptions): Promise<void> {
       $(".page.pageProfile .error .message").text(message);
     } else if (response.status === 200) {
       const profile = response.body.data;
+      if (
+        isUid &&
+        window.location.pathname !== "/profile" &&
+        typeof profile.mongoId === "string" &&
+        profile.mongoId.trim() !== ""
+      ) {
+        window.history.replaceState(null, "", `/profile/${profile.mongoId}?id`);
+      }
       if (window.location.pathname !== "/profile" && !isUid && !isMongoId) {
         window.history.replaceState(null, "", `/profile/${profile.name}`);
       }

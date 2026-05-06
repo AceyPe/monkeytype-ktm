@@ -147,9 +147,6 @@ const routes: Route[] = [
       if (isAuthenticated()) {
         const uid = getAuthenticatedUser()?.uid ?? "";
         if (uid !== "") {
-          if (!checkIfGetParameterExists("isUid")) {
-            history.replaceState(null, "", "/profile?isUid");
-          }
           await PageController.change("profile", {
             ...options,
             force: true,
