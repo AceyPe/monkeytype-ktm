@@ -27,6 +27,9 @@ function reset(): void {
               <div class="name">-</div>
               <div class="userFlags"></div>
             </div>
+            <div class="jwtIdentity hidden">
+              <div class="geocode">-</div>
+            </div>
             <div class="badges"></div>
             <div class="allBadges"></div>
             <div class="joined" data-balloon-pos="up">-</div>

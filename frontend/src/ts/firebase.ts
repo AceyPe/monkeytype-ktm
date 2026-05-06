@@ -63,7 +63,7 @@ export type JwtAccountClaims = {
   grade?: string;
 };
 
-function getAvatarUrlFromGeocode(geocode?: string): string | undefined {
+export function getAvatarUrlFromGeocode(geocode?: string): string | undefined {
   if (geocode === undefined) return undefined;
   const matched = /^R(10|[1-9])/i.exec(geocode.trim());
   if (matched === null) return undefined;

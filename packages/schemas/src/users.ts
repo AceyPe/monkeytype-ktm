@@ -335,6 +335,9 @@ export type TypingStats = z.infer<typeof TypingStatsSchema>;
 export const UserProfileSchema = UserSchema.pick({
   uid: true,
   name: true,
+  geocode: true,
+  firstName: true,
+  lastName: true,
   banned: true,
   addedAt: true,
   discordId: true,

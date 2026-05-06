@@ -14,12 +14,13 @@ import Format from "../utils/format";
 import { UserProfile } from "@monkeytype/schemas/users";
 import { convertRemToPixels } from "../utils/numbers";
 import { secondsToString } from "../utils/date-and-time";
-import { getAuthenticatedUser } from "../firebase";
 import { Snapshot } from "../constants/default-snapshot";
 import { getAvatarElement } from "../utils/discord-avatar";
 import { formatXp } from "../utils/levels";
 import { formatTopPercentage } from "../utils/misc";
 import { get as getServerConfiguration } from "../ape/server-configuration";
+import { getSectionNameByGeocode } from "../constants/sections-by-geocode";
+import { getAvatarUrlFromGeocode, getAuthenticatedUser } from "../firebase";
 
 type ProfileViewPaths = "profile" | "account";
 type UserProfileOrSnapshot = UserProfile | Snapshot;
@@ -52,7 +53,18 @@ export async function update(
     return;
 
   const avatar = details.find(".avatarAndName .avatar");
-  avatar.replaceWith(getAvatarElement(profile, { size: 256 }));
+  const geocodeAvatarUrl =
+    where === "profile" ? getAvatarUrlFromGeocode(profile.geocode) : undefined;
+  avatar.replaceWith(
+    getAvatarElement(
+      {
+        avatarUrl: geocodeAvatarUrl,
+        discordId: profile.discordId,
+        discordAvatar: profile.discordAvatar,
+      },
+      { size: 256 },
+    ),
+  );
 
   if (profile.inventory?.badges && !banned) {
     let mainHtml = "";
@@ -71,6 +83,20 @@ export async function update(
   }
 
   details.find(".name").text(profile.name);
+  if (where === "profile") {
+    const fullName = [profile.firstName, profile.lastName]
+      .filter((part) => typeof part === "string" && part !== "")
+      .join(" ");
+    if (fullName !== "") {
+      details.find(".name").text(fullName);
+    }
+    const jwtIdentity = details.find(".jwtIdentity");
+    const sectionName = getSectionNameByGeocode(profile.geocode);
+    jwtIdentity
+      .find(".geocode")
+      .text(`${sectionName ?? profile.geocode ?? "-"}`);
+    jwtIdentity.removeClass("hidden");
+  }
   details
     .find(".userFlags")
     .html(

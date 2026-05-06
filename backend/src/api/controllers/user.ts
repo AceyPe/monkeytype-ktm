@@ -1063,6 +1063,9 @@ export async function getProfile(
 
   const {
     name,
+    geocode,
+    firstName,
+    lastName,
     banned,
     inventory,
     profileDetails,
@@ -1116,6 +1119,9 @@ export async function getProfile(
 
   const baseProfile = {
     name,
+    geocode,
+    firstName,
+    lastName,
     banned,
     addedAt,
     typingStats,
