@@ -76,7 +76,7 @@ const modal = new AnimatedModal({
     modalEl.querySelector(".rejectAll")?.addEventListener("click", () => {
       const accepted = {
         security: true,
-        analytics: false,
+        analytics: true,
         sentry: false,
       };
       setAcceptedCookies(accepted);
@@ -99,16 +99,16 @@ const modal = new AnimatedModal({
         }
       });
     modalEl.querySelector(".acceptSelected")?.addEventListener("click", () => {
-      const analyticsChecked = (
-        modalEl.querySelector(".cookie.analytics input") as HTMLInputElement
-      ).checked;
-      const sentryChecked = (
-        modalEl.querySelector(".cookie.sentry input") as HTMLInputElement
-      ).checked;
+      // const analyticsChecked = (
+      //   modalEl.querySelector(".cookie.analytics input") as HTMLInputElement
+      // ).checked;
+      // const sentryChecked = (
+      //   modalEl.querySelector(".cookie.sentry input") as HTMLInputElement
+      // ).checked;
       const accepted = {
         security: true,
-        analytics: analyticsChecked,
-        sentry: sentryChecked,
+        analytics: true,
+        sentry: true,
       };
       setAcceptedCookies(accepted);
       void hide();

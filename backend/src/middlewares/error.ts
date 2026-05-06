@@ -56,7 +56,7 @@ async function errorHandlingMiddleware(
       message = error.message;
       status = error.status;
     } else {
-      message = `Oops! Our monkeys dropped their bananas. Please try again later. - ${data.errorId}`;
+      message = `There was an error. Please try again later. - ${data.errorId}`;
     }
 
     await incrementBadAuth(req, res, status);
