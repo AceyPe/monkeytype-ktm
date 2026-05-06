@@ -182,7 +182,8 @@ type UpdateOptions = {
 };
 
 async function update(options: UpdateOptions): Promise<void> {
-  const getParamExists = checkIfGetParameterExists("isUid");
+  const isUid = checkIfGetParameterExists("isUid");
+  const isMongoId = checkIfGetParameterExists("id");
   if (options.data) {
     $(".page.pageProfile .preloader").addClass("hidden");
     await Profile.update("profile", options.data);
@@ -194,21 +195,22 @@ async function update(options: UpdateOptions): Promise<void> {
   } else if (options.uidOrName !== undefined && options.uidOrName !== "") {
     const response = await Ape.users.getProfile({
       params: { uidOrName: options.uidOrName },
-      query: { isUid: getParamExists },
+      query: { isUid, id: isMongoId },
     });
 
     $(".page.pageProfile .preloader").addClass("hidden");
 
     if (response.status === 404) {
-      const message = getParamExists
-        ? "User not found"
-        : `User ${options.uidOrName} not found`;
+      const message =
+        isUid || isMongoId
+          ? "User not found"
+          : `User ${options.uidOrName} not found`;
       $(".page.pageProfile .preloader").addClass("hidden");
       $(".page.pageProfile .error").removeClass("hidden");
       $(".page.pageProfile .error .message").text(message);
     } else if (response.status === 200) {
       const profile = response.body.data;
-      if (window.location.pathname !== "/profile") {
+      if (window.location.pathname !== "/profile" && !isUid && !isMongoId) {
         window.history.replaceState(null, "", `/profile/${profile.name}`);
       }
       await Profile.update("profile", profile);

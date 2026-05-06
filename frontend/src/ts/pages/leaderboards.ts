@@ -591,15 +591,17 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
     element.classList.add("me");
   }
   element.dataset["uid"] = entry.uid;
+  const hasMongoId =
+    typeof entry.mongoId === "string" && entry.mongoId.trim() !== "";
+  const profileId = hasMongoId ? entry.mongoId : entry.uid;
+  const profileQueryParam = hasMongoId ? "id" : "isUid";
   element.innerHTML = `
       <td>${formatRank(entry.friendsRank)}</td>
       <td>${formatRank(entry.rank)}</td>
       <td>
         <div class="avatarNameBadge">
           <div class="avatarPlaceholder"></div>
-          <a href="${location.origin}/profile/${
-            entry.uid
-          }?isUid" class="entryName" uid=${entry.uid} router-link>${displayName}</a>
+          <a href="${location.origin}/profile/${profileId}?${profileQueryParam}" class="entryName" uid=${entry.uid} router-link>${displayName}</a>
           <div class="flagsAndBadge">
             ${getHtmlByUserFlags({
               ...entry,
@@ -677,15 +679,17 @@ function buildWeeklyTableRow(
     element.classList.add("me");
   }
   element.dataset["uid"] = entry.uid;
+  const hasMongoId =
+    typeof entry.mongoId === "string" && entry.mongoId.trim() !== "";
+  const profileId = hasMongoId ? entry.mongoId : entry.uid;
+  const profileQueryParam = hasMongoId ? "id" : "isUid";
   element.innerHTML = `
       <td>${formatRank(entry.friendsRank)}</td>
       <td>${formatRank(entry.rank)}</td>
       <td>
         <div class="avatarNameBadge">
           <div class="avatarPlaceholder"></div>
-          <a href="${location.origin}/profile/${
-            entry.uid
-          }?isUid" class="entryName" uid=${entry.uid} router-link>${displayName}</a>
+          <a href="${location.origin}/profile/${profileId}?${profileQueryParam}" class="entryName" uid=${entry.uid} router-link>${displayName}</a>
           <div class="flagsAndBadge">
             ${getHtmlByUserFlags({
               ...entry,
