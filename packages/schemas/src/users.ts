@@ -274,6 +274,7 @@ export const UserSchema = z.object({
   name: UserNameSchema,
   email: UserEmailSchema,
   uid: z.string(), //defined by firebase, no validation should be applied
+  mongoId: z.string().optional(),
   geocode: z.string().optional(),
   status: z.string().optional(),
   ssoid: z.string().optional(),

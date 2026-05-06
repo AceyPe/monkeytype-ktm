@@ -53,6 +53,7 @@ type SnapshotUserPayload = {
   name?: unknown;
   email?: unknown;
   uid?: unknown;
+  mongoId?: unknown;
   personalBests?: unknown;
   banned?: unknown;
   lbOptOut?: unknown;
@@ -190,6 +191,7 @@ export async function initSnapshot(): Promise<Snapshot | false> {
       typeof safeUser.uid === "string"
         ? safeUser.uid
         : (authenticatedUser?.uid ?? "");
+    snap.mongoId = typeof safeUser.mongoId === "string" ? safeUser.mongoId : "";
     if (isRecord(safeUser.personalBests)) {
       snap.personalBests = safeUser.personalBests as PersonalBests;
     }

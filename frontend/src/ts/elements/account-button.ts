@@ -78,7 +78,7 @@ export function update(): void {
       return;
     }
 
-    const { xp, name } = snapshot;
+    const { xp, name, mongoId } = snapshot;
 
     loading(false);
     updateName(getNavbarProfileDisplayName(authenticatedUser, name));
@@ -92,7 +92,9 @@ export function update(): void {
 
     $("nav .accountButtonAndMenu .menu .items .goToProfile").attr(
       "href",
-      "/profile",
+      typeof mongoId === "string" && mongoId.trim() !== ""
+        ? `/profile/${mongoId}?id`
+        : "/profile",
     );
     void Misc.swapElements(
       document.querySelector("nav .textButton.view-login") as HTMLElement,

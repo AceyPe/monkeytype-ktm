@@ -756,6 +756,7 @@ export async function getUser(req: MonkeyRequest): Promise<GetUserResponse> {
 
   const userData: User = {
     ...relevantUserInfo,
+    mongoId: userInfo._id.toHexString(),
     resultFilterPresets,
     tags,
     customThemes,
