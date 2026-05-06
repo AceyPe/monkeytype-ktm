@@ -81,7 +81,7 @@ export function getSamlStrategy(): SamlStrategy {
         callbackUrl: getAcsUrl(),
         cert: MOCK_SAML_CERT,
         identifierFormat:
-          "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+          "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
         signatureAlgorithm: "sha256",
         acceptedClockSkewMs: 5000,
         authnRequestBinding: usesAuthnRequestHttpPostBinding()
