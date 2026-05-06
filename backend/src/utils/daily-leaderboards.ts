@@ -21,6 +21,7 @@ const scoresNamespace = `${dailyLeaderboardNamespace}:scores`;
 const resultsNamespace = `${dailyLeaderboardNamespace}:results`;
 
 type LeaderboardIdentityFields = {
+  _id: { toHexString: () => string };
   uid: string;
   firstName?: string;
   lastName?: string;
@@ -372,6 +373,7 @@ async function hydrateLeaderboardIdentityFields(
     if (identity === undefined) return entry;
     return {
       ...entry,
+      mongoId: identity._id.toHexString(),
       firstName: identity.firstName ?? entry.firstName,
       lastName: identity.lastName ?? entry.lastName,
       geocode: identity.geocode ?? entry.geocode,

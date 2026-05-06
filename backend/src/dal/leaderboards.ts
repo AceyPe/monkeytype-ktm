@@ -21,7 +21,7 @@ export type DBLeaderboardEntry = LeaderboardEntry & {
 
 type LeaderboardIdentityFields = Pick<
   DBUser,
-  "uid" | "firstName" | "lastName" | "geocode"
+  "_id" | "uid" | "firstName" | "lastName" | "geocode"
 >;
 
 function getCollectionName(key: {
@@ -305,6 +305,7 @@ async function hydrateLeaderboardIdentityFields(
 
     return {
       ...entry,
+      mongoId: identity._id.toHexString(),
       firstName: identity.firstName ?? entry.firstName,
       lastName: identity.lastName ?? entry.lastName,
       geocode: identity.geocode ?? entry.geocode,

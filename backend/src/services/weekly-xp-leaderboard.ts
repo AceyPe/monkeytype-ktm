@@ -11,6 +11,7 @@ import { getCurrentWeekTimestamp } from "@monkeytype/util/date-and-time";
 import MonkeyError from "../utils/error";
 import { parseWithSchema as parseJsonWithSchema } from "@monkeytype/util/json";
 import { omit } from "../utils/misc";
+import { getUsersCollection } from "../dal/user";
 
 export type AddResultOpts = {
   entry: RedisXpLeaderboardEntry;
@@ -201,6 +202,9 @@ export class WeeklyXpLeaderboard {
       },
     );
 
+    resultsWithRanks =
+      await hydrateWeeklyLeaderboardIdentityFields(resultsWithRanks);
+
     if (!premiumFeaturesEnabled) {
       resultsWithRanks = resultsWithRanks.map((it) => omit(it, ["isPremium"]));
     }
@@ -238,12 +242,18 @@ export class WeeklyXpLeaderboard {
     }
 
     try {
-      return {
-        ...parseJsonWithSchema(result ?? "null", RedisXpLeaderboardEntrySchema),
-        rank: rank + 1,
-        friendsRank: friendsRank !== undefined ? friendsRank + 1 : undefined,
-        totalXp: parseInt(score, 10),
-      };
+      const [entry] = await hydrateWeeklyLeaderboardIdentityFields([
+        {
+          ...parseJsonWithSchema(
+            result ?? "null",
+            RedisXpLeaderboardEntrySchema,
+          ),
+          rank: rank + 1,
+          friendsRank: friendsRank !== undefined ? friendsRank + 1 : undefined,
+          totalXp: parseInt(score, 10),
+        },
+      ]);
+      return entry ?? null;
     } catch (error) {
       throw new Error(
         `Failed to parse leaderboard entry: ${
@@ -252,6 +262,23 @@ export class WeeklyXpLeaderboard {
       );
     }
   }
+}
+
+async function hydrateWeeklyLeaderboardIdentityFields(
+  entries: XpLeaderboardEntry[],
+): Promise<XpLeaderboardEntry[]> {
+  if (entries.length === 0) return entries;
+  const users = await getUsersCollection()
+    .find(
+      { uid: { $in: entries.map((it) => it.uid) } },
+      { projection: { uid: 1 } },
+    )
+    .toArray();
+  const byUid = new Map(users.map((it) => [it.uid, it._id.toHexString()]));
+  return entries.map((entry) => ({
+    ...entry,
+    mongoId: byUid.get(entry.uid),
+  }));
 }
 
 export function get(

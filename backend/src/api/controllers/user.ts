@@ -1057,9 +1057,11 @@ export async function getProfile(
 ): Promise<GetProfileResponse> {
   const { uidOrName } = req.params;
 
-  const user = req.query.isUid
-    ? await UserDAL.getUser(uidOrName, "get user profile")
-    : await UserDAL.getUserByName(uidOrName, "get user profile");
+  const user = req.query.id
+    ? await UserDAL.getUserByMongoId(uidOrName, "get user profile")
+    : req.query.isUid
+      ? await UserDAL.getUser(uidOrName, "get user profile")
+      : await UserDAL.getUserByName(uidOrName, "get user profile");
 
   const {
     name,

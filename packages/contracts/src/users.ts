@@ -249,6 +249,12 @@ export const GetProfileQuerySchema = z.object({
     .transform((it) => it === "")
     .or(z.boolean())
     .default(false),
+  id: z
+    .string()
+    .length(0)
+    .transform((it) => it === "")
+    .or(z.boolean())
+    .default(false),
 });
 export type GetProfileQuery = z.infer<typeof GetProfileQuerySchema>;
 

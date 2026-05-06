@@ -336,6 +336,20 @@ export async function getUserByName(
   return user;
 }
 
+export async function getUserByMongoId(
+  mongoId: string,
+  stack: string,
+): Promise<DBUser> {
+  if (!ObjectId.isValid(mongoId)) {
+    throw new MonkeyError(404, "User not found", stack);
+  }
+  const user = await getUsersCollection().findOne({
+    _id: new ObjectId(mongoId),
+  });
+  if (!user) throw new MonkeyError(404, "User not found", stack);
+  return user;
+}
+
 export async function isDiscordIdAvailable(
   discordId: string,
 ): Promise<boolean> {

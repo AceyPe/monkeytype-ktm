@@ -8,6 +8,7 @@ const FriendsRankSchema = z
   .describe("only available on friendsOnly leaderboard");
 
 export const LeaderboardEntrySchema = z.object({
+  mongoId: z.string().optional(),
   wpm: z.number().nonnegative(),
   acc: z.number().nonnegative().min(0).max(100),
   timestamp: z.number().int().nonnegative(),
@@ -38,6 +39,7 @@ export type RedisDailyLeaderboardEntry = z.infer<
 >;
 
 export const RedisXpLeaderboardEntrySchema = z.object({
+  mongoId: z.string().optional(),
   uid: z.string(),
   name: z.string(),
   firstName: z.string().optional(),
