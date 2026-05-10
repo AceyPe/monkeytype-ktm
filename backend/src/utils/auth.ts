@@ -189,11 +189,13 @@ export async function revokeTokensByUid(uid: string): Promise<void> {
  * Generate a JWT token for a user
  * @param uid - User ID
  * @param email - User email
+ * @param expiresIn - Token expiration time (default: 1 day)
  * @returns JWT token string
  */
 export function generateJwtToken(
   uid: string,
   email: string,
+  expiresIn: string = "1d",
   claims?: {
     geocode?: string;
     status?: string;
@@ -218,6 +220,7 @@ export function generateJwtToken(
   };
 
   const token: string = jwt.sign(payload, secret, {
+    expiresIn,
     issuer: "monkeytype-api",
     audience: "monkeytype-client",
     algorithm: "HS256",
