@@ -26,6 +26,66 @@ type ChangeOptions = {
   loadingOptions?: LoadingOptions;
 };
 
+type SeoMetadata = {
+  title: string;
+  description: string;
+};
+
+const SEO_KEYWORDS = [
+  "typing",
+  "speed",
+  "test",
+  "keyboard",
+  "marathon",
+  "competition",
+  "contest",
+  "IEEE",
+  "IEEE typing competition",
+  "Keyboard typing marathon",
+  "Typing speed test event",
+  "IEEE student competition",
+  "Online typing challenge 2025",
+  "KTM",
+  "Typing test",
+  "Typing contest",
+  "Keyboard Typing Marathon",
+  "IEEE KTM 2025",
+  "Professional Typing Competition",
+  "Competitive Typing Tournament",
+  "IEEE events",
+  "IEEE competitions",
+  "WPM speed contest",
+  "coding typing speed test",
+  "technical typing marathon",
+].join(", ");
+
+const HOME_SEO_METADATA: SeoMetadata = {
+  title: "IEEE Keyboard Typing Marathon | Global Online Typing Competition",
+  description:
+    "Join the IEEE Keyboard Typing Marathon and compete with participants worldwide, showcase your typing skills, and win exciting prizes. Are you the fastest typist? Join now!",
+};
+
+const SEO_METADATA_BY_PAGE: Partial<Record<PageName, SeoMetadata>> = {
+  test: HOME_SEO_METADATA,
+  about: {
+    title: "About the IEEE Keyboard Typing Marathon | Vision & Mission",
+    description:
+      "Discover the story behind the IEEE Keyboard Typing Marathon (KTM). Learn about our mission to promote digital literacy and technical excellence through competitive typing.",
+  },
+  team: {
+    title: "IEEE Keyboard Typing Marathon | Team",
+    description:
+      "Meet the dedicated IEEE volunteers behind the KTM. Learn more about the committee driving this global typing initiative.",
+  },
+};
+
+function setMetaContent(selector: string, content: string): void {
+  const metaTag = document.querySelector(selector);
+  if (metaTag instanceof HTMLMetaElement) {
+    metaTag.content = content;
+  }
+}
+
 function updateOpenGraphUrl(): void {
   const ogUrlTag = document.querySelector('meta[property="og:url"]');
   const currentUrl = window.location.href;
@@ -43,13 +103,27 @@ function updateOpenGraphUrl(): void {
 }
 
 function updateTitle(nextPage: { id: string; display?: string }): void {
-  if (nextPage.id === "test") {
-    Misc.updateTitle();
+  const seoMetadata = SEO_METADATA_BY_PAGE[nextPage.id as PageName];
+  if (seoMetadata !== undefined) {
+    Misc.updateTitle(seoMetadata.title);
   } else {
     const titleString =
       nextPage.display ?? Strings.capitalizeFirstLetterOfEachWord(nextPage.id);
-    Misc.updateTitle(`${titleString} | Monkeytype`);
+    Misc.updateTitle(`${titleString} | IEEE KTM`);
   }
+}
+
+function updateSeoMetadata(nextPage: { id: string }): void {
+  const seoMetadata =
+    SEO_METADATA_BY_PAGE[nextPage.id as PageName] ?? HOME_SEO_METADATA;
+
+  setMetaContent('meta[name="name"]', seoMetadata.title);
+  setMetaContent('meta[name="description"]', seoMetadata.description);
+  setMetaContent('meta[name="keywords"]', SEO_KEYWORDS);
+  setMetaContent('meta[property="og:title"]', seoMetadata.title);
+  setMetaContent('meta[property="og:description"]', seoMetadata.description);
+  setMetaContent('meta[name="twitter:title"]', seoMetadata.title);
+  setMetaContent('meta[name="twitter:description"]', seoMetadata.description);
 }
 
 async function showSyncLoading({
@@ -241,6 +315,7 @@ export async function change(
     }
     //between
     updateTitle(nextPage);
+    updateSeoMetadata(nextPage);
     ActivePage.set(nextPage.id);
     updateOpenGraphUrl();
     Focus.set(false);
