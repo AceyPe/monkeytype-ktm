@@ -153,6 +153,14 @@ export const year2026: TeamSection[] = [
         section: "Tunisia Section",
       },
       {
+        name: "Vildana Hrnjić",
+        title: "Brand Designer",
+        imagePath: "/images/team/2026/Vildana-Hrnjić.webp",
+        linkedin: "https://www.linkedin.com/in/vildana-hrnji%C4%87/",
+        region: "R8",
+        section: "Bosnia and Herzegovina Section",
+      },
+      {
         name: "Rayen Dellai",
         title: "Graphic Designer",
         imagePath: "/images/team/2026/Rayen-Dellai.webp",
