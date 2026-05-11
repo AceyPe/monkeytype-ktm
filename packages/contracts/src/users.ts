@@ -344,6 +344,13 @@ export const SamlInitiateResponseSchema = responseWithData(
 );
 export type SamlInitiateResponse = z.infer<typeof SamlInitiateResponseSchema>;
 
+export const SamlLogoutResponseSchema = responseWithData(
+  z.object({
+    url: z.string().url(),
+  }),
+);
+export type SamlLogoutResponse = z.infer<typeof SamlLogoutResponseSchema>;
+
 export const SessionResponseSchema = responseWithData(
   z.object({
     authenticated: z.boolean(),
@@ -1005,6 +1012,19 @@ export const usersContract = c.router(
       metadata: meta({
         authenticationOptions: { isPublic: true },
         rateLimit: "userSamlInitiate",
+      }),
+    },
+    samlLogout: {
+      summary: "initiate SAML logout",
+      description: "Get the SAML logout URL",
+      method: "GET",
+      path: "/logout",
+      responses: {
+        200: SamlLogoutResponseSchema,
+      },
+      metadata: meta({
+        authenticationOptions: { isPublic: true },
+        rateLimit: "userSamlLogout",
       }),
     },
     session: {

@@ -45,6 +45,12 @@ type SessionResponse = {
   };
 };
 
+type LogoutResponse = {
+  data?: {
+    url?: string;
+  };
+};
+
 type JwtSessionClaims = {
   uid?: unknown;
   email?: unknown;
@@ -288,14 +294,27 @@ export function isAuthAvailable(): boolean {
 
 export async function signOut(): Promise<void> {
   const token = getStoredToken();
-  if (token !== null) {
-    await fetch(LOGOUT_URL, {
-      method: "POST",
+  let samlLogoutUrl: string | undefined;
+
+  try {
+    const response = await fetch(LOGOUT_URL, {
+      method: "GET",
       headers: createAuthHeaders(token),
     });
+    if (response.ok) {
+      const body = (await response.json()) as LogoutResponse;
+      samlLogoutUrl = body.data?.url;
+    }
+  } catch {
+    // Still clear local auth state if the IdP logout handoff fails.
   }
+
   clearAuthState();
   await readyCallback?.(true, null);
+
+  if (samlLogoutUrl !== undefined && samlLogoutUrl !== "") {
+    window.location.assign(samlLogoutUrl);
+  }
 }
 
 export async function signInWithEmailAndPassword(
