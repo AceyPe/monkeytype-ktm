@@ -92,10 +92,50 @@ import {
 
 let failReason = "";
 
-export let notSignedInLastResult: CompletedEvent | null = null;
+const NOT_SIGNED_IN_LAST_RESULT_STORAGE_KEY = "notSignedInLastResult";
+
+function clearStoredNotSignedInResult(): void {
+  try {
+    window.sessionStorage.removeItem(NOT_SIGNED_IN_LAST_RESULT_STORAGE_KEY);
+  } catch (e) {
+    console.error("Failed to clear last signed out result", e);
+  }
+}
+
+function loadNotSignedInResult(): CompletedEvent | null {
+  try {
+    const value = window.sessionStorage.getItem(
+      NOT_SIGNED_IN_LAST_RESULT_STORAGE_KEY,
+    );
+    if (value === null) return null;
+
+    return JSON.parse(value) as CompletedEvent;
+  } catch (e) {
+    console.error("Failed to load last signed out result", e);
+    clearStoredNotSignedInResult();
+    return null;
+  }
+}
+
+function saveNotSignedInResult(result: CompletedEvent): void {
+  notSignedInLastResult = result;
+
+  try {
+    window.sessionStorage.setItem(
+      NOT_SIGNED_IN_LAST_RESULT_STORAGE_KEY,
+      JSON.stringify(result),
+    );
+  } catch (e) {
+    console.error("Failed to store last signed out result", e);
+  }
+}
+
+export let notSignedInLastResult: CompletedEvent | null =
+  loadNotSignedInResult();
 
 export function clearNotSignedInResult(): void {
   notSignedInLastResult = null;
+  clearStoredNotSignedInResult();
 }
 
 export function setNotSignedInUidAndHash(uid: string): void {
@@ -104,6 +144,7 @@ export function setNotSignedInUidAndHash(uid: string): void {
   //@ts-expect-error really need to delete this
   delete notSignedInLastResult.hash;
   notSignedInLastResult.hash = objectHash(notSignedInLastResult);
+  saveNotSignedInResult(notSignedInLastResult);
 }
 
 export function startTest(now: number): boolean {
@@ -1193,7 +1234,7 @@ export async function finish(difficultyFailed = false): Promise<void> {
     $(".pageTest #result #rateQuoteButton").addClass("hidden");
     $(".pageTest #result #reportQuoteButton").addClass("hidden");
     void AnalyticsController.log("testCompletedNoLogin");
-    if (!dontSave) notSignedInLastResult = completedEvent;
+    if (!dontSave) saveNotSignedInResult(completedEvent);
     dontSave = true;
   } else {
     $(".pageTest #result #reportQuoteButton").removeClass("hidden");
