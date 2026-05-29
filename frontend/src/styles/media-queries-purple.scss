@@ -34,9 +34,9 @@
           display: none;
         }
         // Keep the name column flexible on small screens.
-        // nth-child(2) is a rank column and forcing it to 100% breaks layout.
-        tbody td:nth-child(3) {
-          width: 100%;
+        tbody td.nameCol {
+          width: auto;
+          min-width: 0;
         }
       }
       .bigUser {

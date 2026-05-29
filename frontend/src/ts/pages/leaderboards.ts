@@ -614,9 +614,9 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
   element.innerHTML = `
       <td>${formatRank(entry.friendsRank)}</td>
       <td>${formatRank(entry.rank)}</td>
-      <td class="stat">${formatRank(entry.regionRank)}</td>
-      <td class="stat">${formatRank(entry.sectionRank)}</td>
-      <td>
+      <td class="rankCol">${formatRank(entry.regionRank)}</td>
+      <td class="rankCol">${formatRank(entry.sectionRank)}</td>
+      <td class="nameCol">
         <div class="avatarNameBadge">
           <div class="avatarPlaceholder"></div>
           <a href="${location.origin}/profile/${profileId}?${profileQueryParam}" class="entryName" uid=${entry.uid} router-link>${displayName}</a>
@@ -703,9 +703,9 @@ function buildWeeklyTableRow(
   element.innerHTML = `
       <td>${formatRank(entry.friendsRank)}</td>
       <td>${formatRank(entry.rank)}</td>
-      <td class="stat">${formatRank(entry.regionRank)}</td>
-      <td class="stat">${formatRank(entry.sectionRank)}</td>
-      <td>
+      <td class="rankCol">${formatRank(entry.regionRank)}</td>
+      <td class="rankCol">${formatRank(entry.sectionRank)}</td>
+      <td class="nameCol">
         <div class="avatarNameBadge">
           <div class="avatarPlaceholder"></div>
           <a href="${location.origin}/profile/${profileId}?${profileQueryParam}" class="entryName" uid=${entry.uid} router-link>${displayName}</a>
@@ -925,11 +925,11 @@ function fillUser(): void {
 
     const html = `
           <div class="rank">${formatRank(rank)}</div>
-        <div class="stat wide">
+        <div class="stat">
           <div class="title">region rank</div>
           <div class="value">${formatRank(userData.regionRank)}</div>
         </div>
-        <div class="stat wide">
+        <div class="stat ">
           <div class="title">section rank</div>
           <div class="value">${formatRank(userData.sectionRank)}</div>
         </div>
@@ -1027,11 +1027,11 @@ function fillUser(): void {
 
     const html = `
           <div class="rank">${formatRank(rank)}</div>
-        <div class="stat wide">
+        <div class="stat ">
           <div class="title">region rank</div>
           <div class="value">${formatRank(userData.regionRank)}</div>
         </div>
-        <div class="stat wide">
+        <div class="stat ">
           <div class="title">section rank</div>
           <div class="value">${formatRank(userData.sectionRank)}</div>
         </div>
