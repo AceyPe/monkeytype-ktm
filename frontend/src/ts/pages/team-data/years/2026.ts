@@ -194,6 +194,14 @@ export const year2026: TeamSection[] = [
         section: "Egypt Section",
       },
       {
+        name: "Nermine Ouada",
+        title: "Video Editor",
+        imagePath: "/images/team/2026/Nermine-Ouada.webp",
+        linkedin: "https://www.linkedin.com/in/nermine-ouada/",
+        region: "R8",
+        section: "Tunisia Section",
+      },
+      {
         name: "Youmna Adel",
         title: "Marketing Specialist",
         imagePath: "/images/team/2026/Youmna-Adel.webp",
