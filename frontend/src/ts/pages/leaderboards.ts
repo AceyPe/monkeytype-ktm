@@ -927,11 +927,11 @@ function fillUser(): void {
           <div class="rank">${formatRank(rank)}</div>
         <div class="stat wide">
           <div class="title">region rank</div>
-          <div class="value">${formatRankText(userData.regionRank)}</div>
+          <div class="value">${formatRank(userData.regionRank)}</div>
         </div>
         <div class="stat wide">
           <div class="title">section rank</div>
-          <div class="value">${formatRankText(userData.sectionRank)}</div>
+          <div class="value">${formatRank(userData.sectionRank)}</div>
         </div>
         <div class="userInfo">
           <div class="top">You (${percentileString})</div>
@@ -1029,11 +1029,11 @@ function fillUser(): void {
           <div class="rank">${formatRank(rank)}</div>
         <div class="stat wide">
           <div class="title">region rank</div>
-          <div class="value">${formatRankText(userData.regionRank)}</div>
+          <div class="value">${formatRank(userData.regionRank)}</div>
         </div>
         <div class="stat wide">
           <div class="title">section rank</div>
-          <div class="value">${formatRankText(userData.sectionRank)}</div>
+          <div class="value">${formatRank(userData.sectionRank)}</div>
         </div>
         <div class="userInfo">
           <div class="top">You (${percentileString})</div>
@@ -1612,7 +1612,9 @@ function updateTimeText(
 
 function formatRank(rank: number | undefined): string {
   if (rank === undefined) return "";
-  if (rank === 1) return '<i class="fas fa-crown"></i>';
+  if (rank === 1) {
+    return `<span class="lbRankCrown" aria-label="1"><i class="fas fa-crown"></i><span class="lbRankCrownNumber">1</span></span>`;
+  }
 
   return rank.toString();
 }

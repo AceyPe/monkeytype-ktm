@@ -90,6 +90,21 @@
         font-size: 1em;
         margin-bottom: 2em;
         margin-top: 2em;
+
+        .rank .lbRankCrown,
+        .stat .value .lbRankCrown {
+          width: 1.5em;
+          height: 1.35em;
+
+          .fa-crown {
+            font-size: 1.5em;
+          }
+
+          .lbRankCrownNumber {
+            font-size: 0.45em;
+            transform: translateY(0.14em);
+          }
+        }
         background: var(--sub-alt-color);
         padding: 1em 2em;
         border-radius: var(--roundness);
@@ -192,6 +207,30 @@
           // padding: 0;
           width: 0;
           text-align: center;
+        }
+
+        .lbRankCrown {
+          position: relative;
+          display: inline-grid;
+          place-items: center;
+          width: 1.15em;
+          height: 1em;
+          vertical-align: middle;
+
+          .fa-crown {
+            grid-area: 1 / 1;
+            font-size: 1.15em;
+            line-height: 1;
+          }
+
+          .lbRankCrownNumber {
+            grid-area: 1 / 1;
+            font-size: 0.42em;
+            font-weight: 700;
+            line-height: 1;
+            transform: translateY(0.12em);
+            pointer-events: none;
+          }
         }
 
         thead {
