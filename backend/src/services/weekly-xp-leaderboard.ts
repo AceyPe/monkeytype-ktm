@@ -13,6 +13,34 @@ import { parseWithSchema as parseJsonWithSchema } from "@monkeytype/util/json";
 import { omit } from "../utils/misc";
 import { getUsersCollection } from "../dal/user";
 
+const MAX_WEEKLY_RANK_SCAN = 50_000;
+
+type RankMaps = {
+  regionRankByUid: Map<string, number>;
+  sectionRankByUid: Map<string, number>;
+};
+
+type WeeklyLeaderboardIdentityFields = {
+  _id: { toHexString: () => string };
+  uid: string;
+  firstName?: string;
+  lastName?: string;
+  geocode?: string;
+};
+
+function normalizeGeocode(geocode?: string): string | null {
+  if (geocode === undefined) return null;
+  const normalized = geocode.trim().toUpperCase();
+  return normalized === "" ? null : normalized;
+}
+
+function getRegionCodeFromGeocode(geocode?: string): string | null {
+  const firstDigit = geocode?.match(/\d/)?.[0];
+  if (firstDigit === undefined) return null;
+  if (firstDigit === "0") return "10";
+  return firstDigit;
+}
+
 export type AddResultOpts = {
   entry: RedisXpLeaderboardEntry;
   xpGained: RedisXpLeaderboardScore;
@@ -204,6 +232,14 @@ export class WeeklyXpLeaderboard {
 
     resultsWithRanks =
       await hydrateWeeklyLeaderboardIdentityFields(resultsWithRanks);
+    const rankMaps = await this.buildGlobalRegionAndSectionRanks(
+      weeklyXpLeaderboardConfig,
+    );
+    resultsWithRanks = resultsWithRanks.map((entry) => ({
+      ...entry,
+      regionRank: rankMaps.regionRankByUid.get(entry.uid),
+      sectionRank: rankMaps.sectionRankByUid.get(entry.uid),
+    }));
 
     if (!premiumFeaturesEnabled) {
       resultsWithRanks = resultsWithRanks.map((it) => omit(it, ["isPremium"]));
@@ -242,7 +278,7 @@ export class WeeklyXpLeaderboard {
     }
 
     try {
-      const [entry] = await hydrateWeeklyLeaderboardIdentityFields([
+      const [hydratedEntry] = await hydrateWeeklyLeaderboardIdentityFields([
         {
           ...parseJsonWithSchema(
             result ?? "null",
@@ -253,7 +289,15 @@ export class WeeklyXpLeaderboard {
           totalXp: parseInt(score, 10),
         },
       ]);
-      return entry ?? null;
+      if (hydratedEntry === undefined) return null;
+      const rankMaps = await this.buildGlobalRegionAndSectionRanks(
+        weeklyXpLeaderboardConfig,
+      );
+      return {
+        ...hydratedEntry,
+        regionRank: rankMaps.regionRankByUid.get(hydratedEntry.uid),
+        sectionRank: rankMaps.sectionRankByUid.get(hydratedEntry.uid),
+      };
     } catch (error) {
       throw new Error(
         `Failed to parse leaderboard entry: ${
@@ -261,6 +305,106 @@ export class WeeklyXpLeaderboard {
         }`,
       );
     }
+  }
+
+  private async buildGlobalRegionAndSectionRanks(
+    weeklyXpLeaderboardConfig: Configuration["leaderboards"]["weeklyXp"],
+  ): Promise<RankMaps> {
+    const connection = RedisClient.getConnection();
+    if (!connection || !weeklyXpLeaderboardConfig.enabled) {
+      return {
+        regionRankByUid: new Map<string, number>(),
+        sectionRankByUid: new Map<string, number>(),
+      };
+    }
+
+    const { weeklyXpLeaderboardScoresKey, weeklyXpLeaderboardResultsKey } =
+      this.getThisWeeksXpLeaderboardKeys();
+
+    const [, , count, ,] = await connection.getResults(
+      2,
+      weeklyXpLeaderboardScoresKey,
+      weeklyXpLeaderboardResultsKey,
+      0,
+      0,
+      "false",
+      "",
+    );
+
+    const totalCount = parseInt(count, 10);
+    if (totalCount === 0) {
+      return {
+        regionRankByUid: new Map<string, number>(),
+        sectionRankByUid: new Map<string, number>(),
+      };
+    }
+
+    const maxRank = Math.min(
+      Math.max(0, totalCount - 1),
+      MAX_WEEKLY_RANK_SCAN - 1,
+    );
+    const [results, scores] = await connection.getResults(
+      2,
+      weeklyXpLeaderboardScoresKey,
+      weeklyXpLeaderboardResultsKey,
+      0,
+      maxRank,
+      "true",
+      "",
+    );
+
+    if (results === undefined || results.length === 0) {
+      return {
+        regionRankByUid: new Map<string, number>(),
+        sectionRankByUid: new Map<string, number>(),
+      };
+    }
+
+    const parsedEntries: XpLeaderboardEntry[] = results.map(
+      (resultJSON: string, index: number) => {
+        const parsed = parseJsonWithSchema(
+          resultJSON,
+          RedisXpLeaderboardEntrySchema,
+        );
+        const scoreValue = scores[index];
+        if (typeof scoreValue !== "string") {
+          throw new Error(
+            `Invalid score value at index ${index}: ${String(scoreValue)}`,
+          );
+        }
+        return {
+          ...parsed,
+          rank: index + 1,
+          totalXp: parseInt(scoreValue, 10),
+        };
+      },
+    );
+
+    const hydratedEntries =
+      await hydrateWeeklyLeaderboardIdentityFields(parsedEntries);
+
+    const regionCounter = new Map<string, number>();
+    const sectionCounter = new Map<string, number>();
+    const regionRankByUid = new Map<string, number>();
+    const sectionRankByUid = new Map<string, number>();
+
+    for (const entry of hydratedEntries) {
+      const regionCode = getRegionCodeFromGeocode(entry.geocode);
+      if (regionCode !== null) {
+        const nextRegionRank = (regionCounter.get(regionCode) ?? 0) + 1;
+        regionCounter.set(regionCode, nextRegionRank);
+        regionRankByUid.set(entry.uid, nextRegionRank);
+      }
+
+      const sectionCode = normalizeGeocode(entry.geocode);
+      if (sectionCode !== null) {
+        const nextSectionRank = (sectionCounter.get(sectionCode) ?? 0) + 1;
+        sectionCounter.set(sectionCode, nextSectionRank);
+        sectionRankByUid.set(entry.uid, nextSectionRank);
+      }
+    }
+
+    return { regionRankByUid, sectionRankByUid };
   }
 }
 
@@ -271,14 +415,23 @@ async function hydrateWeeklyLeaderboardIdentityFields(
   const users = await getUsersCollection()
     .find(
       { uid: { $in: entries.map((it) => it.uid) } },
-      { projection: { uid: 1 } },
+      { projection: { uid: 1, firstName: 1, lastName: 1, geocode: 1 } },
     )
     .toArray();
-  const byUid = new Map(users.map((it) => [it.uid, it._id.toHexString()]));
-  return entries.map((entry) => ({
-    ...entry,
-    mongoId: byUid.get(entry.uid),
-  }));
+  const byUid = new Map<string, WeeklyLeaderboardIdentityFields>(
+    users.map((it) => [it.uid, it]),
+  );
+  return entries.map((entry) => {
+    const identity = byUid.get(entry.uid);
+    if (identity === undefined) return entry;
+    return {
+      ...entry,
+      mongoId: identity._id.toHexString(),
+      firstName: identity.firstName ?? entry.firstName,
+      lastName: identity.lastName ?? entry.lastName,
+      geocode: identity.geocode ?? entry.geocode,
+    };
+  });
 }
 
 export function get(

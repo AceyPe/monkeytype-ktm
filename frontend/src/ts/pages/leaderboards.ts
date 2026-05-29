@@ -80,58 +80,72 @@ function getSectionCellText(geocode?: string): string {
   return getSectionNameByGeocode(geocode) ?? "-";
 }
 
-type LeaderboardEntryStatsForModal = {
-  raw: string;
-  consistency: string;
-  date: string;
-  region: string;
-  section: string;
-  globalRank: string;
-  regionRank: string;
-  sectionRank: string;
-};
+type LeaderboardStatsModalRow = [label: string, value: string];
 
-function getLeaderboardEntryStatsForModal(
-  entry: LeaderboardEntry,
-  formatted: { raw: string; con: string },
-): LeaderboardEntryStatsForModal {
-  const regionNumber = getRegionNumberFromGeocode(entry.geocode);
-  return {
-    raw: formatted.raw,
-    consistency: formatted.con,
-    date: `${format(entry.timestamp, "dd MMM yyyy")} ${format(
-      entry.timestamp,
-      "HH:mm",
-    )}`,
-    region: regionNumber === null ? "-" : String(regionNumber),
-    section: getSectionCellText(entry.geocode),
-    globalRank: formatRankText(entry.rank),
-    regionRank: formatRankText(entry.regionRank),
-    sectionRank: formatRankText(entry.sectionRank),
-  };
+function formatWeeklyXpValue(xp: number): string {
+  return xp < 1000 ? xp.toString() : abbreviateNumber(xp);
 }
 
-function encodeLeaderboardEntryStatsPayload(
-  stats: LeaderboardEntryStatsForModal,
+function formatWeeklyTimeTyped(seconds: number): string {
+  return DateTime.secondsToString(Math.round(seconds), true, true, ":");
+}
+
+function getTypingLeaderboardStatsModalRows(
+  entry: LeaderboardEntry,
+  formatted: { raw: string; con: string },
+): LeaderboardStatsModalRow[] {
+  const regionNumber = getRegionNumberFromGeocode(entry.geocode);
+  return [
+    ["raw", formatted.raw],
+    ["consistency", formatted.con],
+    [
+      "date",
+      `${format(entry.timestamp, "dd MMM yyyy")} ${format(
+        entry.timestamp,
+        "HH:mm",
+      )}`,
+    ],
+    ["region", regionNumber === null ? "-" : String(regionNumber)],
+    ["section", getSectionCellText(entry.geocode)],
+    ["global rank", formatRankText(entry.rank)],
+    ["region rank", formatRankText(entry.regionRank)],
+    ["section rank", formatRankText(entry.sectionRank)],
+  ];
+}
+
+function getWeeklyLeaderboardStatsModalRows(
+  entry: XpLeaderboardEntry,
+): LeaderboardStatsModalRow[] {
+  const regionNumber = getRegionNumberFromGeocode(entry.geocode);
+  return [
+    ["xp gained", formatWeeklyXpValue(entry.totalXp)],
+    ["time typed", formatWeeklyTimeTyped(entry.timeTypedSeconds)],
+    [
+      "last activity",
+      `${format(entry.lastActivityTimestamp, "dd MMM yyyy")} ${format(
+        entry.lastActivityTimestamp,
+        "HH:mm",
+      )}`,
+    ],
+    ["region", regionNumber === null ? "-" : String(regionNumber)],
+    ["section", getSectionCellText(entry.geocode)],
+    ["global rank", formatRankText(entry.rank)],
+    ["region rank", formatRankText(entry.regionRank)],
+    ["section rank", formatRankText(entry.sectionRank)],
+  ];
+}
+
+function encodeLeaderboardStatsModalPayload(
+  rows: LeaderboardStatsModalRow[],
 ): string {
-  return encodeURIComponent(JSON.stringify(stats));
+  return encodeURIComponent(JSON.stringify({ rows }));
 }
 
 function renderLeaderboardEntryStatsModal(
-  stats: LeaderboardEntryStatsForModal,
+  rows: LeaderboardStatsModalRow[],
 ): void {
   const body = $("#leaderboardEntryStatsModalBody");
   body.empty();
-  const rows: [string, string][] = [
-    ["raw", stats.raw],
-    ["consistency", stats.consistency],
-    ["date", stats.date],
-    ["region", stats.region],
-    ["section", stats.section],
-    ["global rank", stats.globalRank],
-    ["region rank", stats.regionRank],
-    ["section rank", stats.sectionRank],
-  ];
   for (const [label, value] of rows) {
     const row = $("<div>", { class: "lbStatsModalRow" });
     row.append($("<span>", { class: "label" }).text(label));
@@ -161,15 +175,17 @@ function setupLeaderboardEntryStatsModal(): void {
 
 function openLeaderboardEntryStatsModal(encoded: string): void {
   setupLeaderboardEntryStatsModal();
-  let stats: LeaderboardEntryStatsForModal;
+  let rows: LeaderboardStatsModalRow[];
   try {
-    stats = JSON.parse(
-      decodeURIComponent(encoded),
-    ) as LeaderboardEntryStatsForModal;
+    const parsed = JSON.parse(decodeURIComponent(encoded)) as {
+      rows: LeaderboardStatsModalRow[];
+    };
+    rows = parsed.rows;
+    if (!Array.isArray(rows)) return;
   } catch {
     return;
   }
-  renderLeaderboardEntryStatsModal(stats);
+  renderLeaderboardEntryStatsModal(rows);
   const dlg = document.getElementById(
     "leaderboardEntryStatsModal",
   ) as HTMLDialogElement | null;
@@ -582,8 +598,8 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
     raw: Format.typingSpeed(entry.raw, { showDecimalPlaces: true }),
     con: Format.percentage(entry.consistency, { showDecimalPlaces: true }),
   };
-  const statsPayload = encodeLeaderboardEntryStatsPayload(
-    getLeaderboardEntryStatsForModal(entry, formatted),
+  const statsPayload = encodeLeaderboardStatsModalPayload(
+    getTypingLeaderboardStatsModalRows(entry, formatted),
   );
 
   const element = document.createElement("tr");
@@ -598,6 +614,8 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
   element.innerHTML = `
       <td>${formatRank(entry.friendsRank)}</td>
       <td>${formatRank(entry.rank)}</td>
+      <td class="stat">${formatRank(entry.regionRank)}</td>
+      <td class="stat">${formatRank(entry.sectionRank)}</td>
       <td>
         <div class="avatarNameBadge">
           <div class="avatarPlaceholder"></div>
@@ -617,13 +635,8 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
       ${formatted.wpm}
         <div class="sub">${formatted.acc}</div>
       </td>
-      <td class="stat narrow rawAndConsistency">
-      ${formatted.raw}
-        <div class="sub">${formatted.con}</div>
-      </td>
       <td class="stat wide">${formatted.wpm}</td>
       <td class="stat wide">${formatted.acc}</td>
-      <td class="stat wide">${formatted.raw}</td>
       <td class="stat wide">${formatted.con}</td>
       <td class="date">${format(
         entry.timestamp,
@@ -631,8 +644,6 @@ function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
       )}<div class="sub">${format(entry.timestamp, "HH:mm")}</div></td>
       <td class="region">${regionCellHtml}</td>
       <td class="section">${sectionCellText}</td>
-      <td class="stat">${formatRank(entry.regionRank)}</td>
-      <td class="stat">${formatRank(entry.sectionRank)}</td>
       <td class="mobileLbStats">
         <button
           type="button"
@@ -673,7 +684,13 @@ function buildWeeklyTableRow(
   const activeDiff = formatDistanceToNow(entry.lastActivityTimestamp, {
     addSuffix: true,
   });
+  const regionCellHtml = getRegionCellHtml(entry.geocode);
   const sectionCellText = getSectionCellText(entry.geocode);
+  const formattedXp = formatWeeklyXpValue(entry.totalXp);
+  const formattedTime = formatWeeklyTimeTyped(entry.timeTypedSeconds);
+  const statsPayload = encodeLeaderboardStatsModalPayload(
+    getWeeklyLeaderboardStatsModalRows(entry),
+  );
   const element = document.createElement("tr");
   if (me) {
     element.classList.add("me");
@@ -686,6 +703,8 @@ function buildWeeklyTableRow(
   element.innerHTML = `
       <td>${formatRank(entry.friendsRank)}</td>
       <td>${formatRank(entry.rank)}</td>
+      <td class="stat">${formatRank(entry.regionRank)}</td>
+      <td class="stat">${formatRank(entry.sectionRank)}</td>
       <td>
         <div class="avatarNameBadge">
           <div class="avatarPlaceholder"></div>
@@ -701,32 +720,32 @@ function buildWeeklyTableRow(
           </div>
         </div>
       </td>
-      <td class="stat wide">${
-        entry.totalXp < 1000 ? entry.totalXp : abbreviateNumber(entry.totalXp)
-      }</td>
-      <td class="stat wide">${DateTime.secondsToString(
-        Math.round(entry.timeTypedSeconds),
-        true,
-        true,
-        ":",
-      )}</td>
       <td class="stat narrow">
-      ${entry.totalXp < 1000 ? entry.totalXp : abbreviateNumber(entry.totalXp)}
-      <div class="sub">${DateTime.secondsToString(
-        Math.round(entry.timeTypedSeconds),
-        true,
-        true,
-        ":",
-      )}</div>
+      ${formattedXp}
+        <div class="sub">${formattedTime}</div>
       </td>
-      <td class="date" data-balloon-pos="left"  aria-label="${activeDiff}">
+      <td class="stat wide">${formattedXp}</td>
+      <td class="stat wide">${formattedTime}</td>
+      <td class="date" data-balloon-pos="left" aria-label="${activeDiff}">
         ${format(entry.lastActivityTimestamp, "dd MMM yyyy")}
         <div class="sub">
           ${format(entry.lastActivityTimestamp, "HH:mm")}
         </div>
       </td>
+      <td class="region">${regionCellHtml}</td>
       <td class="section">${sectionCellText}</td>
-    </tr>
+      <td class="mobileLbStats">
+        <button
+          type="button"
+          class="textButton viewLbStatsButton"
+          data-action="viewLbStats"
+          aria-haspopup="dialog"
+          data-lb-stats="${statsPayload}"
+        >
+          view stats
+        </button>
+      </td>
+
   `;
   const avatarEntry = {
     ...entry,
@@ -754,11 +773,12 @@ function fillTable(): void {
   $(".page.pageLeaderboards table thead").addClass("hidden");
   if (state.type === "allTime" || state.type === "daily") {
     tableElement.addClass("mobileStatsInModal");
+    tableElement.removeClass("weeklyMobileStatsInModal");
     $(".page.pageLeaderboards table thead.allTimeAndDaily").removeClass(
       "hidden",
     );
   } else if (state.type === "weekly") {
-    tableElement.removeClass("mobileStatsInModal");
+    tableElement.addClass("mobileStatsInModal weeklyMobileStatsInModal");
     $(".page.pageLeaderboards table thead.weekly").removeClass("hidden");
   }
 
@@ -900,12 +920,19 @@ function fillUser(): void {
     const formatted = {
       wpm: Format.typingSpeed(userData.wpm, { showDecimalPlaces: true }),
       acc: Format.percentage(userData.acc, { showDecimalPlaces: true }),
-      raw: Format.typingSpeed(userData.raw, { showDecimalPlaces: true }),
       con: Format.percentage(userData.consistency, { showDecimalPlaces: true }),
     };
 
     const html = `
           <div class="rank">${formatRank(rank)}</div>
+        <div class="stat wide">
+          <div class="title">region rank</div>
+          <div class="value">${formatRankText(userData.regionRank)}</div>
+        </div>
+        <div class="stat wide">
+          <div class="title">section rank</div>
+          <div class="value">${formatRankText(userData.sectionRank)}</div>
+        </div>
         <div class="userInfo">
           <div class="top">You (${percentileString})</div>
           <div class="bottom">${diffText}</div>
@@ -917,10 +944,6 @@ function fillUser(): void {
         <div class="stat wide">
           <div class="title">accuracy</div>
           <div class="value">${formatted.acc}</div>
-        </div>
-        <div class="stat wide">
-          <div class="title">raw</div>
-          <div class="value">${formatted.raw}</div>
         </div>
         <div class="stat wide">
           <div class="title">consistency</div>
@@ -941,22 +964,11 @@ function fillUser(): void {
           <div class="title">section</div>
           <div class="value">${getSectionCellText(userData.geocode)}</div>
         </div>
-        <div class="stat wide">
-          <div class="title">region rank</div>
-          <div class="value">${formatRankText(userData.regionRank)}</div>
-        </div>
-        <div class="stat wide">
-          <div class="title">section rank</div>
-          <div class="value">${formatRankText(userData.sectionRank)}</div>
-        </div>
         <div class="stat narrow">
           <div>${formatted.wpm}</div>
           <div class="sub">${formatted.acc}</div>
         </div>
-        <div class="stat narrow rawAndConsistency">
-          <div>${formatted.raw}</div>
-          <div class="sub">${formatted.con}</div>
-        </div>
+
         <div class="stat narrow">
           <div>${format(userData.timestamp, "dd MMM yyyy")}</div>
           <div class="sub">${format(userData.timestamp, "HH:mm")}</div>
@@ -1015,6 +1027,14 @@ function fillUser(): void {
 
     const html = `
           <div class="rank">${formatRank(rank)}</div>
+        <div class="stat wide">
+          <div class="title">region rank</div>
+          <div class="value">${formatRankText(userData.regionRank)}</div>
+        </div>
+        <div class="stat wide">
+          <div class="title">section rank</div>
+          <div class="value">${formatRankText(userData.sectionRank)}</div>
+        </div>
         <div class="userInfo">
           <div class="top">You (${percentileString})</div>
           <div class="bottom">${diffText}</div>
@@ -1027,16 +1047,24 @@ function fillUser(): void {
           <div class="title">time typed</div>
           <div class="value">${formatted.time}</div>
         </div>
-        <div class="stat narrow">
-          <div>${formatted.xp}</div>
-          <div class="sub">${formatted.time}</div>
-        </div>
         <div class="stat wide">
           <div class="title">last activity</div>
           <div class="value">${format(
             userData.lastActivityTimestamp,
             "dd MMM yyyy HH:mm",
           )}</div>
+        </div>
+        <div class="stat wide">
+          <div class="title">region</div>
+          <div class="value">${getRegionNumberFromGeocode(userData.geocode) ?? "-"}</div>
+        </div>
+        <div class="stat wide">
+          <div class="title">section</div>
+          <div class="value">${getSectionCellText(userData.geocode)}</div>
+        </div>
+        <div class="stat narrow">
+          <div>${formatted.xp}</div>
+          <div class="sub">${formatted.time}</div>
         </div>
         <div class="stat narrow">
           <div>${format(userData.lastActivityTimestamp, "dd MMM yyyy")}</div>

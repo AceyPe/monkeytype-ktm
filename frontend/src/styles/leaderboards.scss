@@ -361,30 +361,48 @@
 
 @media only screen and (max-width: calc(1280px + 5rem)) {
   .pageLeaderboards .content table thead.allTimeAndDaily tr .mobileLbStats,
+  .pageLeaderboards .content table thead.weekly tr .mobileLbStats,
   .pageLeaderboards .content table tbody tr .mobileLbStats {
     display: table-cell;
     width: 1%;
     padding: 1em 0.75rem;
   }
 
-  .pageLeaderboards .content table.mobileStatsInModal {
+  .pageLeaderboards
+    .content
+    table.mobileStatsInModal:not(.weeklyMobileStatsInModal) {
     thead.allTimeAndDaily tr {
-      td:nth-child(5),
+      td:nth-child(6),
       td:nth-child(10),
       td:nth-child(11),
-      td:nth-child(12),
-      td:nth-child(13),
-      td:nth-child(14) {
+      td:nth-child(12) {
         display: none;
       }
     }
     tbody tr {
-      td:nth-child(5),
+      td:nth-child(6),
       td:nth-child(10),
       td:nth-child(11),
-      td:nth-child(12),
-      td:nth-child(13),
-      td:nth-child(14) {
+      td:nth-child(12) {
+        display: none;
+      }
+    }
+  }
+
+  .pageLeaderboards .content table.mobileStatsInModal.weeklyMobileStatsInModal {
+    thead.weekly tr {
+      td:nth-child(6),
+      td:nth-child(9),
+      td:nth-child(10),
+      td:nth-child(11) {
+        display: none;
+      }
+    }
+    tbody tr {
+      td:nth-child(6),
+      td:nth-child(9),
+      td:nth-child(10),
+      td:nth-child(11) {
         display: none;
       }
     }
