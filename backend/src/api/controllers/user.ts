@@ -337,7 +337,7 @@ export async function acs(
   const userEmail = user.email ?? normalizedEmail;
 
   // Generate JWT token with security standards
-  const token = AuthUtil.generateJwtToken(uid, userEmail, "1h", {
+  const token = AuthUtil.generateJwtToken(uid, userEmail, "1d", {
     geocode,
     status,
     ssoid,
