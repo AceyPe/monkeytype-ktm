@@ -49,7 +49,7 @@ document
   });
 
 document
-  .querySelector("footer .right .current-theme")
+  .querySelector("footer .current-theme")
   ?.addEventListener("click", async (event) => {
     const e = event as MouseEvent;
     if (e.shiftKey) {

@@ -216,14 +216,12 @@
     }
   }
   footer {
+    .footerBody,
     .leftright {
-      .left {
+      .left,
+      .footerTopLeft {
         display: grid;
         grid-template-columns: repeat(4, auto);
-      }
-      .right {
-        display: grid;
-        grid-template-columns: 1fr;
       }
     }
   }

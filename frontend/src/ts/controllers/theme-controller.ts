@@ -199,9 +199,26 @@ async function apply(
   }
 }
 
+const IEEE_STUDENTS_LOGO_DARK = "/images/ieee_students_logo_dark_theme.png";
+const IEEE_STUDENTS_LOGO_LIGHT = "/images/ieee_students_logo_white_theme.png";
+
+function getIeeeStudentsLogoSrc(themeName: string): string {
+  return themeName === "light"
+    ? IEEE_STUDENTS_LOGO_LIGHT
+    : IEEE_STUDENTS_LOGO_DARK;
+}
+
+function updateFooterIeeeLogo(themeName: string): void {
+  const logo = document.querySelector<HTMLImageElement>(
+    "footer .footerIeeeLogo img",
+  );
+  if (logo === null) return;
+  logo.src = getIeeeStudentsLogoSrc(themeName);
+}
+
 function updateFooterIndicator(nameOverride?: string): void {
   const indicator = document.querySelector<HTMLElement>(
-    "footer .right .current-theme",
+    "footer .current-theme",
   );
   const text = indicator?.querySelector<HTMLElement>(".text");
   const favIcon = indicator?.querySelector<HTMLElement>(".favIndicator");
@@ -221,6 +238,7 @@ function updateFooterIndicator(nameOverride?: string): void {
   if (nameOverride !== undefined && nameOverride !== "") str = nameOverride;
   str = str.replace(/_/g, " ");
   text.innerText = str;
+  updateFooterIeeeLogo(str.trim());
 
   //fav icon
   // const isCustom = Config.customTheme;
