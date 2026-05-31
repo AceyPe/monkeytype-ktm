@@ -20,10 +20,56 @@ import { formatXp } from "../utils/levels";
 import { formatTopPercentage } from "../utils/misc";
 import { get as getServerConfiguration } from "../ape/server-configuration";
 import { getSectionNameByGeocode } from "../constants/sections-by-geocode";
-import { getAvatarUrlFromGeocode, getAuthenticatedUser } from "../firebase";
+import {
+  getAccountClaimsFromStoredToken,
+  getAccountDisplayName,
+  getAvatarUrlFromGeocode,
+  getAvatarUrlFromStoredTokenGeocode,
+  getAuthenticatedUser,
+  getPublicProfileDisplayName,
+} from "../firebase";
 
 type ProfileViewPaths = "profile" | "account";
 type UserProfileOrSnapshot = UserProfile | Snapshot;
+
+function refreshAccountProfileIdentity(
+  details: JQuery<HTMLElement>,
+  profile: UserProfileOrSnapshot,
+): void {
+  const claims = getAccountClaimsFromStoredToken();
+  const geocodeAvatarUrl =
+    getAvatarUrlFromStoredTokenGeocode() ??
+    getAuthenticatedUser()?.photoURL ??
+    null;
+
+  if (geocodeAvatarUrl !== null) {
+    const avatar = details.find(".avatarAndName .avatar");
+    avatar.replaceWith(
+      getAvatarElement({ avatarUrl: geocodeAvatarUrl }, { size: 256 }),
+    );
+  }
+
+  const displayName = getAccountDisplayName({
+    firstName: claims?.firstName,
+    lastName: claims?.lastName,
+    authDisplayName: getAuthenticatedUser()?.displayName,
+    accountName: profile.name,
+    uid: profile.uid,
+  });
+  if (displayName !== "") {
+    details.find(".name").text(displayName);
+  }
+
+  const jwtIdentity = details.find(".jwtIdentity");
+  if (claims === null) {
+    jwtIdentity.addClass("hidden");
+    return;
+  }
+
+  const sectionName = getSectionNameByGeocode(claims.geocode);
+  jwtIdentity.find(".geocode").text(`${sectionName ?? claims.geocode ?? "-"}`);
+  jwtIdentity.removeClass("hidden");
+}
 
 //this is probably the dirtiest code ive ever written
 
@@ -54,7 +100,11 @@ export async function update(
 
   const avatar = details.find(".avatarAndName .avatar");
   const geocodeAvatarUrl =
-    where === "profile" ? getAvatarUrlFromGeocode(profile.geocode) : undefined;
+    where === "profile"
+      ? getAvatarUrlFromGeocode(profile.geocode)
+      : (getAvatarUrlFromStoredTokenGeocode() ??
+        getAvatarUrlFromGeocode(profile.geocode) ??
+        undefined);
   avatar.replaceWith(
     getAvatarElement(
       {
@@ -82,13 +132,10 @@ export async function update(
     details.find(".allBadges").empty().append(restHtml);
   }
 
-  details.find(".name").text(profile.name);
   if (where === "profile") {
-    const fullName = [profile.firstName, profile.lastName]
-      .filter((part) => typeof part === "string" && part !== "")
-      .join(" ");
-    if (fullName !== "") {
-      details.find(".name").text(fullName);
+    const displayName = getPublicProfileDisplayName(profile);
+    if (displayName !== "") {
+      details.find(".name").text(displayName);
     }
     const jwtIdentity = details.find(".jwtIdentity");
     const sectionName = getSectionNameByGeocode(profile.geocode);
@@ -390,6 +437,10 @@ export async function update(
     details.addClass("bioAndKey");
   } else if (socials && bioAndKey) {
     details.addClass("both");
+  }
+
+  if (where === "account") {
+    refreshAccountProfileIdentity(details, profile);
   }
 
   updateFriendRequestButton();

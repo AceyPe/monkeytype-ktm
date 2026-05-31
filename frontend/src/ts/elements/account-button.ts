@@ -5,6 +5,7 @@ import {
 } from "../controllers/user-flag-controller";
 import {
   getAccountClaimsFromStoredToken,
+  getAccountDisplayName,
   getAuthenticatedUser,
   isAuthenticated,
 } from "../firebase";
@@ -48,16 +49,16 @@ export function updateAvatar(avatar?: {
 function getNavbarProfileDisplayName(
   authenticatedUser: ReturnType<typeof getAuthenticatedUser>,
   snapshotName: string | undefined,
+  uid: string | undefined,
 ): string {
   const claims = getAccountClaimsFromStoredToken();
-  const fromClaims = [claims?.firstName, claims?.lastName]
-    .filter((p): p is string => typeof p === "string" && p.trim() !== "")
-    .join(" ")
-    .trim();
-  if (fromClaims !== "") return fromClaims;
-  const fromUser = authenticatedUser?.displayName?.trim();
-  if (fromUser !== undefined && fromUser !== "") return fromUser;
-  return snapshotName ?? "";
+  return getAccountDisplayName({
+    firstName: claims?.firstName,
+    lastName: claims?.lastName,
+    authDisplayName: authenticatedUser?.displayName,
+    accountName: snapshotName,
+    uid,
+  });
 }
 
 export function update(): void {
@@ -67,7 +68,9 @@ export function update(): void {
 
     if (snapshot === undefined) {
       loading(true);
-      updateName(getNavbarProfileDisplayName(authenticatedUser, undefined));
+      updateName(
+        getNavbarProfileDisplayName(authenticatedUser, undefined, undefined),
+      );
       updateAvatar({ avatarUrl: authenticatedUser?.photoURL ?? undefined });
       void Misc.swapElements(
         document.querySelector("nav .textButton.view-login") as HTMLElement,
@@ -81,7 +84,9 @@ export function update(): void {
     const { xp, name, mongoId } = snapshot;
 
     loading(false);
-    updateName(getNavbarProfileDisplayName(authenticatedUser, name));
+    updateName(
+      getNavbarProfileDisplayName(authenticatedUser, name, snapshot.uid),
+    );
     updateFlags(snapshot ?? {});
     XpBar.setXp(xp);
     updateAvatar({

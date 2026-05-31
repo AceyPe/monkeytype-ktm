@@ -21,11 +21,7 @@ import * as Skeleton from "../utils/skeleton";
 import type { ScaleChartOptions, LinearScaleOptions } from "chart.js";
 import * as ConfigEvent from "../observables/config-event";
 import * as ActivePage from "../states/active-page";
-import {
-  getAccountClaimsFromStoredToken,
-  getAuthenticatedUser,
-  getAvatarUrlFromStoredTokenGeocode,
-} from "../firebase";
+import { getAuthenticatedUser } from "../firebase";
 import * as Loader from "../elements/loader";
 import * as ResultBatches from "../elements/result-batches";
 import Format from "../utils/format";
@@ -39,8 +35,6 @@ import { SnapshotResult } from "../constants/default-snapshot";
 import Ape from "../ape";
 import { AccountChart } from "@monkeytype/schemas/configs";
 import { SortedTableWithLimit } from "../utils/sorted-table";
-import { getAvatarElement } from "../utils/discord-avatar";
-import { getSectionNameByGeocode } from "../constants/sections-by-geocode";
 
 let filterDebug = false;
 //toggle filterdebug
@@ -55,45 +49,6 @@ let filteredResults: SnapshotResult<Mode>[] = [];
 let visibleTableLines = 0;
 let testActivityEl: HTMLElement | null;
 let historyTable: SortedTableWithLimit<SnapshotResult<Mode>>;
-
-function updateAccountIdentityFromJwt(): void {
-  const claims = getAccountClaimsFromStoredToken();
-  const details = $(".pageAccount .profile .details");
-  const jwtIdentity = details.find(".jwtIdentity");
-  const geocodeAvatarUrl =
-    getAvatarUrlFromStoredTokenGeocode() ??
-    getAuthenticatedUser()?.photoURL ??
-    null;
-
-  if (geocodeAvatarUrl !== null) {
-    const avatar = details.find(".avatarAndName .avatar");
-    avatar.replaceWith(
-      getAvatarElement(
-        {
-          avatarUrl: geocodeAvatarUrl,
-        },
-        { size: 256 },
-      ),
-    );
-  }
-
-  if (claims === null) {
-    jwtIdentity.addClass("hidden");
-    return;
-  }
-
-  const fullName = [claims.firstName, claims.lastName]
-    .filter((part) => typeof part === "string" && part !== "")
-    .join(" ");
-  if (fullName !== "") {
-    details.find(".name").text(fullName);
-  }
-
-  const sectionName = getSectionNameByGeocode(claims.geocode);
-  jwtIdentity.find(".geocode").text(`${sectionName ?? claims.geocode ?? "-"}`);
-  // jwtIdentity.find(".grade").text(`Grade: ${claims.grade ?? "-"}`);
-  jwtIdentity.removeClass("hidden");
-}
 
 function loadMoreLines(lineIndex?: number): void {
   if (filteredResults === undefined || filteredResults.length === 0) return;
@@ -269,7 +224,6 @@ async function fillContent(): Promise<void> {
 
   PbTables.update(snapshot.personalBests);
   await Profile.update("account", snapshot);
-  updateAccountIdentityFromJwt();
 
   TestActivity.init(
     testActivityEl as HTMLElement,

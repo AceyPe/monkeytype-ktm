@@ -13,6 +13,7 @@ import {
   getAuthenticatedUser,
   getAvatarUrlFromStoredTokenGeocode,
   isAuthenticated,
+  getPublicProfileDisplayName,
 } from "../firebase";
 import * as DB from "../db";
 import {
@@ -583,13 +584,7 @@ function updateJumpButtons(): void {
 }
 
 function buildTableRow(entry: LeaderboardEntry, me = false): HTMLElement {
-  const displayName =
-    [entry.firstName, entry.lastName]
-      .filter((it) => typeof it === "string" && it !== "")
-      .join(" ")
-      .trim() ||
-    entry.name ||
-    entry.uid;
+  const displayName = getPublicProfileDisplayName(entry) || "Member";
   const regionCellHtml = getRegionCellHtml(entry.geocode);
   const sectionCellText = getSectionCellText(entry.geocode);
   const formatted = {
@@ -674,13 +669,7 @@ function buildWeeklyTableRow(
   entry: XpLeaderboardEntry,
   me = false,
 ): HTMLElement {
-  const displayName =
-    [entry.firstName, entry.lastName]
-      .filter((it) => typeof it === "string" && it !== "")
-      .join(" ")
-      .trim() ||
-    entry.name ||
-    entry.uid;
+  const displayName = getPublicProfileDisplayName(entry) || "Member";
   const activeDiff = formatDistanceToNow(entry.lastActivityTimestamp, {
     addSuffix: true,
   });
