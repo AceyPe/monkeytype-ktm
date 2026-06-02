@@ -298,11 +298,12 @@ header {
   user-select: none;
 
   .ktmHeaderLogo {
-    background-image: url("/images/ktm.png");
-    background-size: cover;
+    background-image: url("/images/logo.png");
+    background-size: contain;
+    background-repeat: no-repeat;
     background-position: center;
-    width: 300px;
-    height: 100px;
+    width: 200px;
+    height: 120px;
   }
 
   #logo {
@@ -443,7 +444,6 @@ header {
       .punctuationMode {
         margin-bottom: -0.1rem;
       }
-
       .numbersMode {
         margin-bottom: -0.1rem;
       }
