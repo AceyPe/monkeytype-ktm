@@ -49,7 +49,7 @@ input[type="submit"] {
   display: inline-flex;
   gap: 0.5em;
   align-items: baseline;
-  justify-content: center;
+  justify-content: left;
 
   &.danger {
     background: var(--error-color);
@@ -125,7 +125,7 @@ button.text,
   display: inline-flex;
   gap: 0.5em;
   align-items: baseline;
-  justify-content: center;
+  justify-content: left;
 
   &.danger {
     color: var(--error-color);

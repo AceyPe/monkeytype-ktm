@@ -35,13 +35,16 @@ footer {
     transition: 0.25s;
   }
 
+  .footerBody,
   .leftright {
     margin: -0.5em;
     -webkit-user-select: none;
     user-select: none;
     display: grid;
     grid-template-columns: 1fr max-content;
-    gap: 2rem;
+    column-gap: 1.25rem;
+    row-gap: 0;
+    align-items: start;
     .textButton {
       text-decoration: none;
       font-size: 0.75rem;
@@ -52,18 +55,71 @@ footer {
       font-size: 0.75rem;
       padding: 0.25em 0.5em;
     }
-    .left {
+    .left,
+    .footerLeft,
+    .footerTopLeft,
+    .footerBottomLeft {
       text-align: left;
       display: flex;
       justify-items: start;
       width: max-content;
     }
-    .right {
+    .footerLeft {
+      grid-column: 1;
+      grid-row: 1;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.15rem;
+      max-width: 100%;
+    }
+    .footerTopLeft {
+      flex-wrap: wrap;
+      column-gap: 0.125rem;
+
+      .textButton {
+        padding: 0.25em 0.3em;
+        gap: 0.2rem;
+      }
+    }
+    .footerBottomLeft {
+      .textNonButton {
+        padding-top: 0;
+        padding-bottom: 0.25em;
+      }
+    }
+    .right,
+    .footerRight {
       text-align: right;
       display: flex;
       justify-self: right;
       width: max-content;
       height: max-content;
+    }
+    .footerRight {
+      grid-column: 2;
+      grid-row: 1;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      align-self: start;
+    }
+    .footerIeeeLogo {
+      display: block;
+      line-height: 0;
+      flex-shrink: 0;
+      // background: white;
+      // padding: 1em;
+      // border-radius: 0.5em;
+
+      img {
+        display: block;
+        height: 2.25rem;
+        width: auto;
+        max-width: min(14rem, 40vw);
+        object-fit: contain;
+        object-position: right center;
+      }
     }
     .bottom {
       text-align: left;
@@ -73,7 +129,9 @@ footer {
       height: max-content;
     }
     .left .textButton,
-    .right .textButton {
+    .right .textButton,
+    .footerTopLeft .textButton,
+    .footerRight .textButton {
       display: grid;
       grid-auto-flow: column;
       gap: 0.25rem;
@@ -81,6 +139,10 @@ footer {
       width: -moz-available;
       width: max-content;
     }
+  }
+
+  .footerBody {
+    grid-template-rows: auto;
   }
 
   .currentVersion {
@@ -127,6 +189,9 @@ footer {
       pointer-events: none !important;
     }
     p {
+      opacity: 0 !important;
+    }
+    .footerIeeeLogo {
       opacity: 0 !important;
     }
   }

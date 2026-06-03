@@ -570,7 +570,9 @@ export function updateTitle(title?: string): void {
   const local = isDevEnvironment() ? "localhost - " : "";
 
   if (title === undefined || title === "") {
-    document.title = local + "IEEE KTM | Type. Compete. Repeat.";
+    document.title =
+      local +
+      "IEEE Keyboard Typing Marathon | Global Online Typing Competition";
   } else {
     document.title = local + title;
   }

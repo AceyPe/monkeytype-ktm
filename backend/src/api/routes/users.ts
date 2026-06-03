@@ -11,6 +11,9 @@ export default s.router(usersContract, {
   samlInitiate: {
     handler: async (r) => callController(UserController.samlInitiate)(r),
   },
+  samlLogout: {
+    handler: async (r) => callController(UserController.samlLogout)(r),
+  },
   session: {
     handler: async (r) => callController(UserController.getSession)(r),
   },

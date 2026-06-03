@@ -356,6 +356,11 @@ export const limits = {
     max: 10,
   },
 
+  userSamlLogout: {
+    window: "minute",
+    max: 10,
+  },
+
   userSamlAcs: {
     window: "minute",
     max: 10,

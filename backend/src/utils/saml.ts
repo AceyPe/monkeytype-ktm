@@ -13,6 +13,7 @@ import Logger from "./logger";
 const SAML_AUTHN_REQUEST_BINDING =
   process.env["SAML_AUTHN_REQUEST_BINDING"] ?? "";
 const SAML_PUBLIC_API_URL = process.env["SAML_PUBLIC_API_URL"];
+const SAML_LOGOUT_URL = process.env["SAML_LOGOUT_URL"];
 // const FRONTEND_BASE_URL = (
 //   process.env["FRONTEND_URL"] ?? "https://ieeektm.org"
 // ).replace(/\/$/, "");
@@ -39,6 +40,20 @@ let samlStrategyInstance: SamlStrategy | null = null;
 
 export function usesAuthnRequestHttpPostBinding(): boolean {
   return SAML_AUTHN_REQUEST_BINDING === "HTTP-POST";
+}
+
+export function getSamlLogoutUrl(): string {
+  const logoutUrl = SAML_LOGOUT_URL?.trim();
+  if (logoutUrl === undefined || logoutUrl === "") {
+    throw new MonkeyError(500, "SAML logout URL is not configured");
+  }
+
+  try {
+    new URL(logoutUrl);
+    return logoutUrl;
+  } catch {
+    throw new MonkeyError(500, "SAML logout URL is invalid");
+  }
 }
 
 export function getSamlRequestHostFromHeaders(

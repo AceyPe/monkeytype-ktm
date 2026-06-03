@@ -77,6 +77,7 @@ import {
   RemoveResultFilterPresetPathParams,
   ReportUserRequest,
   SamlInitiateResponse,
+  SamlLogoutResponse,
   SessionResponse,
   SetStreakHourOffsetRequest,
   TagIdPathParams,
@@ -117,6 +118,13 @@ export async function samlInitiate(
   const publicBase = SamlUtils.getPublicApiBaseUrlFromExpressRequest(req.raw);
   const url = await SamlUtils.getSamlInitiateNavigateUrl(publicBase, host);
   return new MonkeyResponse("SAML SSO URL generated", { url });
+}
+
+export async function samlLogout(
+  _req: MonkeyRequest,
+): Promise<SamlLogoutResponse> {
+  const url = SamlUtils.getSamlLogoutUrl();
+  return new MonkeyResponse("SAML logout URL generated", { url });
 }
 
 export async function getSession(req: MonkeyRequest): Promise<SessionResponse> {
@@ -329,7 +337,7 @@ export async function acs(
   const userEmail = user.email ?? normalizedEmail;
 
   // Generate JWT token with security standards
-  const token = AuthUtil.generateJwtToken(uid, userEmail, "1h", {
+  const token = AuthUtil.generateJwtToken(uid, userEmail, "1d", {
     geocode,
     status,
     ssoid,

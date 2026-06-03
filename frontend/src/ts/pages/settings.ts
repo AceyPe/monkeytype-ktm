@@ -265,11 +265,11 @@ async function initGroups(): Promise<void> {
     UpdateConfig.setStartGraphsAtZero,
     "button",
   );
-  groups["autoSwitchTheme"] = new SettingsGroup(
-    "autoSwitchTheme",
-    UpdateConfig.setAutoSwitchTheme,
-    "button",
-  );
+  // groups["autoSwitchTheme"] = new SettingsGroup(
+  //   "autoSwitchTheme",
+  //   UpdateConfig.setAutoSwitchTheme,
+  //   "button",
+  // );
   // groups["randomTheme"] = new SettingsGroup(
   //   "randomTheme",
   //   UpdateConfig.setRandomTheme,

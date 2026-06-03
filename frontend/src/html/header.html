@@ -18,19 +18,7 @@
 
 <header>
   <a href="/">
-    <!-- <<<<<<< HEAD -->
-    <div
-      style="
-        background-image: url(&quot;/images/logo.png&quot;);
-        background-size: cover;
-        background-position: center;
-        width: 200px;
-        height: 120px;
-      "
-    >
-      <!-- ======= -->
-      <!-- <div class="ktmHeaderLogo"> -->
-      <!-- >>>>>>> 1eba642a677c3c7de5325ae2b96a458570d15a51 -->
+    <div class="ktmHeaderLogo">
       <!-- <svg
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -144,16 +132,39 @@
       </div>
     </a> -->
     <a
-      class="textButton view-settings"
+      class="textButton view-contests"
+      href="/contests"
+      onclick="this.blur()"
+      router-link
+      title="contests"
+    >
+      <div class="icon">
+        <i class="fas fa-fw fa-trophy"></i>
+      </div>
+    </a>
+    <a
+      class="textButton"
       href="/settings"
       onclick="this.blur()"
       router-link
       title="settings"
+      style="max-width: 40px"
     >
       <div class="icon">
         <i class="fas fa-fw fa-cog"></i>
       </div>
     </a>
+    <!-- <a
+      class="textButton view-settings"
+      href="/"
+      onclick="this.blur()"
+      router-link
+      title="button >:("
+    >
+      <div class="icon">
+        <i class="fas fa-fw fa-cog"></i>
+      </div>
+    </a> -->
     <div></div>
     <button class="text showAlerts" onclick="this.blur()">
       <div class="icon">

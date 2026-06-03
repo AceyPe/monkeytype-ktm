@@ -90,6 +90,21 @@
         font-size: 1em;
         margin-bottom: 2em;
         margin-top: 2em;
+
+        .rank .lbRankCrown,
+        .stat .value .lbRankCrown {
+          width: 1.5em;
+          height: 1.35em;
+
+          .fa-crown {
+            font-size: 1.5em;
+          }
+
+          .lbRankCrownNumber {
+            font-size: 0.45em;
+            transform: translateY(0.14em);
+          }
+        }
         background: var(--sub-alt-color);
         padding: 1em 2em;
         border-radius: var(--roundness);
@@ -188,10 +203,46 @@
           display: none;
         }
         td:first-child,
-        td:nth-child(2) {
-          // padding: 0;
-          width: 0;
+        td:nth-child(2),
+        td.rankCol {
+          width: 1px;
+          white-space: nowrap;
           text-align: center;
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+        }
+
+        .rankColLabelShort {
+          display: none;
+        }
+
+        td.nameCol {
+          width: auto;
+          min-width: 8rem;
+        }
+
+        .lbRankCrown {
+          position: relative;
+          display: inline-grid;
+          place-items: center;
+          width: 1.15em;
+          height: 1em;
+          vertical-align: middle;
+
+          .fa-crown {
+            grid-area: 1 / 1;
+            font-size: 1.15em;
+            line-height: 1;
+          }
+
+          .lbRankCrownNumber {
+            grid-area: 1 / 1;
+            font-size: 0.42em;
+            font-weight: 700;
+            line-height: 1;
+            transform: translateY(0.12em);
+            pointer-events: none;
+          }
         }
 
         thead {
@@ -255,6 +306,10 @@
 
           td.stat {
             text-align: right;
+          }
+
+          td.rankCol {
+            text-align: center;
           }
 
           td.date {
@@ -360,31 +415,96 @@
 }
 
 @media only screen and (max-width: calc(1280px + 5rem)) {
+  .pageLeaderboards .content .tableAndUser table {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 0;
+
+    --padding: 0.5em 0.35rem;
+
+    td:first-child,
+    td:nth-child(2),
+    td.rankCol {
+      width: 2.25rem;
+      max-width: 2.25rem;
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+    }
+
+    td.nameCol {
+      width: auto;
+      min-width: 0;
+
+      .avatarNameBadge {
+        min-width: 0;
+      }
+
+      .entryName {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .rankColLabelFull {
+      display: none;
+    }
+
+    .rankColLabelShort {
+      display: inline;
+    }
+
+    &.friendsOnly .globalRank {
+      .rankColLabelFull,
+      .rankColLabelShort {
+        display: none;
+      }
+    }
+  }
+
   .pageLeaderboards .content table thead.allTimeAndDaily tr .mobileLbStats,
+  .pageLeaderboards .content table thead.weekly tr .mobileLbStats,
   .pageLeaderboards .content table tbody tr .mobileLbStats {
     display: table-cell;
     width: 1%;
     padding: 1em 0.75rem;
   }
 
-  .pageLeaderboards .content table.mobileStatsInModal {
+  .pageLeaderboards
+    .content
+    table.mobileStatsInModal:not(.weeklyMobileStatsInModal) {
     thead.allTimeAndDaily tr {
-      td:nth-child(5),
+      td:nth-child(6),
       td:nth-child(10),
       td:nth-child(11),
-      td:nth-child(12),
-      td:nth-child(13),
-      td:nth-child(14) {
+      td:nth-child(12) {
         display: none;
       }
     }
     tbody tr {
-      td:nth-child(5),
+      td:nth-child(6),
       td:nth-child(10),
       td:nth-child(11),
-      td:nth-child(12),
-      td:nth-child(13),
-      td:nth-child(14) {
+      td:nth-child(12) {
+        display: none;
+      }
+    }
+  }
+
+  .pageLeaderboards .content table.mobileStatsInModal.weeklyMobileStatsInModal {
+    thead.weekly tr {
+      td:nth-child(6),
+      td:nth-child(9),
+      td:nth-child(10),
+      td:nth-child(11) {
+        display: none;
+      }
+    }
+    tbody tr {
+      td:nth-child(6),
+      td:nth-child(9),
+      td:nth-child(10),
+      td:nth-child(11) {
         display: none;
       }
     }

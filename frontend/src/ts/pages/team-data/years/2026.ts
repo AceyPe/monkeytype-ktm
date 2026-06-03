@@ -153,6 +153,14 @@ export const year2026: TeamSection[] = [
         section: "Tunisia Section",
       },
       {
+        name: "Vildana Hrnjić",
+        title: "Brand Designer",
+        imagePath: "/images/team/2026/Vildana-Hrnjić.webp",
+        linkedin: "https://www.linkedin.com/in/vildana-hrnji%C4%87/",
+        region: "R8",
+        section: "Bosnia and Herzegovina Section",
+      },
+      {
         name: "Rayen Dellai",
         title: "Graphic Designer",
         imagePath: "/images/team/2026/Rayen-Dellai.webp",
@@ -184,6 +192,14 @@ export const year2026: TeamSection[] = [
           "https://www.linkedin.com/in/rashad-alkhodary?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app",
         region: "R8",
         section: "Egypt Section",
+      },
+      {
+        name: "Nermine Ouada",
+        title: "Video Editor",
+        imagePath: "/images/team/2026/Nermine-Ouada.webp",
+        linkedin: "https://www.linkedin.com/in/nermine-ouada/",
+        region: "R8",
+        section: "Tunisia Section",
       },
       {
         name: "Youmna Adel",

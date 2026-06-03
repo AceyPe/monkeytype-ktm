@@ -45,6 +45,12 @@ type SessionResponse = {
   };
 };
 
+type LogoutResponse = {
+  data?: {
+    url?: string;
+  };
+};
+
 type JwtSessionClaims = {
   uid?: unknown;
   email?: unknown;
@@ -183,6 +189,85 @@ export function getAvatarUrlFromStoredTokenGeocode(): string | null {
   return avatarUrl ?? null;
 }
 
+/** Numeric member / SSO ids must not be shown as the user's display name. */
+export function looksLikeIeeeMemberId(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed === "") return false;
+  return /^\d{5,}$/.test(trimmed);
+}
+
+export function getDisplayNameFromParts(
+  firstName?: string,
+  lastName?: string,
+): string {
+  return [firstName, lastName]
+    .filter((part): part is string => typeof part === "string" && part !== "")
+    .map((part) => part.trim())
+    .join(" ")
+    .trim();
+}
+
+function shouldHideAccountNameAsDisplayName(
+  accountName: string | undefined,
+  uid?: string,
+): boolean {
+  const name = accountName?.trim() ?? "";
+  if (name === "") return true;
+  if (looksLikeIeeeMemberId(name)) return true;
+  if (uid !== undefined && uid.trim() !== "" && name === uid.trim())
+    return true;
+  return false;
+}
+
+/** Preferred label for the signed-in user's profile card and nav (never the IEEE member id). */
+export function getAccountDisplayName(options: {
+  firstName?: string;
+  lastName?: string;
+  authDisplayName?: string | null;
+  accountName?: string;
+  uid?: string;
+}): string {
+  const fromNames = getDisplayNameFromParts(
+    options.firstName,
+    options.lastName,
+  );
+  if (fromNames !== "") return fromNames;
+
+  const fromAuth = options.authDisplayName?.trim();
+  if (
+    fromAuth !== undefined &&
+    fromAuth !== "" &&
+    !looksLikeIeeeMemberId(fromAuth)
+  ) {
+    return fromAuth;
+  }
+
+  const accountName = options.accountName?.trim() ?? "";
+  if (
+    accountName !== "" &&
+    !shouldHideAccountNameAsDisplayName(accountName, options.uid)
+  ) {
+    return accountName;
+  }
+
+  return "";
+}
+
+/** Name shown on public profile pages; omits IEEE member id when no legal name is stored. */
+export function getPublicProfileDisplayName(profile: {
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  uid?: string;
+}): string {
+  const fullName = getDisplayNameFromParts(profile.firstName, profile.lastName);
+  if (fullName !== "") return fullName;
+  if (shouldHideAccountNameAsDisplayName(profile.name, profile.uid)) {
+    return "";
+  }
+  return profile.name?.trim() ?? "";
+}
+
 function readSessionUserFromToken(token: string | null): User | null {
   if (token === null) {
     return null;
@@ -288,14 +373,27 @@ export function isAuthAvailable(): boolean {
 
 export async function signOut(): Promise<void> {
   const token = getStoredToken();
-  if (token !== null) {
-    await fetch(LOGOUT_URL, {
-      method: "POST",
+  let samlLogoutUrl: string | undefined;
+
+  try {
+    const response = await fetch(LOGOUT_URL, {
+      method: "GET",
       headers: createAuthHeaders(token),
     });
+    if (response.ok) {
+      const body = (await response.json()) as LogoutResponse;
+      samlLogoutUrl = body.data?.url;
+    }
+  } catch {
+    // Still clear local auth state if the IdP logout handoff fails.
   }
+
   clearAuthState();
   await readyCallback?.(true, null);
+
+  if (samlLogoutUrl !== undefined && samlLogoutUrl !== "") {
+    window.location.assign(samlLogoutUrl);
+  }
 }
 
 export async function signInWithEmailAndPassword(

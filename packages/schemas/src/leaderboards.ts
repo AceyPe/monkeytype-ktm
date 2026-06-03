@@ -71,6 +71,8 @@ export const XpLeaderboardEntrySchema = RedisXpLeaderboardEntrySchema.extend({
   totalXp: RedisXpLeaderboardScoreSchema,
   // dynamically added when generating response on the backend
   rank: z.number().nonnegative().int(),
+  regionRank: z.number().nonnegative().int().optional(),
+  sectionRank: z.number().nonnegative().int().optional(),
   friendsRank: FriendsRankSchema,
 });
 export type XpLeaderboardEntry = z.infer<typeof XpLeaderboardEntrySchema>;
