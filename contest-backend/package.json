@@ -1,0 +1,38 @@
+{
+  "name": "@monkeytype/contest-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "eslint": "eslint \"./src/**/*.ts\"",
+    "oxlint": "oxlint .",
+    "lint": "npm run oxlint && npm run eslint",
+    "build": "tsc --build",
+    "ts-check": "tsc --noEmit",
+    "start": "node ./dist/server.js",
+    "dev": "tsx watch --clear-screen=false ./src/server.ts"
+  },
+  "dependencies": {
+    "@monkeytype/contest-validation": "workspace:*",
+    "@monkeytype/test-content": "workspace:*",
+    "cors": "2.8.5",
+    "dotenv": "16.4.5",
+    "express": "5.2.0",
+    "stream-chat": "8.59.0",
+    "uuid": "10.0.0",
+    "ws": "8.18.0",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@monkeytype/eslint-config": "workspace:*",
+    "@monkeytype/oxlint-config": "workspace:*",
+    "@monkeytype/typescript-config": "workspace:*",
+    "eslint": "8.57.1",
+    "oxlint": "1.29.0",
+    "@types/cors": "2.8.12",
+    "@types/express": "5.0.3",
+    "@types/node": "24.9.1",
+    "@types/ws": "8.5.13",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3"
+  }
+}

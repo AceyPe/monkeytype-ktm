@@ -37,6 +37,7 @@ import * as QuoteRateModal from "../modals/quote-rate";
 import * as Result from "./result";
 import * as MonkeyPower from "../elements/monkey-power";
 import * as ActivePage from "../states/active-page";
+import * as ContestClient from "../contest/contest-client";
 import * as TestInput from "./test-input";
 import * as TestWords from "./test-words";
 import * as WordsGenerator from "./words-generator";
@@ -591,12 +592,46 @@ async function init(): Promise<boolean> {
   let generatedWords: string[] = [];
   let generatedSectionIndexes: number[] = [];
   try {
-    const gen = await WordsGenerator.generateWords(language);
-    generatedWords = gen.words;
-    generatedSectionIndexes = gen.sectionIndexes;
-    wordsHaveTab = gen.hasTab;
-    wordsHaveNewline = gen.hasNewline;
-    ({ allRightToLeft, allLigatures } = gen);
+    if (ActivePage.isContestPage()) {
+      let contestWords = ContestClient.getSessionWords();
+      if (contestWords === null) {
+        try {
+          if (!ContestClient.isConnected()) {
+            await ContestClient.startSession();
+          }
+          contestWords = await ContestClient.loadSessionWords();
+        } catch (e) {
+          Notifications.add(
+            Misc.createErrorMessage(
+              e,
+              "Contest server unavailable — using offline words",
+            ),
+            -1,
+            { important: true },
+          );
+        }
+      }
+      if (contestWords !== null) {
+        generatedWords = contestWords;
+        generatedSectionIndexes = contestWords.map(() => 0);
+        wordsHaveTab = false;
+        wordsHaveNewline = false;
+      } else {
+        const gen = await WordsGenerator.generateWords(language);
+        generatedWords = gen.words;
+        generatedSectionIndexes = gen.sectionIndexes;
+        wordsHaveTab = gen.hasTab;
+        wordsHaveNewline = gen.hasNewline;
+        ({ allRightToLeft, allLigatures } = gen);
+      }
+    } else {
+      const gen = await WordsGenerator.generateWords(language);
+      generatedWords = gen.words;
+      generatedSectionIndexes = gen.sectionIndexes;
+      wordsHaveTab = gen.hasTab;
+      wordsHaveNewline = gen.hasNewline;
+      ({ allRightToLeft, allLigatures } = gen);
+    }
   } catch (e) {
     Loader.hide();
     if (e instanceof WordGenError || e instanceof Error) {
@@ -969,6 +1004,9 @@ function buildCompletedEvent(
 
 export async function finish(difficultyFailed = false): Promise<void> {
   if (!TestState.isActive) return;
+  if (ActivePage.isContestPage() && ContestClient.isConnected()) {
+    void ContestClient.finishSession();
+  }
   TestUI.setResultCalculating(true);
   const now = performance.now();
   TestStats.setEnd(now);

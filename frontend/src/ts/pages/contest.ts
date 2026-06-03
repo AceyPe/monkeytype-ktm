@@ -9,7 +9,10 @@ import * as Keymap from "../elements/keymap";
 import * as TestConfig from "../test/test-config";
 import * as ScrollToTop from "../elements/scroll-to-top";
 import { blurInputElement } from "../input/input-element";
+import * as Notifications from "../elements/notifications";
+import * as Misc from "../utils/misc";
 import * as ContestMode from "../contest/contest-mode";
+import * as ContestClient from "../contest/contest-client";
 
 export const page = new Page({
   id: "contest",
@@ -20,6 +23,7 @@ export const page = new Page({
     blurInputElement();
   },
   afterHide: async (): Promise<void> => {
+    await ContestClient.disconnect();
     $(".page.pageTest").removeClass("contest-mode");
     ContestMode.restore();
     ManualRestart.set();
@@ -34,6 +38,15 @@ export const page = new Page({
   beforeShow: async (): Promise<void> => {
     $(".page.pageTest").addClass("contest-mode");
     ContestMode.apply();
+    try {
+      await ContestClient.startSession();
+    } catch (e) {
+      Notifications.add(
+        Misc.createErrorMessage(e, "Contest server unavailable"),
+        -1,
+        { important: true },
+      );
+    }
     TestConfig.hide();
     updateFooterAndVerticalAds(false);
     TestStats.resetIncomplete();

@@ -22,6 +22,8 @@ import {
 import * as Replay from "../../test/replay";
 import * as MonkeyPower from "../../elements/monkey-power";
 import Config from "../../config";
+import * as ActivePage from "../../states/active-page";
+import * as ContestClient from "../../contest/contest-client";
 import * as KeymapEvent from "../../observables/keymap-event";
 import * as WeakSpot from "../../test/weak-spot";
 import * as CompositionState from "../../states/composition";
@@ -148,6 +150,10 @@ export async function onInsertText(options: OnInsertTextParams): Promise<void> {
       targetWord: currentWord,
       correctShiftUsed,
     });
+
+  if (ActivePage.isContestPage()) {
+    void ContestClient.reportKeystroke(data, correct);
+  }
 
   // word navigation check
   const noSpaceForce =
