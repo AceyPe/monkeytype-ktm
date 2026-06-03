@@ -105,7 +105,7 @@ ConfigEvent.subscribe((eventKey, eventValue, nosave) => {
 
   if (eventValue === undefined) return;
   if (eventKey === "highlightMode") {
-    if (ActivePage.get() === "test") updateActiveElement();
+    if (ActivePage.isTypingTestPage()) updateActiveElement();
   }
 
   if (
@@ -342,7 +342,7 @@ async function joinOverlappingHints(
 
 async function updateHintsPosition(): Promise<void> {
   if (
-    ActivePage.get() !== "test" ||
+    !ActivePage.isTypingTestPage() ||
     TestState.resultVisible ||
     (Config.indicateTypos !== "below" && Config.indicateTypos !== "both")
   )
@@ -514,7 +514,7 @@ export function appendEmptyWordElement(
 
 export function updateWordsInputPosition(): void {
   requestDebouncedAnimationFrame("test-ui.updateWordsInputPosition", () => {
-    if (ActivePage.get() !== "test") return;
+    if (!ActivePage.isTypingTestPage()) return;
     const isTestRightToLeft = TestState.isDirectionReversed
       ? !TestState.isLanguageRightToLeft
       : TestState.isLanguageRightToLeft;
@@ -596,7 +596,7 @@ export async function centerActiveLine(): Promise<void> {
 }
 
 export function updateWordsWrapperHeight(force = false): void {
-  if (ActivePage.get() !== "test" || TestState.resultVisible) return;
+  if (!ActivePage.isTypingTestPage() || TestState.resultVisible) return;
   if (!force && Config.mode !== "custom") return;
   const wrapperEl = document.getElementById("wordsWrapper") as HTMLElement;
   const outOfFocusEl = document.querySelector(
@@ -879,7 +879,7 @@ function getNlCharWidth(
 }
 
 export async function scrollTape(noAnimation = false): Promise<void> {
-  if (ActivePage.get() !== "test" || TestState.resultVisible) return;
+  if (!ActivePage.isTypingTestPage() || TestState.resultVisible) return;
 
   await centeringActiveLine;
 

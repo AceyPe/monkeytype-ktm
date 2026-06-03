@@ -278,7 +278,7 @@ export const commandlineConfigMetadata: CommandlineConfigMetadataObject = {
       inputValueConvert: (val) =>
         val.trim().split(" ") as ConfigSchemas.CustomPolyglot,
       afterExec: () => {
-        if (ActivePage.get() === "test") {
+        if (ActivePage.isTypingTestPage() && !ActivePage.isContestPage()) {
           TestLogic.restart();
         }
       },

@@ -7,6 +7,7 @@ import {
 export type PageName =
   | "loading"
   | "test"
+  | "contest"
   | "settings"
   | "about"
   | "team"

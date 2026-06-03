@@ -9,15 +9,19 @@ import * as Keymap from "../elements/keymap";
 import * as TestConfig from "../test/test-config";
 import * as ScrollToTop from "../elements/scroll-to-top";
 import { blurInputElement } from "../input/input-element";
+import * as ContestMode from "../contest/contest-mode";
 
 export const page = new Page({
-  id: "test",
+  id: "contest",
+  display: "Contest",
   element: $(".page.pageTest"),
-  path: "/",
+  path: "/contest",
   beforeHide: async (): Promise<void> => {
     blurInputElement();
   },
   afterHide: async (): Promise<void> => {
+    $(".page.pageTest").removeClass("contest-mode");
+    ContestMode.restore();
     ManualRestart.set();
     TestLogic.restart({
       noAnim: true,
@@ -25,17 +29,18 @@ export const page = new Page({
     void Funbox.clear();
     void ModesNotice.update();
     updateFooterAndVerticalAds(true);
+    TestConfig.show();
   },
   beforeShow: async (): Promise<void> => {
-    $(".page.pageTest").removeClass("contest-mode");
-    TestConfig.show();
+    $(".page.pageTest").addClass("contest-mode");
+    ContestMode.apply();
+    TestConfig.hide();
     updateFooterAndVerticalAds(false);
     TestStats.resetIncomplete();
     ManualRestart.set();
     TestLogic.restart({
       noAnim: true,
     });
-    void TestConfig.instantUpdate();
     void Keymap.refresh();
     ScrollToTop.hide();
   },

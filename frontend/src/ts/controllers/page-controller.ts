@@ -4,6 +4,7 @@ import * as ActivePage from "../states/active-page";
 import * as Settings from "../pages/settings";
 import * as Account from "../pages/account";
 import * as PageTest from "../pages/test";
+import * as PageContest from "../pages/contest";
 import * as PageAbout from "../pages/about";
 import * as PageTeam from "../pages/team";
 import * as PageLogin from "../pages/login";
@@ -67,6 +68,11 @@ const HOME_SEO_METADATA: SeoMetadata = {
 
 const SEO_METADATA_BY_PAGE: Partial<Record<PageName, SeoMetadata>> = {
   test: HOME_SEO_METADATA,
+  contest: {
+    title: "IEEE Keyboard Typing Marathon | Contest Mode",
+    description:
+      "Compete in the IEEE Keyboard Typing Marathon contest mode: 60 seconds, words only — no numbers or punctuation.",
+  },
   about: {
     title: "About the IEEE Keyboard Typing Marathon | Vision & Mission",
     description:
@@ -258,6 +264,7 @@ export async function change(
   const pages = {
     loading: PageLoading.page,
     test: PageTest.page,
+    contest: PageContest.page,
     settings: Settings.page,
     about: PageAbout.page,
     team: PageTeam.page,

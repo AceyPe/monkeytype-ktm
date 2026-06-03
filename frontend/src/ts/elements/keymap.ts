@@ -388,7 +388,7 @@ export async function refresh(): Promise<void> {
       : Config.layout;
 
   if (Config.keymapMode === "off") return;
-  if (ActivePage.get() !== "test") return;
+  if (!ActivePage.isTypingTestPage()) return;
   if (!layoutName) return;
   try {
     let layoutNameDisplayString = layoutName;

@@ -27,6 +27,7 @@ import * as CookiesModal from "./modals/cookies";
 import "./input/listeners";
 import "./ready";
 import "./controllers/route-controller";
+import "./pages/contest";
 import "./pages/about";
 import "./pages/team";
 import "./elements/scroll-to-top";

@@ -74,6 +74,13 @@
   }
 }
 
+.pageTest.contest-mode {
+  #testConfig,
+  #mobileTestConfigButton {
+    display: none !important;
+  }
+}
+
 .pageTest {
   position: relative;
 
@@ -1363,8 +1370,26 @@
 
 .pageTest {
   height: 100%;
-  display: grid;
+  // Only add rows; keep .content-grid column tracks (side padding) intact.
   grid-template-rows: 1fr auto 1fr;
+
+  #testConfig,
+  #mobileTestConfigButton {
+    grid-row: 1;
+    align-self: end;
+  }
+
+  #testInitFailed,
+  #typingTest {
+    grid-row: 2;
+    align-self: center;
+  }
+
+  #result:not(.hidden) {
+    grid-row: 1 / -1;
+    align-self: start;
+    overflow-y: auto;
+  }
 }
 
 .pageTest {

@@ -223,7 +223,7 @@ export function restart(options = {} as RestartOptions): void {
     options.event?.preventDefault();
     return;
   }
-  if (ActivePage.get() === "test") {
+  if (ActivePage.isTypingTestPage()) {
     if (!ManualRestart.get()) {
       if (Config.mode !== "zen") options.event?.preventDefault();
       if (
@@ -378,10 +378,12 @@ export function restart(options = {} as RestartOptions): void {
       }
 
       Focus.set(false);
-      if (ActivePage.get() === "test") {
+      if (ActivePage.isTypingTestPage()) {
         AdController.updateFooterAndVerticalAds(false);
       }
-      TestConfig.show();
+      if (!ActivePage.isContestPage()) {
+        TestConfig.show();
+      }
       AdController.destroyResult();
 
       await Funbox.rememberSettings();
@@ -498,7 +500,7 @@ async function init(): Promise<boolean> {
     return await init();
   }
 
-  if (ActivePage.get() === "test") {
+  if (ActivePage.isTypingTestPage()) {
     await Funbox.activate();
   }
 
@@ -1615,13 +1617,14 @@ $(".pageTest").on("click", "#testConfig .numbersMode.textButton", () => {
 });
 
 $("header").on("click", "nav #startTestButton, #logo", () => {
-  if (ActivePage.get() === "test") restart();
+  if (ActivePage.isTypingTestPage()) restart();
   // Result.showConfetti();
 });
 
 // ===============================
 
 ConfigEvent.subscribe((eventKey, eventValue, nosave) => {
+  if (ActivePage.isContestPage()) return;
   if (ActivePage.get() === "test") {
     if (eventKey === "language") {
       //automatically enable lazy mode for arabic
