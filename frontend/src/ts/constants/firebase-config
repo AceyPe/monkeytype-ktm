@@ -1,0 +1,14 @@
+// To find your config, go to https://console.firebase.google.com/ and select your project
+// Go to (top left) Settings > Project Settings > General
+// scroll down to Your apps > Web Apps (if it doesnt exist, create one) > SDK setup and configuration > select npm
+// your config should be visible there
+
+export const firebaseConfig = {
+  apiKey: "AIzaSyCcmK0gs-6Qc5MbZ-8ts6FZ-ZUcUDpMwxc",
+  authDomain: "ieee-ktm-f0742.firebaseapp.com",
+  databaseURL: "https://ieee-ktm-f0742-default-rtdb.europe-west1.firebasedatabase.app/",
+  projectId: "ieee-ktm-f0742",
+  storageBucket: "ieee-ktm-f0742.firebasestorage.app",
+  messagingSenderId: "891169420986",
+  appId: "1:891169420986:web:a3a7341a939b476c467483"
+};
