@@ -203,10 +203,11 @@
         }
 
         .globalRank {
-          i {
+          .friendsOnlyIcon {
             display: none;
           }
-          span {
+          .rankColLabelFull,
+          .rankColLabelShort {
             display: inline;
           }
         }
@@ -215,11 +216,71 @@
             display: table-cell;
           }
           .globalRank {
-            i {
+            .friendsOnlyIcon {
               display: inline;
             }
-            span {
+            .rankColLabelFull,
+            .rankColLabelShort,
+            .rankSortChevrons {
               display: none;
+            }
+          }
+        }
+        .rankSortButton {
+          background: none;
+          border: none;
+          color: inherit;
+          font: inherit;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.35em;
+          padding: 0;
+          text-align: center;
+
+          .rankSortChevrons {
+            display: inline-flex;
+            flex-direction: column;
+            font-size: 0.55em;
+            line-height: 0.8;
+            gap: 0.05em;
+            opacity: 0.35;
+
+            i {
+              display: block;
+            }
+          }
+
+          &.sortAsc {
+            color: var(--main-color);
+
+            .rankSortChevrons {
+              opacity: 1;
+            }
+
+            .fa-chevron-up {
+              opacity: 1;
+            }
+
+            .fa-chevron-down {
+              opacity: 0.25;
+            }
+          }
+
+          &.sortDesc {
+            color: var(--main-color);
+
+            .rankSortChevrons {
+              opacity: 1;
+            }
+
+            .fa-chevron-up {
+              opacity: 0.25;
+            }
+
+            .fa-chevron-down {
+              opacity: 1;
             }
           }
         }
@@ -244,6 +305,12 @@
         &.rankScopeRegion thead .rankColRegion,
         &.rankScopeSection thead .rankColSection {
           color: var(--main-color);
+        }
+
+        thead .rankCol {
+          .rankSortButton:not(.sortAsc):not(.sortDesc) {
+            color: var(--sub-color);
+          }
         }
 
         td.nameCol {

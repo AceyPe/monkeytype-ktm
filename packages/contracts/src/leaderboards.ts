@@ -59,6 +59,20 @@ const RankFilterQuerySchema = z.object({
 });
 export type RankFilterQuery = z.infer<typeof RankFilterQuerySchema>;
 
+export const RankSortBySchema = z
+  .enum(["global", "region", "section"])
+  .default("global");
+export type RankSortBy = z.infer<typeof RankSortBySchema>;
+
+export const RankSortDirectionSchema = z.enum(["asc", "desc"]).default("asc");
+export type RankSortDirection = z.infer<typeof RankSortDirectionSchema>;
+
+const RankSortQuerySchema = z.object({
+  rankSortBy: RankSortBySchema.optional(),
+  rankSortDirection: RankSortDirectionSchema.optional(),
+});
+export type RankSortQuery = z.infer<typeof RankSortQuerySchema>;
+
 const LeaderboardResponseSchema = z.object({
   count: z.number().int().nonnegative(),
   pageSize: z.number().int().positive(),
@@ -71,7 +85,8 @@ export const GetLeaderboardQuerySchema = LanguageAndModeQuerySchema.merge(
 )
   .merge(FriendsOnlyQuerySchema)
   .merge(RankScopeQuerySchema)
-  .merge(RankFilterQuerySchema);
+  .merge(RankFilterQuerySchema)
+  .merge(RankSortQuerySchema);
 export type GetLeaderboardQuery = z.infer<typeof GetLeaderboardQuerySchema>;
 
 export const GetLeaderboardResponseSchema = responseWithData(
@@ -89,7 +104,8 @@ export const GetLeaderboardRankQuerySchema = LanguageAndModeQuerySchema.merge(
   FriendsOnlyQuerySchema,
 )
   .merge(RankScopeQuerySchema)
-  .merge(RankFilterQuerySchema);
+  .merge(RankFilterQuerySchema)
+  .merge(RankSortQuerySchema);
 export type GetLeaderboardRankQuery = z.infer<
   typeof GetLeaderboardRankQuerySchema
 >;
@@ -107,7 +123,8 @@ export const DailyLeaderboardQuerySchema = LanguageAndModeQuerySchema.extend({
 })
   .merge(FriendsOnlyQuerySchema)
   .merge(RankScopeQuerySchema)
-  .merge(RankFilterQuerySchema);
+  .merge(RankFilterQuerySchema)
+  .merge(RankSortQuerySchema);
 export type DailyLeaderboardQuery = z.infer<typeof DailyLeaderboardQuerySchema>;
 
 export const GetDailyLeaderboardQuerySchema = DailyLeaderboardQuerySchema.merge(
@@ -148,7 +165,8 @@ const WeeklyXpLeaderboardQuerySchema = z
   })
   .merge(FriendsOnlyQuerySchema)
   .merge(RankScopeQuerySchema)
-  .merge(RankFilterQuerySchema);
+  .merge(RankFilterQuerySchema)
+  .merge(RankSortQuerySchema);
 
 export const GetWeeklyXpLeaderboardQuerySchema =
   WeeklyXpLeaderboardQuerySchema.merge(PaginationQuerySchema);

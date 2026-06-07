@@ -20,6 +20,7 @@ import {
   getRegionCodeFromGeocode,
   normalizeGeocode,
   RankFilterTarget,
+  RankSortOptions,
 } from "./geocode-rank-scope";
 
 const dailyLeaderboardNamespace = "monkeytype:dailyleaderboard";
@@ -135,6 +136,7 @@ export class DailyLeaderboard {
     premiumFeaturesEnabled: boolean,
     userIds?: string[],
     rankFilter: RankFilterTarget = { rankScope: "global" },
+    rankSort: RankSortOptions = { sortBy: "global", sortDirection: "asc" },
   ): Promise<{
     entries: LeaderboardEntry[];
     count: number;
@@ -175,9 +177,11 @@ export class DailyLeaderboard {
         : 0;
 
     const fetchMaxRank = Math.max(0, totalCount - 1);
-    const useScopedRank = rankFilter.rankScope !== "global";
-    const minRank = useScopedRank ? 0 : page * pageSize;
-    const maxRank = useScopedRank ? fetchMaxRank : minRank + pageSize - 1;
+    const needsCustomSort =
+      rankSort.sortBy !== "global" || rankSort.sortDirection !== "asc";
+    const useFullFetch = rankFilter.rankScope !== "global" || needsCustomSort;
+    const minRank = useFullFetch ? 0 : page * pageSize;
+    const maxRank = useFullFetch ? fetchMaxRank : minRank + pageSize - 1;
 
     const [results, _, count, , ranks] = await connection.getResults(
       2,
@@ -234,14 +238,15 @@ export class DailyLeaderboard {
       resultsWithRanks = resultsWithRanks.map((it) => omit(it, ["isPremium"]));
     }
 
-    if (useScopedRank) {
-      const scoped = applyRankScopeToEntries(
+    if (useFullFetch) {
+      const processed = applyRankScopeToEntries(
         resultsWithRanks,
         page,
         pageSize,
         rankFilter,
+        rankSort,
       );
-      return { entries: scoped.entries, count: scoped.count, minWpm };
+      return { entries: processed.entries, count: processed.count, minWpm };
     }
 
     return { entries: resultsWithRanks, count: parseInt(count), minWpm };

@@ -44,6 +44,10 @@ import {
   PaginationQuery,
   FriendsOnlyQuery,
   RankScope,
+  RankSortBy,
+  RankSortBySchema,
+  RankSortDirection,
+  RankSortDirectionSchema,
 } from "@monkeytype/contracts/leaderboards";
 import { Language, LanguageSchema } from "@monkeytype/schemas/languages";
 import { isSafeNumber } from "@monkeytype/util/numbers";
@@ -64,7 +68,6 @@ import {
 
 const LeaderboardTypeSchema = z.enum(["allTime", "weekly", "daily"]);
 type LeaderboardType = z.infer<typeof LeaderboardTypeSchema>;
-// const RankScopeSchema = z.enum(["global", "region", "section"]);
 const RegionFilterSchema = z.enum([
   "1",
   "2",
@@ -165,6 +168,18 @@ function handleFilterChange(values: LeaderboardFilterValues): void {
   updateGetParameters();
 }
 
+function getSortRank(
+  entry: Pick<
+    LeaderboardEntry | XpLeaderboardEntry,
+    "rank" | "regionRank" | "sectionRank"
+  >,
+  sortBy: RankSortBy,
+): number | undefined {
+  if (sortBy === "region") return entry.regionRank;
+  if (sortBy === "section") return entry.sectionRank;
+  return entry.rank;
+}
+
 function getScopedRank(
   entry: Pick<
     LeaderboardEntry | XpLeaderboardEntry,
@@ -172,9 +187,28 @@ function getScopedRank(
   >,
   rankScope: RankScope,
 ): number | undefined {
-  if (rankScope === "region") return entry.regionRank;
-  if (rankScope === "section") return entry.sectionRank;
-  return entry.rank;
+  return getSortRank(entry, rankScope);
+}
+
+function updateRankSortHeaders(): void {
+  $(".page.pageLeaderboards .rankSortButton").removeClass("sortAsc sortDesc");
+  $(
+    `.page.pageLeaderboards .rankSortButton[data-sort-by='${state.rankSortBy}']`,
+  ).addClass(state.rankSortDirection === "asc" ? "sortAsc" : "sortDesc");
+}
+
+function handleRankSortButtonClick(sortBy: RankSortBy): void {
+  if (state.rankSortBy === sortBy) {
+    state.rankSortDirection =
+      state.rankSortDirection === "asc" ? "desc" : "asc";
+  } else {
+    state.rankSortBy = sortBy;
+    state.rankSortDirection = "asc";
+  }
+  state.page = 0;
+  updateRankSortHeaders();
+  updateGetParameters();
+  void requestData(true);
 }
 
 type LeaderboardStatsModalRow = [label: string, value: string];
@@ -337,6 +371,8 @@ type State = {
   pageSize: number;
   friendsOnly: boolean;
   rankScope: RankScope;
+  rankSortBy: RankSortBy;
+  rankSortDirection: RankSortDirection;
   regionFilter: RegionCode | "";
   sectionFilter: string;
   title: string;
@@ -357,6 +393,8 @@ const state = {
   pageSize: 50,
   friendsOnly: false,
   rankScope: "global",
+  rankSortBy: "global",
+  rankSortDirection: "asc",
   regionFilter: "",
   sectionFilter: "",
   title: "All-time English Time 15 Leaderboard",
@@ -374,6 +412,8 @@ const SelectorSchema = z.object({
   friendsOnly: z.boolean().optional(),
   regionFilter: RegionFilterSchema.optional(),
   sectionFilter: z.string().optional(),
+  rankSortBy: RankSortBySchema.optional(),
+  rankSortDirection: RankSortDirectionSchema.optional(),
 });
 const UrlParameterSchema = SelectorSchema.extend({
   page: z.number(),
@@ -529,6 +569,8 @@ async function requestData(update = false): Promise<void> {
           rankScope?: RankScope;
           regionFilter?: string;
           sectionFilter?: string;
+          rankSortBy?: RankSortBy;
+          rankSortDirection?: RankSortDirection;
         };
     }) => Promise<TData>,
     rank: (args: { query: TQuery }) => Promise<TRank>,
@@ -554,6 +596,14 @@ async function requestData(update = false): Promise<void> {
           rankScope: state.rankScope === "global" ? undefined : state.rankScope,
           regionFilter: state.regionFilter || undefined,
           sectionFilter: state.sectionFilter || undefined,
+          rankSortBy:
+            state.rankSortBy === "global" && state.rankSortDirection === "asc"
+              ? undefined
+              : state.rankSortBy,
+          rankSortDirection:
+            state.rankSortBy === "global" && state.rankSortDirection === "asc"
+              ? undefined
+              : state.rankSortDirection,
         },
       }),
   });
@@ -601,7 +651,7 @@ async function requestData(update = false): Promise<void> {
       rankResponse.body.data !== null
     ) {
       state.userData = rankResponse.body.data;
-      const scopedRank = getScopedRank(state.userData, state.rankScope);
+      const scopedRank = getSortRank(state.userData, state.rankSortBy);
       if (scopedRank !== undefined) {
         state.page = Math.floor((scopedRank - 1) / state.pageSize);
       }
@@ -685,7 +735,7 @@ function updateJumpButtons(): void {
     if (!state.userData) {
       userButton.addClass("disabled");
     } else {
-      const scopedRank = getScopedRank(state.userData, state.rankScope);
+      const scopedRank = getSortRank(state.userData, state.rankSortBy);
       if (scopedRank === undefined) {
         userButton.addClass("disabled");
       } else {
@@ -883,7 +933,8 @@ function fillTable(): void {
   }
 
   tableElement.removeClass("rankScopeGlobal rankScopeRegion rankScopeSection");
-  tableElement.addClass(`rankScope${capitalizeFirstLetter(state.rankScope)}`);
+  tableElement.addClass(`rankScope${capitalizeFirstLetter(state.rankSortBy)}`);
+  updateRankSortHeaders();
 
   $(".page.pageLeaderboards table thead").addClass("hidden");
   if (state.type === "allTime" || state.type === "daily") {
@@ -1019,7 +1070,7 @@ function fillUser(): void {
     const userData = state.userData;
     const rank = state.friendsOnly
       ? (userData.friendsRank as number)
-      : (getScopedRank(userData, state.rankScope) as number);
+      : (getSortRank(userData, state.rankSortBy) as number);
     const percentile = (rank / state.count) * 100;
 
     let percentileString = `Top ${percentile.toFixed(2)}%`;
@@ -1114,7 +1165,7 @@ function fillUser(): void {
     const userData = state.userData;
     const rank = state.friendsOnly
       ? (userData.friendsRank as number)
-      : (getScopedRank(userData, state.rankScope) as number);
+      : (getSortRank(userData, state.rankSortBy) as number);
     const percentile = (rank / state.count) * 100;
 
     let percentileString = `Top ${percentile.toFixed(2)}%`;
@@ -1608,7 +1659,7 @@ function handleJumpButton(action: Action, page?: number): void {
   } else if (action === "userPage") {
     if (isAuthenticated()) {
       const rank = state.userData
-        ? getScopedRank(state.userData, state.rankScope)
+        ? getSortRank(state.userData, state.rankSortBy)
         : undefined;
       if (isSafeNumber(rank)) {
         // - 1 to make sure position 50 with page size 50 is on the first page (page 0)
@@ -1678,6 +1729,10 @@ function updateGetParameters(): void {
   if (state.sectionFilter !== "") {
     params.sectionFilter = state.sectionFilter;
   }
+  if (state.rankSortBy !== "global" || state.rankSortDirection !== "asc") {
+    params.rankSortBy = state.rankSortBy;
+    params.rankSortDirection = state.rankSortDirection;
+  }
   page.setUrlParams(params);
 
   selectorLS.set({
@@ -1690,12 +1745,22 @@ function updateGetParameters(): void {
     friendsOnly: state.friendsOnly || undefined,
     regionFilter: state.regionFilter || undefined,
     sectionFilter: state.sectionFilter || undefined,
+    rankSortBy:
+      state.rankSortBy !== "global" || state.rankSortDirection !== "asc"
+        ? state.rankSortBy
+        : undefined,
+    rankSortDirection:
+      state.rankSortBy !== "global" || state.rankSortDirection !== "asc"
+        ? state.rankSortDirection
+        : undefined,
   });
 }
 
 function readGetParameters(params?: UrlParameter): void {
   if (params === undefined) {
     Object.assign(state, selectorLS.get());
+    state.rankSortBy = state.rankSortBy ?? "global";
+    state.rankSortDirection = state.rankSortDirection ?? "asc";
     syncRankScopeFromFilters();
     return;
   }
@@ -1707,6 +1772,8 @@ function readGetParameters(params?: UrlParameter): void {
   state.friendsOnly = params.friendsOnly ?? false;
   state.regionFilter = (params.regionFilter ?? "") as RegionCode | "";
   state.sectionFilter = params.sectionFilter ?? "";
+  state.rankSortBy = params.rankSortBy ?? "global";
+  state.rankSortDirection = params.rankSortDirection ?? "asc";
   syncRankScopeFromFilters();
 
   if (state.type === "allTime") {
@@ -1881,6 +1948,12 @@ $(".page.pageLeaderboards .buttonGroup.friendsOnlyButtons").on(
   },
 );
 
+$(".page.pageLeaderboards").on("click", ".rankSortButton", function () {
+  const sortBy = $(this).attr("data-sort-by") as RankSortBy | undefined;
+  if (sortBy === undefined) return;
+  handleRankSortButtonClick(sortBy);
+});
+
 export const page = new PageWithUrlParams({
   id: "leaderboards",
   element: $(".page.pageLeaderboards"),
@@ -1904,6 +1977,7 @@ export const page = new PageWithUrlParams({
       regionFilter: state.regionFilter,
       sectionFilter: state.sectionFilter,
     });
+    updateRankSortHeaders();
     startTimer();
     updateTitle();
     updateContent();

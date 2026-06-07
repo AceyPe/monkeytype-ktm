@@ -2,13 +2,33 @@ import {
   LeaderboardEntry,
   XpLeaderboardEntry,
 } from "@monkeytype/schemas/leaderboards";
-import { RankScope, RegionFilter } from "@monkeytype/contracts/leaderboards";
+import {
+  RankScope,
+  RegionFilter,
+  RankSortBy,
+  RankSortDirection,
+} from "@monkeytype/contracts/leaderboards";
 
 export type RankFilterTarget = {
   rankScope: RankScope;
   regionCode?: RegionFilter;
   sectionGeocode?: string;
 };
+
+export type RankSortOptions = {
+  sortBy: RankSortBy;
+  sortDirection: RankSortDirection;
+};
+
+export function resolveRankSortOptions(args: {
+  rankSortBy?: RankSortBy;
+  rankSortDirection?: RankSortDirection;
+}): RankSortOptions {
+  return {
+    sortBy: args.rankSortBy ?? "global",
+    sortDirection: args.rankSortDirection ?? "asc",
+  };
+}
 
 export function normalizeGeocode(geocode?: string): string | null {
   if (geocode === undefined) return null;
@@ -88,20 +108,33 @@ export function filterEntriesByRankScope<T extends RankedEntry>(
   return entries;
 }
 
-export function sortEntriesByRankScope<T extends RankedEntry>(
+export function sortEntriesByRank<T extends RankedEntry>(
   entries: T[],
-  rankScope: RankScope,
+  sort: RankSortOptions,
 ): T[] {
   const getSortRank = (entry: T): number => {
-    if (rankScope === "region")
+    if (sort.sortBy === "region") {
       return entry.regionRank ?? Number.MAX_SAFE_INTEGER;
-    if (rankScope === "section") {
+    }
+    if (sort.sortBy === "section") {
       return entry.sectionRank ?? Number.MAX_SAFE_INTEGER;
     }
     return entry.rank;
   };
+  const direction = sort.sortDirection === "asc" ? 1 : -1;
+  return [...entries].sort(
+    (a, b) => (getSortRank(a) - getSortRank(b)) * direction,
+  );
+}
 
-  return [...entries].sort((a, b) => getSortRank(a) - getSortRank(b));
+export function sortEntriesByRankScope<T extends RankedEntry>(
+  entries: T[],
+  rankScope: RankScope,
+): T[] {
+  return sortEntriesByRank(entries, {
+    sortBy: rankScope,
+    sortDirection: "asc",
+  });
 }
 
 export function paginateEntries<T>(
@@ -118,19 +151,26 @@ export function applyRankScopeToEntries<T extends RankedEntry>(
   page: number,
   pageSize: number,
   target: RankFilterTarget,
+  sort: RankSortOptions,
 ): { entries: T[]; count: number } {
   const filtered = filterEntriesByRankScope(entries, target);
-  const sorted = sortEntriesByRankScope(filtered, target.rankScope);
+  const sorted = sortEntriesByRank(filtered, sort);
   return {
     entries: paginateEntries(sorted, page, pageSize),
     count: sorted.length,
   };
 }
 
+export function getRankSortField(
+  sortBy: RankSortBy,
+): "rank" | "regionRank" | "sectionRank" {
+  if (sortBy === "region") return "regionRank";
+  if (sortBy === "section") return "sectionRank";
+  return "rank";
+}
+
 export function getRankScopeSortField(
   rankScope: RankScope,
 ): "rank" | "regionRank" | "sectionRank" {
-  if (rankScope === "region") return "regionRank";
-  if (rankScope === "section") return "sectionRank";
-  return "rank";
+  return getRankSortField(rankScope);
 }

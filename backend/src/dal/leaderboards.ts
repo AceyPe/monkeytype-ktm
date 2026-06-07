@@ -15,8 +15,12 @@ import { DBUser, getUsersCollection } from "./user";
 import MonkeyError from "../utils/error";
 import { aggregateWithAcceptedConnections } from "./connections";
 import {
-  getRankScopeSortField,
+  // applyRankScopeToEntries,
+  getRankSortField,
+  // getRegionCodeFromGeocode,
+  // normalizeGeocode,
   RankFilterTarget,
+  RankSortOptions,
 } from "../utils/geocode-rank-scope";
 
 export type DBLeaderboardEntry = LeaderboardEntry & {
@@ -238,6 +242,7 @@ export async function get(
   premiumFeaturesEnabled: boolean = false,
   uid?: string,
   rankFilter: RankFilterTarget = { rankScope: "global" },
+  rankSort: RankSortOptions = { sortBy: "global", sortDirection: "asc" },
 ): Promise<DBLeaderboardEntry[] | false> {
   if (page < 0 || pageSize < 0) {
     throw new MonkeyError(500, "Invalid page or pageSize");
@@ -245,13 +250,14 @@ export async function get(
 
   const skip = page * pageSize;
   const limit = pageSize;
-  const sortField = getRankScopeSortField(rankFilter.rankScope);
+  const sortField = getRankSortField(rankSort.sortBy);
+  const sortDir = rankSort.sortDirection === "asc" ? 1 : -1;
 
   let leaderboard: DBLeaderboardEntry[] | false = [];
 
   const pipeline: Document[] = [
     ...buildRankScopeMatchStages(rankFilter),
-    { $sort: { [sortField]: 1 } },
+    { $sort: { [sortField]: sortDir } },
     { $skip: skip },
     { $limit: limit },
   ];
