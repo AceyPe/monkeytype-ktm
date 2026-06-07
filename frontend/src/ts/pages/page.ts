@@ -157,7 +157,11 @@ export class PageWithUrlParams<T, U extends UrlParamsSchema> extends Page<T> {
       schema: this.urlSchema,
       data: params,
     });
-    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    const query = urlParams.toString();
+    const newUrl =
+      query === ""
+        ? window.location.pathname
+        : `${window.location.pathname}?${query}`;
     window.history.replaceState({}, "", newUrl);
   }
 

@@ -1,4 +1,4 @@
-import Page from "./page";
+import { PageWithUrlParams } from "./page";
 import * as Skeleton from "../utils/skeleton";
 import Ape from "../ape";
 import AnimatedModal from "../utils/animated-modal";
@@ -21,9 +21,24 @@ import {
 import { SimpleModal } from "../utils/simple-modal";
 import { format } from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
+import { z } from "zod";
 
 type DashboardSection = "contests" | "users";
 type ContestFormMode = "create" | "edit";
+
+const DashboardUrlParamsSchema = z.object({
+  tab: z.enum(["contests", "users"]).optional(),
+});
+
+function resolveSection(
+  tab: z.infer<typeof DashboardUrlParamsSchema>["tab"],
+): DashboardSection {
+  return tab === "users" ? "users" : "contests";
+}
+
+function updateDashboardUrlParams(): void {
+  page.setUrlParams({ tab: state.section });
+}
 
 const state = {
   section: "contests" as DashboardSection,
@@ -842,6 +857,7 @@ pageElement.on("click", ".sectionButtons button", function () {
   if (section === undefined || state.section === section) return;
   state.section = section;
   updateSectionButtons();
+  updateDashboardUrlParams();
   updateContent();
   if (section === "users") {
     if (state.users.length === 0 && !state.usersLoading) {
@@ -907,19 +923,31 @@ pageElement.on("click", ".deleteContestButton", function () {
   openDeleteContestModal(contestId);
 });
 
-export const page = new Page({
+export const page = new PageWithUrlParams({
   id: "dashboard",
   element: pageElement,
   path: "/dashboard",
+  urlParamsSchema: DashboardUrlParamsSchema,
   afterHide: async (): Promise<void> => {
     destroyDashboardUsersFilters();
     usersFiltersInitialized = false;
     Skeleton.remove("pageDashboard");
   },
-  beforeShow: async (): Promise<void> => {
+  beforeShow: async (options): Promise<void> => {
     Skeleton.append("pageDashboard", "main");
+    state.section = resolveSection(options.urlParams?.tab);
     updateSectionButtons();
-    await fetchContests();
+    updateDashboardUrlParams();
+    updateContent();
+
+    if (state.section === "contests") {
+      await fetchContests();
+      return;
+    }
+
+    if (state.users.length === 0 && !state.usersLoading) {
+      await fetchUsers();
+    }
   },
 });
 
