@@ -59,6 +59,22 @@ export const ListUsersResponseSchema = responseWithData(
 );
 export type ListUsersResponse = z.infer<typeof ListUsersResponseSchema>;
 
+export const SetUserAdminRequestSchema = z
+  .object({
+    uid: z.string(),
+  })
+  .strict();
+export type SetUserAdminRequest = z.infer<typeof SetUserAdminRequestSchema>;
+
+export const RemoveUserAdminRequestSchema = z
+  .object({
+    uid: z.string(),
+  })
+  .strict();
+export type RemoveUserAdminRequest = z.infer<
+  typeof RemoveUserAdminRequestSchema
+>;
+
 export const CreateUserRequestSchema = z.object({
   email: UserEmailSchema.optional(),
   name: UserNameSchema,
@@ -430,6 +446,34 @@ export const usersContract = c.router(
       path: "/list",
       responses: {
         200: ListUsersResponseSchema,
+      },
+      metadata: meta({
+        rateLimit: "userGet",
+        requirePermission: "admin",
+      }),
+    },
+    setAdmin: {
+      summary: "set user admin",
+      description: "Grant admin access to a user.",
+      method: "POST",
+      path: "/admin/set",
+      body: SetUserAdminRequestSchema.strict(),
+      responses: {
+        200: MonkeyResponseSchema,
+      },
+      metadata: meta({
+        rateLimit: "userGet",
+        requirePermission: "admin",
+      }),
+    },
+    removeAdmin: {
+      summary: "remove user admin",
+      description: "Revoke admin access from a user.",
+      method: "POST",
+      path: "/admin/remove",
+      body: RemoveUserAdminRequestSchema.strict(),
+      responses: {
+        200: MonkeyResponseSchema,
       },
       metadata: meta({
         rateLimit: "userGet",

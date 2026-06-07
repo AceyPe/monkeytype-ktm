@@ -263,6 +263,15 @@ export async function setAdminRoleByUid(uid: string): Promise<boolean> {
   return result.matchedCount > 0;
 }
 
+export async function removeAdminRoleByUid(uid: string): Promise<boolean> {
+  const result = await getUsersCollection().updateOne(
+    { uid },
+    { $unset: { role: "" } },
+  );
+
+  return result.matchedCount > 0;
+}
+
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -333,6 +342,7 @@ export async function getAllUsersForAdmin(
     .toArray();
 
   return users.map((user) => ({
+    uid: user.uid,
     displayName: getAdminUserDisplayName(user),
     geocode: user.geocode,
     grade: user.grade,

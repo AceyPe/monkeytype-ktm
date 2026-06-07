@@ -14,6 +14,10 @@ export async function getAllLegacyAdminUids(): Promise<string[]> {
   return admins.map((admin) => admin.uid);
 }
 
+export async function removeLegacyAdmin(uid: string): Promise<void> {
+  await getCollection().deleteOne({ uid });
+}
+
 export async function isAdmin(uid: string): Promise<boolean> {
   const legacyAdmin = await getCollection().findOne({ uid });
   if (legacyAdmin !== null) {

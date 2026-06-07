@@ -29,6 +29,12 @@ export default s.router(usersContract, {
   listUsers: {
     handler: async (r) => callController(UserController.listUsers)(r),
   },
+  setAdmin: {
+    handler: async (r) => callController(UserController.setUserAdmin)(r),
+  },
+  removeAdmin: {
+    handler: async (r) => callController(UserController.removeUserAdmin)(r),
+  },
   create: {
     handler: async (r) => callController(UserController.createNewUser)(r),
   },

@@ -18,6 +18,7 @@ import {
   initDashboardUsersFilters,
   type DashboardUsersFilterValues,
 } from "../elements/dashboard-users-filters";
+import { SimpleModal } from "../utils/simple-modal";
 import { format } from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
 
@@ -40,6 +41,71 @@ const state = {
 };
 
 let usersFiltersInitialized = false;
+let usersActionsMenuListenerAttached = false;
+
+function getUserDisplayName(uid: string): string {
+  const user = state.users.find((entry) => entry.uid === uid);
+  if (user === undefined) return "this user";
+  return user.displayName.trim() === "" ? "Member" : user.displayName;
+}
+
+function closeUserActionsMenus(): void {
+  pageElement.find(".userActionsMenu").addClass("hidden");
+}
+
+function attachUserActionsMenuListener(): void {
+  if (usersActionsMenuListenerAttached) return;
+  document.addEventListener("click", closeUserActionsMenus);
+  usersActionsMenuListenerAttached = true;
+}
+
+const setUserAdminModal = new SimpleModal({
+  id: "setUserAdmin",
+  title: "Set as admin",
+  buttonText: "set as admin",
+  text: "Are you sure you want to set this user as admin?",
+  beforeInitFn: (popup) => {
+    popup.text = `Are you sure you want to set ${getUserDisplayName(popup.parameters[0] ?? "")} as admin?`;
+  },
+  execFn: async (popup) => {
+    const uid = popup.parameters[0] as string;
+    const response = await Ape.users.setAdmin({ body: { uid } });
+
+    if (response.status !== 200) {
+      return {
+        status: -1,
+        message: response.body.message ?? "Failed to set admin role",
+      };
+    }
+
+    await fetchUsers();
+    return { status: 1, message: "Admin role granted" };
+  },
+});
+
+const removeUserAdminModal = new SimpleModal({
+  id: "removeUserAdmin",
+  title: "Remove admin",
+  buttonText: "remove admin",
+  text: "Are you sure you want to remove admin access from this user?",
+  beforeInitFn: (popup) => {
+    popup.text = `Are you sure you want to remove admin access from ${getUserDisplayName(popup.parameters[0] ?? "")}?`;
+  },
+  execFn: async (popup) => {
+    const uid = popup.parameters[0] as string;
+    const response = await Ape.users.removeAdmin({ body: { uid } });
+
+    if (response.status !== 200) {
+      return {
+        status: -1,
+        message: response.body.message ?? "Failed to remove admin role",
+      };
+    }
+
+    await fetchUsers();
+    return { status: 1, message: "Admin role removed" };
+  },
+});
 
 const contestFormState = {
   mode: "create" as ContestFormMode,
@@ -273,6 +339,12 @@ function renderUsersList(): void {
         user.status !== undefined
           ? escapeHtml(user.status)
           : '<span class="emptyCell">—</span>';
+      const setAdminAction = user.isAdmin
+        ? ""
+        : `<button type="button" class="setAdminAction" data-uid="${escapeHtml(user.uid)}">set as admin</button>`;
+      const removeAdminAction = user.isAdmin
+        ? `<button type="button" class="removeAdminAction" data-uid="${escapeHtml(user.uid)}">remove admin</button>`
+        : "";
 
       return `
         <tr>
@@ -287,6 +359,22 @@ function renderUsersList(): void {
           <td>${section}</td>
           <td>${grade}</td>
           <td>${status}</td>
+          <td class="userActionsCell">
+            <div class="userActions">
+              <button
+                type="button"
+                class="textButton userActionsButton"
+                aria-label="User actions"
+                data-uid="${escapeHtml(user.uid)}"
+              >
+                <i class="fas fa-ellipsis-h"></i>
+              </button>
+              <div class="userActionsMenu hidden">
+                ${setAdminAction}
+                ${removeAdminAction}
+              </div>
+            </div>
+          </td>
         </tr>
       `;
     })
@@ -300,6 +388,7 @@ function renderUsersList(): void {
           <th>section</th>
           <th>grade</th>
           <th>status</th>
+          <th class="userActionsHeader"></th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -363,6 +452,7 @@ function updateContent(): void {
 
   ensureUsersFilters();
   updateAdminsOnlyButtons();
+  attachUserActionsMenuListener();
   renderUsersList();
 }
 
@@ -770,6 +860,34 @@ pageElement.on("click", ".usersTableToolbar .adminsOnly", () => {
   if (state.usersFilters.adminsOnly) return;
   state.usersFilters.adminsOnly = true;
   updateContent();
+});
+
+pageElement.on("click", ".userActionsButton", function (event) {
+  event.stopPropagation();
+  const menu = $(this).siblings(".userActionsMenu");
+  const isOpen = !menu.hasClass("hidden");
+  closeUserActionsMenus();
+  if (!isOpen) {
+    menu.removeClass("hidden");
+  }
+});
+
+pageElement.on("click", ".userActionsMenu", (event) => {
+  event.stopPropagation();
+});
+
+pageElement.on("click", ".setAdminAction", function () {
+  const uid = $(this).attr("data-uid");
+  if (uid === undefined) return;
+  closeUserActionsMenus();
+  setUserAdminModal.show([uid], {});
+});
+
+pageElement.on("click", ".removeAdminAction", function () {
+  const uid = $(this).attr("data-uid");
+  if (uid === undefined) return;
+  closeUserActionsMenus();
+  removeUserAdminModal.show([uid], {});
 });
 
 pageElement.on("click", ".createContestButton", () => {

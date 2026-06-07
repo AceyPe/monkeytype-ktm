@@ -73,6 +73,7 @@ import {
   GetUserResponse,
   GetAdminStatusResponse,
   ListUsersResponse,
+  RemoveUserAdminRequest,
   LinkDiscordRequest,
   LinkDiscordResponse,
   RemoveFavoriteQuoteRequest,
@@ -82,6 +83,7 @@ import {
   SamlLogoutResponse,
   SessionResponse,
   SetStreakHourOffsetRequest,
+  SetUserAdminRequest,
   TagIdPathParams,
   UpdateEmailRequest,
   UpdateLeaderboardMemoryRequest,
@@ -827,6 +829,37 @@ export async function listUsers(
   const users = await UserDAL.getAllUsersForAdmin(legacyAdminUids);
 
   return new MonkeyResponse("Users retrieved", users);
+}
+
+export async function setUserAdmin(
+  req: MonkeyRequest<undefined, SetUserAdminRequest>,
+): Promise<MonkeyResponse> {
+  const { uid } = req.body;
+  const updated = await UserDAL.setAdminRoleByUid(uid);
+
+  if (!updated) {
+    throw new MonkeyError(404, "User not found");
+  }
+
+  void addImportantLog("admin_role_granted", {}, uid);
+
+  return new MonkeyResponse("User granted admin role", null);
+}
+
+export async function removeUserAdmin(
+  req: MonkeyRequest<undefined, RemoveUserAdminRequest>,
+): Promise<MonkeyResponse> {
+  const { uid } = req.body;
+  const updated = await UserDAL.removeAdminRoleByUid(uid);
+
+  if (!updated) {
+    throw new MonkeyError(404, "User not found");
+  }
+
+  await AdminUidsDal.removeLegacyAdmin(uid);
+  void addImportantLog("admin_role_removed", {}, uid);
+
+  return new MonkeyResponse("Admin role removed", null);
 }
 
 export async function getOauthLink(

@@ -276,6 +276,7 @@ export const UserNameSchema = doesNotContainProfanity(
 
 export const AdminUserListItemSchema = z
   .object({
+    uid: z.string(),
     displayName: z.string(),
     geocode: z.string().optional(),
     grade: z.string().optional(),

@@ -206,6 +206,53 @@
           font-size: 0.75rem;
           text-transform: uppercase;
         }
+
+        .userActionsHeader {
+          width: 3rem;
+        }
+
+        .userActionsCell {
+          width: 3rem;
+          text-align: right;
+        }
+
+        .userActions {
+          position: relative;
+          display: inline-flex;
+          justify-content: flex-end;
+
+          .userActionsButton {
+            padding: 0.35em 0.65em;
+          }
+
+          .userActionsMenu {
+            position: absolute;
+            top: calc(100% + 0.35rem);
+            right: 0;
+            z-index: 2;
+            min-width: 10rem;
+            display: grid;
+            background: var(--bg-color);
+            border-radius: var(--roundness);
+            box-shadow: 0 0 0 0.35rem var(--bg-color);
+            overflow: hidden;
+
+            &.hidden {
+              display: none;
+            }
+
+            button {
+              justify-content: start;
+              padding: 0.65em 0.85em;
+              border-radius: 0;
+              white-space: nowrap;
+
+              &:hover {
+                background: var(--sub-alt-color);
+              }
+            }
+          }
+        }
       }
     }
 
