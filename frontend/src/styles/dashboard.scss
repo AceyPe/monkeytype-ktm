@@ -147,6 +147,102 @@
         }
       }
     }
+
+    .usersList {
+      .empty {
+        color: var(--sub-color);
+        padding: 2rem;
+        text-align: center;
+        background: var(--sub-alt-color);
+        border-radius: var(--roundness);
+      }
+
+      .usersTable {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--sub-alt-color);
+        border-radius: var(--roundness);
+        overflow: hidden;
+
+        th,
+        td {
+          padding: 0.75rem 1rem;
+          text-align: left;
+        }
+
+        th {
+          color: var(--sub-color);
+          font-size: 0.85rem;
+          font-weight: normal;
+        }
+
+        tbody tr:nth-child(even) {
+          background: var(--bg-color);
+        }
+
+        .userNameCell {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .userName {
+          color: var(--main-color);
+        }
+
+        .emptyCell {
+          color: var(--sub-color);
+        }
+
+        .adminBadge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35em;
+          padding: 0.15em 0.5em;
+          border-radius: var(--roundness);
+          background: color-mix(in srgb, var(--main-color) 15%, transparent);
+          color: var(--main-color);
+          font-size: 0.75rem;
+          text-transform: uppercase;
+        }
+      }
+    }
+
+    .usersLoading,
+    .usersError {
+      color: var(--sub-color);
+      display: flex;
+      align-items: center;
+      gap: 0.75em;
+    }
+
+    .usersTableToolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 1.5rem;
+      align-items: flex-end;
+
+      .adminsOnlyButtons {
+        flex-shrink: 0;
+      }
+
+      .usersFilterGroup {
+        display: grid;
+        gap: 0.35em;
+        min-width: min(100%, 16rem);
+        flex: 1 1 16rem;
+
+        label {
+          font-size: 0.75em;
+          color: var(--sub-color);
+        }
+
+        .ss-main {
+          width: 100%;
+        }
+      }
+    }
   }
 }
 

@@ -13,6 +13,7 @@ import * as Notifications from "../elements/notifications";
 import { LoadingOptions } from "../pages/page";
 import * as NavigationEvent from "../observables/navigation-event";
 import { checkIfGetParameterExists } from "../utils/misc";
+import Ape from "../ape";
 
 //source: https://www.youtube.com/watch?v=OstALBk-jTc
 // https://www.youtube.com/watch?v=OstALBk-jTc
@@ -205,6 +206,25 @@ const routes: Route[] = [
   {
     path: "/dashboard",
     load: async (_params, options) => {
+      if (!isAuthAvailable()) {
+        await navigate("/", options);
+        return;
+      }
+      if (!isAuthenticated()) {
+        await navigate("/login", options);
+        return;
+      }
+
+      const adminStatus = await Ape.users.getAdminStatus();
+      if (
+        adminStatus.status !== 200 ||
+        adminStatus.body.data.isAdmin !== true
+      ) {
+        Notifications.add("Admin access required", -1);
+        await navigate("/", options);
+        return;
+      }
+
       await PageController.change("dashboard", options);
     },
   },

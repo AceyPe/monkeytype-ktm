@@ -23,6 +23,12 @@ export default s.router(usersContract, {
   get: {
     handler: async (r) => callController(UserController.getUser)(r),
   },
+  getAdminStatus: {
+    handler: async (r) => callController(UserController.getAdminStatus)(r),
+  },
+  listUsers: {
+    handler: async (r) => callController(UserController.listUsers)(r),
+  },
   create: {
     handler: async (r) => callController(UserController.createNewUser)(r),
   },

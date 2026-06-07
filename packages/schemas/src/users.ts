@@ -73,6 +73,10 @@ export const UserStreakSchema = z
   .strict();
 export type UserStreak = z.infer<typeof UserStreakSchema>;
 
+export const ADMIN_ROLE = 1 as const;
+export const UserRoleSchema = z.literal(ADMIN_ROLE);
+export type UserRole = z.infer<typeof UserRoleSchema>;
+
 export const UserTagSchema = z
   .object({
     _id: IdSchema,
@@ -270,6 +274,17 @@ export const UserNameSchema = doesNotContainProfanity(
     ),
 );
 
+export const AdminUserListItemSchema = z
+  .object({
+    displayName: z.string(),
+    geocode: z.string().optional(),
+    grade: z.string().optional(),
+    status: z.string().optional(),
+    isAdmin: z.boolean(),
+  })
+  .strict();
+export type AdminUserListItem = z.infer<typeof AdminUserListItemSchema>;
+
 export const UserSchema = z.object({
   name: UserNameSchema,
   email: UserEmailSchema,
@@ -310,6 +325,7 @@ export const UserSchema = z.object({
   verified: z.boolean().optional(),
   needsToChangeName: z.boolean().optional(),
   quoteMod: QuoteModSchema.optional(),
+  role: UserRoleSchema.optional(),
   resultFilterPresets: z.array(ResultFiltersSchema).optional(),
   testActivity: TestActivitySchema.optional(),
 });

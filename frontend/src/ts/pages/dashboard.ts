@@ -8,18 +8,38 @@ import {
   ContestPrize,
   CreateContestRequest,
 } from "@monkeytype/schemas/contests";
+import { AdminUserListItem } from "@monkeytype/schemas/users";
+import {
+  getSectionNameByGeocode,
+  type RegionCode,
+} from "../constants/sections-by-geocode";
+import {
+  destroyDashboardUsersFilters,
+  initDashboardUsersFilters,
+  type DashboardUsersFilterValues,
+} from "../elements/dashboard-users-filters";
 import { format } from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
 
-type DashboardSection = "contests";
+type DashboardSection = "contests" | "users";
 type ContestFormMode = "create" | "edit";
 
 const state = {
   section: "contests" as DashboardSection,
-  loading: false,
-  error: undefined as string | undefined,
+  contestsLoading: false,
+  contestsError: undefined as string | undefined,
   contests: [] as Contest[],
+  usersLoading: false,
+  usersError: undefined as string | undefined,
+  users: [] as AdminUserListItem[],
+  usersFilters: {
+    adminsOnly: false,
+    regionFilter: "" as RegionCode | "",
+    sectionFilter: "",
+  },
 };
+
+let usersFiltersInitialized = false;
 
 const contestFormState = {
   mode: "create" as ContestFormMode,
@@ -159,6 +179,134 @@ function renderContestsList(): void {
   }
 }
 
+function getRegionNumberFromGeocode(geocode?: string): number | null {
+  if (geocode === undefined || geocode.trim() === "") return null;
+  const firstDigit = geocode.match(/\d/)?.[0];
+  if (firstDigit === undefined) return null;
+  const n = Number(firstDigit);
+  if (!Number.isInteger(n) || n < 0 || n > 9) return null;
+  return n === 0 ? 10 : n;
+}
+
+function normalizeGeocode(geocode?: string): string | null {
+  if (geocode === undefined) return null;
+  const normalized = geocode.trim().toUpperCase();
+  return normalized === "" ? null : normalized;
+}
+
+function userMatchesFilters(user: AdminUserListItem): boolean {
+  if (state.usersFilters.adminsOnly && !user.isAdmin) return false;
+
+  if (state.usersFilters.sectionFilter !== "") {
+    return (
+      normalizeGeocode(user.geocode) ===
+      normalizeGeocode(state.usersFilters.sectionFilter)
+    );
+  }
+
+  if (state.usersFilters.regionFilter !== "") {
+    const userRegion = getRegionNumberFromGeocode(user.geocode);
+    return (
+      userRegion !== null &&
+      String(userRegion) === state.usersFilters.regionFilter
+    );
+  }
+
+  return true;
+}
+
+function getFilteredUsers(): AdminUserListItem[] {
+  return state.users.filter(userMatchesFilters);
+}
+
+function updateAdminsOnlyButtons(): void {
+  const toolbar = pageElement.find(".usersTableToolbar .adminsOnlyButtons");
+  toolbar
+    .find(".allUsers")
+    .toggleClass("active", !state.usersFilters.adminsOnly);
+  toolbar
+    .find(".adminsOnly")
+    .toggleClass("active", state.usersFilters.adminsOnly);
+}
+
+function ensureUsersFilters(): void {
+  if (usersFiltersInitialized) return;
+  initDashboardUsersFilters(handleUsersFilterChange);
+  usersFiltersInitialized = true;
+}
+
+function handleUsersFilterChange(values: DashboardUsersFilterValues): void {
+  state.usersFilters.regionFilter = values.regionFilter;
+  state.usersFilters.sectionFilter = values.sectionFilter;
+  updateContent();
+}
+
+function renderUsersList(): void {
+  const list = pageElement.find(".usersList");
+  list.empty();
+
+  const users = getFilteredUsers();
+
+  if (state.users.length === 0) {
+    list.append(`<div class="empty">No users found</div>`);
+    return;
+  }
+
+  if (users.length === 0) {
+    list.append(`<div class="empty">No users match these filters</div>`);
+    return;
+  }
+
+  const rows = users
+    .map((user) => {
+      const displayName =
+        user.displayName.trim() === "" ? "Member" : user.displayName;
+      const section =
+        user.geocode !== undefined
+          ? escapeHtml(getSectionNameByGeocode(user.geocode) ?? user.geocode)
+          : '<span class="emptyCell">—</span>';
+      const grade =
+        user.grade !== undefined
+          ? escapeHtml(user.grade)
+          : '<span class="emptyCell">—</span>';
+      const status =
+        user.status !== undefined
+          ? escapeHtml(user.status)
+          : '<span class="emptyCell">—</span>';
+
+      return `
+        <tr>
+          <td class="userNameCell">
+            <span class="userName">${escapeHtml(displayName)}</span>
+            ${
+              user.isAdmin
+                ? `<span class="adminBadge" title="Admin"><i class="fas fa-shield-alt"></i> admin</span>`
+                : ""
+            }
+          </td>
+          <td>${section}</td>
+          <td>${grade}</td>
+          <td>${status}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  list.append(`
+    <table class="usersTable">
+      <thead>
+        <tr>
+          <th>name</th>
+          <th>section</th>
+          <th>grade</th>
+          <th>status</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `);
+}
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -169,37 +317,92 @@ function escapeHtml(value: string): string {
 }
 
 function updateContent(): void {
-  pageElement.find(".loading").toggleClass("hidden", !state.loading);
-  pageElement.find(".error").toggleClass("hidden", state.error === undefined);
-  pageElement.find(".error p").text(state.error ?? "");
   pageElement
     .find(".contestsPanel")
     .toggleClass("hidden", state.section !== "contests");
+  pageElement
+    .find(".usersPanel")
+    .toggleClass("hidden", state.section !== "users");
 
-  if (state.loading || state.error !== undefined) {
-    pageElement.find(".contestsList").empty();
+  if (state.section === "contests") {
+    pageElement
+      .find(".contestsPanel .loading")
+      .toggleClass("hidden", !state.contestsLoading);
+    pageElement
+      .find(".contestsPanel .error")
+      .toggleClass("hidden", state.contestsError === undefined);
+    pageElement.find(".contestsPanel .error p").text(state.contestsError ?? "");
+
+    if (state.contestsLoading || state.contestsError !== undefined) {
+      pageElement.find(".contestsList").empty();
+      return;
+    }
+
+    renderContestsList();
     return;
   }
 
-  renderContestsList();
+  pageElement
+    .find(".usersPanel .usersLoading")
+    .toggleClass("hidden", !state.usersLoading);
+  pageElement
+    .find(".usersPanel .usersError")
+    .toggleClass("hidden", state.usersError === undefined);
+  pageElement.find(".usersPanel .usersError p").text(state.usersError ?? "");
+  pageElement
+    .find(".usersTableToolbar")
+    .toggleClass(
+      "hidden",
+      state.usersLoading || state.usersError !== undefined,
+    );
+
+  if (state.usersLoading || state.usersError !== undefined) {
+    pageElement.find(".usersList").empty();
+    return;
+  }
+
+  ensureUsersFilters();
+  updateAdminsOnlyButtons();
+  renderUsersList();
 }
 
 async function fetchContests(): Promise<void> {
-  state.loading = true;
-  state.error = undefined;
+  state.contestsLoading = true;
+  state.contestsError = undefined;
   updateContent();
 
   const response = await Ape.contests.get();
 
-  state.loading = false;
+  state.contestsLoading = false;
 
   if (response.status === 200) {
     state.contests = response.body.data;
-    state.error = undefined;
+    state.contestsError = undefined;
   } else {
     state.contests = [];
-    state.error = response.body.message ?? "Failed to load contests";
-    Notifications.add(state.error, -1);
+    state.contestsError = response.body.message ?? "Failed to load contests";
+    Notifications.add(state.contestsError, -1);
+  }
+
+  updateContent();
+}
+
+async function fetchUsers(): Promise<void> {
+  state.usersLoading = true;
+  state.usersError = undefined;
+  updateContent();
+
+  const response = await Ape.users.listUsers();
+
+  state.usersLoading = false;
+
+  if (response.status === 200) {
+    state.users = response.body.data;
+    state.usersError = undefined;
+  } else {
+    state.users = [];
+    state.usersError = response.body.message ?? "Failed to load users";
+    Notifications.add(state.usersError, -1);
   }
 
   updateContent();
@@ -550,6 +753,23 @@ pageElement.on("click", ".sectionButtons button", function () {
   state.section = section;
   updateSectionButtons();
   updateContent();
+  if (section === "users") {
+    if (state.users.length === 0 && !state.usersLoading) {
+      void fetchUsers();
+    }
+  }
+});
+
+pageElement.on("click", ".usersTableToolbar .allUsers", () => {
+  if (!state.usersFilters.adminsOnly) return;
+  state.usersFilters.adminsOnly = false;
+  updateContent();
+});
+
+pageElement.on("click", ".usersTableToolbar .adminsOnly", () => {
+  if (state.usersFilters.adminsOnly) return;
+  state.usersFilters.adminsOnly = true;
+  updateContent();
 });
 
 pageElement.on("click", ".createContestButton", () => {
@@ -574,6 +794,8 @@ export const page = new Page({
   element: pageElement,
   path: "/dashboard",
   afterHide: async (): Promise<void> => {
+    destroyDashboardUsersFilters();
+    usersFiltersInitialized = false;
     Skeleton.remove("pageDashboard");
   },
   beforeShow: async (): Promise<void> => {

@@ -22,6 +22,7 @@ import {
   UserProfileSchema,
   ReportUserReasonSchema,
   UserSchema,
+  AdminUserListItemSchema,
   UserStreakSchema,
   UserTagSchema,
   UserEmailSchema,
@@ -43,6 +44,20 @@ export const GetUserResponseSchema = responseWithData(
   }),
 );
 export type GetUserResponse = z.infer<typeof GetUserResponseSchema>;
+
+export const GetAdminStatusResponseSchema = responseWithData(
+  z.object({
+    isAdmin: z.boolean(),
+  }),
+);
+export type GetAdminStatusResponse = z.infer<
+  typeof GetAdminStatusResponseSchema
+>;
+
+export const ListUsersResponseSchema = responseWithData(
+  z.array(AdminUserListItemSchema),
+);
+export type ListUsersResponse = z.infer<typeof ListUsersResponseSchema>;
 
 export const CreateUserRequestSchema = z.object({
   email: UserEmailSchema.optional(),
@@ -394,6 +409,31 @@ export const usersContract = c.router(
       },
       metadata: meta({
         rateLimit: "userGet",
+      }),
+    },
+    getAdminStatus: {
+      summary: "get admin status",
+      description: "Check whether the current user has admin access.",
+      method: "GET",
+      path: "/adminStatus",
+      responses: {
+        200: GetAdminStatusResponseSchema,
+      },
+      metadata: meta({
+        rateLimit: "userGet",
+      }),
+    },
+    listUsers: {
+      summary: "list users",
+      description: "List all users on the platform.",
+      method: "GET",
+      path: "/list",
+      responses: {
+        200: ListUsersResponseSchema,
+      },
+      metadata: meta({
+        rateLimit: "userGet",
+        requirePermission: "admin",
       }),
     },
     create: {

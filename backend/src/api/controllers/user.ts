@@ -71,6 +71,8 @@ import {
   GetTestActivityResponse,
   GetUserInboxResponse,
   GetUserResponse,
+  GetAdminStatusResponse,
+  ListUsersResponse,
   LinkDiscordRequest,
   LinkDiscordResponse,
   RemoveFavoriteQuoteRequest,
@@ -96,6 +98,7 @@ import * as ConnectionsDal from "../../dal/connections";
 import { PersonalBest } from "@monkeytype/schemas/shared";
 import * as SamlUtils from "../../utils/saml";
 import Logger from "../../utils/logger";
+import * as AdminUidsDal from "../../dal/admin-uids";
 
 async function verifyCaptcha(captcha: string): Promise<void> {
   const { data: verified, error } = await tryCatch(verify(captcha));
@@ -167,6 +170,12 @@ function generateUidFromEmail(email: string): string {
   return crypto.createHash("sha256").update(email.toLowerCase()).digest("hex");
 }
 
+function looksLikeIeeeMemberId(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed === "") return false;
+  return /^\d{5,}$/.test(trimmed);
+}
+
 function getProfileString(
   profile: SamlUtils.SamlProfile,
   keys: string[],
@@ -175,13 +184,44 @@ function getProfileString(
     typeof profile["attributes"] === "object" && profile["attributes"] !== null
       ? (profile["attributes"] as Record<string, unknown>)
       : undefined;
+
   for (const key of keys) {
-    const value = profile[key] ?? attributes?.[key];
-    if (typeof value === "string" && value.trim() !== "") {
-      return value;
+    const raw = profile[key] ?? attributes?.[key];
+    if (typeof raw === "string" && raw.trim() !== "") {
+      return raw.trim();
+    }
+    if (Array.isArray(raw)) {
+      for (const entry of raw) {
+        if (typeof entry === "string" && entry.trim() !== "") {
+          return entry.trim();
+        }
+      }
     }
   }
+
   return undefined;
+}
+
+function resolveSamlEmail(profile: SamlUtils.SamlProfile): string | undefined {
+  const emailFromClaims = getProfileString(profile, [
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+    "Email",
+    "email",
+    "mail",
+  ]);
+
+  const candidates = [emailFromClaims, profile.email, profile.nameID].filter(
+    (value): value is string =>
+      typeof value === "string" && value.trim() !== "",
+  );
+
+  for (const candidate of candidates) {
+    const trimmed = candidate.trim();
+    if (looksLikeIeeeMemberId(trimmed)) continue;
+    if (trimmed.includes("@")) return trimmed;
+  }
+
+  return candidates[0]?.trim();
 }
 
 async function generateAvailableUsername(
@@ -259,15 +299,7 @@ export async function acs(
   }
 
   // Extract user information from SAML profile
-  const emailRaw =
-    profile.email ??
-    profile.nameID ??
-    getProfileString(profile, [
-      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
-      "Email",
-      "email",
-      "mail",
-    ]);
+  const emailRaw = resolveSamlEmail(profile);
 
   const firstName = getProfileString(profile, [
     "FirstName",
@@ -777,6 +809,24 @@ export async function getUser(req: MonkeyRequest): Promise<GetUserResponse> {
     ...userData,
     inboxUnreadSize: inboxUnreadSize,
   });
+}
+
+export async function getAdminStatus(
+  req: MonkeyRequest,
+): Promise<GetAdminStatusResponse> {
+  const { uid } = req.ctx.decodedToken;
+  const admin = await AdminUidsDal.isAdmin(uid);
+
+  return new MonkeyResponse("Admin status retrieved", { isAdmin: admin });
+}
+
+export async function listUsers(
+  _req: MonkeyRequest,
+): Promise<ListUsersResponse> {
+  const legacyAdminUids = new Set(await AdminUidsDal.getAllLegacyAdminUids());
+  const users = await UserDAL.getAllUsersForAdmin(legacyAdminUids);
+
+  return new MonkeyResponse("Users retrieved", users);
 }
 
 export async function getOauthLink(

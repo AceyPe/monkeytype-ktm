@@ -6,6 +6,10 @@
           <i class="fas fa-trophy"></i>
           contests
         </button>
+        <button data-section="users">
+          <i class="fas fa-users"></i>
+          users
+        </button>
       </div>
     </div>
     <div class="mainContent">
@@ -27,6 +31,45 @@
           <p>Something went wrong</p>
         </div>
         <div class="contestsList"></div>
+      </div>
+      <div class="sectionPanel usersPanel hidden">
+        <div class="sectionHeader">
+          <div class="bigtitle">
+            <div class="text">Users</div>
+          </div>
+        </div>
+        <div class="usersLoading hidden">
+          <i class="fas fa-circle-notch fa-spin"></i>
+        </div>
+        <div class="usersError hidden">
+          <i class="fas fa-times"></i>
+          <p>Something went wrong</p>
+        </div>
+        <div class="usersTableToolbar">
+          <div class="buttonGroup adminsOnlyButtons">
+            <button type="button" class="allUsers active">
+              <i class="fas fa-users"></i>
+              all users
+            </button>
+            <button type="button" class="adminsOnly">
+              <i class="fas fa-shield-alt"></i>
+              admins only
+            </button>
+          </div>
+          <div class="usersFilterGroup">
+            <label for="usersRegionFilter">Region</label>
+            <select id="usersRegionFilter" class="usersRegionFilter">
+              <option value="">All regions</option>
+            </select>
+          </div>
+          <div class="usersFilterGroup">
+            <label for="usersSectionFilter">Section</label>
+            <select id="usersSectionFilter" class="usersSectionFilter">
+              <option value="">All sections</option>
+            </select>
+          </div>
+        </div>
+        <div class="usersList"></div>
       </div>
     </div>
   </div>

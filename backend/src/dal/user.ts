@@ -26,6 +26,8 @@ import {
   User,
   CountByYearAndDay,
   Friend,
+  ADMIN_ROLE,
+  AdminUserListItem,
 } from "@monkeytype/schemas/users";
 import { Mode, Mode2, PersonalBest } from "@monkeytype/schemas/shared";
 import { addImportantLog } from "./logs";
@@ -241,6 +243,102 @@ export async function updateEmail(
   await updateUser({ uid }, { $set: { email } }, { stack: "update email" });
 
   return true;
+}
+
+export async function setAdminRoleByEmail(email: string): Promise<boolean> {
+  const result = await getUsersCollection().updateOne(
+    { email: { $regex: `^${escapeRegex(email)}$`, $options: "i" } },
+    { $set: { role: ADMIN_ROLE } },
+  );
+
+  return result.matchedCount > 0;
+}
+
+export async function setAdminRoleByUid(uid: string): Promise<boolean> {
+  const result = await getUsersCollection().updateOne(
+    { uid },
+    { $set: { role: ADMIN_ROLE } },
+  );
+
+  return result.matchedCount > 0;
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export async function getUserByEmail(
+  email: string,
+): Promise<Pick<DBUser, "uid" | "email" | "role"> | null> {
+  return await getUsersCollection().findOne(
+    { email: { $regex: `^${escapeRegex(email)}$`, $options: "i" } },
+    { projection: { uid: 1, email: 1, role: 1 } },
+  );
+}
+
+function looksLikeIeeeMemberId(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed === "") return false;
+  return /^\d{5,}$/.test(trimmed);
+}
+
+function getDisplayNameFromParts(
+  firstName?: string,
+  lastName?: string,
+): string {
+  return [firstName, lastName]
+    .filter((part): part is string => typeof part === "string" && part !== "")
+    .map((part) => part.trim())
+    .join(" ")
+    .trim();
+}
+
+function getAdminUserDisplayName(user: {
+  uid: string;
+  name: string;
+  firstName?: string;
+  lastName?: string;
+}): string {
+  const fullName = getDisplayNameFromParts(user.firstName, user.lastName);
+  if (fullName !== "") return fullName;
+
+  const name = user.name.trim();
+  if (name === "" || looksLikeIeeeMemberId(name) || name === user.uid.trim()) {
+    return "";
+  }
+
+  return name;
+}
+
+export async function getAllUsersForAdmin(
+  legacyAdminUids: ReadonlySet<string>,
+): Promise<AdminUserListItem[]> {
+  const users = await getUsersCollection()
+    .find(
+      {},
+      {
+        projection: {
+          uid: 1,
+          name: 1,
+          role: 1,
+          firstName: 1,
+          lastName: 1,
+          geocode: 1,
+          grade: 1,
+          status: 1,
+        },
+      },
+    )
+    .sort({ lastName: 1, firstName: 1, name: 1 })
+    .toArray();
+
+  return users.map((user) => ({
+    displayName: getAdminUserDisplayName(user),
+    geocode: user.geocode,
+    grade: user.grade,
+    status: user.status,
+    isAdmin: user.role === ADMIN_ROLE || legacyAdminUids.has(user.uid),
+  }));
 }
 
 type SamlUserFields = {

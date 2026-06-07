@@ -58,9 +58,7 @@ export const contestsContract = c.router(
       },
       metadata: meta({
         rateLimit: "contestsAdd",
-        authenticationOptions: {
-          isPublic: true,
-        },
+        requirePermission: "admin",
       }),
     },
     update: {
@@ -75,9 +73,7 @@ export const contestsContract = c.router(
       },
       metadata: meta({
         rateLimit: "contestsEdit",
-        authenticationOptions: {
-          isPublic: true,
-        },
+        requirePermission: "admin",
       }),
     },
     delete: {
@@ -92,9 +88,7 @@ export const contestsContract = c.router(
       },
       metadata: meta({
         rateLimit: "contestsRemove",
-        authenticationOptions: {
-          isPublic: true,
-        },
+        requirePermission: "admin",
       }),
     },
   },
