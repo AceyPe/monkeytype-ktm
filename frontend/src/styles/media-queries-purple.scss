@@ -54,6 +54,12 @@
       font-size: 0.9rem;
       line-height: 0.9rem;
       gap: 0.25rem;
+
+      .textButton .label,
+      button.showAlerts .label {
+        display: none;
+      }
+
       .view-account {
         .text {
           display: none;

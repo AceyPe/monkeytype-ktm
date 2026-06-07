@@ -45,10 +45,19 @@ nav {
 
   button.showAlerts {
     position: relative;
+    align-items: center;
   }
 
   .textButton {
     position: relative;
+    align-items: center;
+
+    .label {
+      font-size: 0.75em;
+      align-self: center;
+      white-space: nowrap;
+    }
+
     .text {
       font-size: 0.75em;
       align-self: center;
@@ -63,11 +72,18 @@ nav {
       height: 1.25em;
       display: grid;
       place-content: center center;
+      flex-shrink: 0;
     }
     .spinner {
       opacity: 0;
       transition: opacity 0.125s;
     }
+  }
+
+  button.showAlerts .label {
+    font-size: 0.75em;
+    align-self: center;
+    white-space: nowrap;
   }
 
   .accountButtonAndMenu {
