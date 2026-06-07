@@ -1,7 +1,12 @@
 import { ObjectId, type Collection, type WithId } from "mongodb";
-import { Contest, CreateContestRequest } from "@monkeytype/schemas/contests";
+import {
+  Contest,
+  CreateContestRequest,
+  UpdateContestRequest,
+} from "@monkeytype/schemas/contests";
 import * as db from "../init/db";
 import { WithObjectId } from "../utils/misc";
+import MonkeyError from "../utils/error";
 
 type DBContest = WithObjectId<Contest>;
 
@@ -28,4 +33,18 @@ export async function createContest(
   return {
     contestId: result.insertedId.toHexString(),
   };
+}
+
+export async function updateContest(
+  contestId: string,
+  contest: UpdateContestRequest,
+): Promise<void> {
+  const result = await getContestsCollection().updateOne(
+    { _id: new ObjectId(contestId) },
+    { $set: contest },
+  );
+
+  if (result.matchedCount === 0) {
+    throw new MonkeyError(404, "Contest not found");
+  }
 }

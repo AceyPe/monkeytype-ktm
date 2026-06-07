@@ -3,11 +3,16 @@ import * as Skeleton from "../utils/skeleton";
 import Ape from "../ape";
 import AnimatedModal from "../utils/animated-modal";
 import * as Notifications from "../elements/notifications";
-import { Contest, CreateContestRequest } from "@monkeytype/schemas/contests";
+import {
+  Contest,
+  ContestPrize,
+  CreateContestRequest,
+} from "@monkeytype/schemas/contests";
 import { format } from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
 
 type DashboardSection = "contests";
+type ContestFormMode = "create" | "edit";
 
 const state = {
   section: "contests" as DashboardSection,
@@ -16,7 +21,16 @@ const state = {
   contests: [] as Contest[],
 };
 
+const contestFormState = {
+  mode: "create" as ContestFormMode,
+  contestId: undefined as string | undefined,
+};
+
 const pageElement = $(".page.pageDashboard");
+
+function pad2(value: number): string {
+  return String(value).padStart(2, "0");
+}
 
 function parseUtcDate(value: string): number | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -25,6 +39,11 @@ function parseUtcDate(value: string): number | null {
   const month = Number(match[2]);
   const day = Number(match[3]);
   return Date.UTC(year, month - 1, day);
+}
+
+function formatUtcDateInput(timestamp: number): string {
+  const date = new UTCDateMini(timestamp);
+  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}`;
 }
 
 function formatContestDate(timestamp: number): string {
@@ -68,8 +87,20 @@ function renderContestsList(): void {
 
     list.append(`
       <div class="contestCard" data-contest-id="${contest._id}">
-        <div class="contestTitle">${escapeHtml(contest.title)}</div>
-        <div class="contestDate">${formatContestDate(contest.date)}</div>
+        <div class="contestCardHeader">
+          <div class="contestMeta">
+            <div class="contestTitle">${escapeHtml(contest.title)}</div>
+            <div class="contestDate">${formatContestDate(contest.date)}</div>
+          </div>
+          <button
+            type="button"
+            class="textButton editContestButton"
+            data-contest-id="${contest._id}"
+          >
+            <i class="fas fa-pencil-alt"></i>
+            edit
+          </button>
+        </div>
         <table class="prizeTable">
           <thead>
             <tr>
@@ -130,7 +161,7 @@ async function fetchContests(): Promise<void> {
   updateContent();
 }
 
-function createPrizeRow(): HTMLElement {
+function createPrizeRow(prize?: ContestPrize): HTMLElement {
   const row = document.createElement("div");
   row.className = "prizeRow";
   row.innerHTML = `
@@ -150,23 +181,66 @@ function createPrizeRow(): HTMLElement {
       <i class="fas fa-times"></i>
     </button>
   `;
+
+  if (prize !== undefined) {
+    const rowEl = $(row);
+    rowEl.find(".fromPosition").val(String(prize.fromPosition));
+    if (prize.toPosition !== undefined) {
+      rowEl.find(".toPosition").val(String(prize.toPosition));
+    }
+    rowEl.find(".reward").val(prize.reward);
+  }
+
   return row;
 }
 
-function resetCreateContestForm(): void {
-  const form = createContestModal.getModal();
+function getContestFormModal(): JQuery {
+  return $(contestFormModal.getModal());
+}
+
+function resetContestForm(): void {
+  const form = contestFormModal.getModal();
   if (form instanceof HTMLFormElement) {
     form.reset();
   }
-  const prizeList = $(form).find(".prizeList");
+  const modal = getContestFormModal();
+  const prizeList = modal.find(".prizeList");
   prizeList.empty();
   prizeList.append(createPrizeRow());
-  $(form).find(".formError").addClass("hidden").text("");
+  modal.find(".formError").addClass("hidden").text("");
+}
+
+function populateContestForm(contest: Contest): void {
+  const form = contestFormModal.getModal();
+  if (form instanceof HTMLFormElement) {
+    form.reset();
+  }
+
+  const modal = getContestFormModal();
+  modal.find("input[name='title']").val(contest.title);
+  modal.find("input[name='date']").val(formatUtcDateInput(contest.date));
+
+  const prizeList = modal.find(".prizeList");
+  prizeList.empty();
+  for (const prize of contest.prizes) {
+    prizeList.append(createPrizeRow(prize));
+  }
+
+  modal.find(".formError").addClass("hidden").text("");
+}
+
+function updateContestFormModalUi(): void {
+  const modal = getContestFormModal();
+  const isEdit = contestFormState.mode === "edit";
+  modal
+    .find(".contestFormTitle")
+    .text(isEdit ? "Edit contest" : "Create contest");
+  modal.find(".contestFormSubmitButton").text(isEdit ? "save" : "create");
 }
 
 function readPrizesFromForm(): CreateContestRequest["prizes"] | string {
   const prizes: CreateContestRequest["prizes"] = [];
-  const rows = $(createContestModal.getModal()).find(".prizeRow");
+  const rows = getContestFormModal().find(".prizeRow");
 
   if (rows.length === 0) {
     return "Add at least one prize";
@@ -214,7 +288,7 @@ function readPrizesFromForm(): CreateContestRequest["prizes"] | string {
   return prizes;
 }
 
-const createContestModal = new AnimatedModal({
+const contestFormModal = new AnimatedModal({
   dialogId: "createContestModal",
   setup: async (modalEl): Promise<void> => {
     $(modalEl).on("click", ".addPrizeButton", () => {
@@ -228,17 +302,17 @@ const createContestModal = new AnimatedModal({
     });
 
     $(modalEl).on("submit", (event) => {
-      void submitCreateContest(event);
+      void submitContestForm(event);
     });
   },
 });
 
-async function submitCreateContest(event: {
+async function submitContestForm(event: {
   preventDefault: () => void;
 }): Promise<void> {
   event.preventDefault();
 
-  const modal = $(createContestModal.getModal());
+  const modal = getContestFormModal();
   const title = (modal.find("input[name='title']").val() as string).trim();
   const dateValue = modal.find("input[name='date']").val() as string;
   const date = parseUtcDate(dateValue);
@@ -261,33 +335,56 @@ async function submitCreateContest(event: {
   }
 
   errorEl.addClass("hidden").text("");
-  modal.find(".submitButton").prop("disabled", true);
+  modal.find(".contestFormSubmitButton").prop("disabled", true);
 
-  const response = await Ape.contests.create({
-    body: {
-      title,
-      date,
-      prizes,
-    },
-  });
+  const body = { title, date, prizes };
+  const response =
+    contestFormState.mode === "edit" && contestFormState.contestId !== undefined
+      ? await Ape.contests.update({
+          params: { contestId: contestFormState.contestId },
+          body,
+        })
+      : await Ape.contests.create({ body });
 
-  modal.find(".submitButton").prop("disabled", false);
+  modal.find(".contestFormSubmitButton").prop("disabled", false);
 
   if (response.status === 200) {
-    Notifications.add("Contest created", 1);
-    void createContestModal.hide();
+    Notifications.add(
+      contestFormState.mode === "edit" ? "Contest updated" : "Contest created",
+      1,
+    );
+    void contestFormModal.hide();
     await fetchContests();
     return;
   }
 
   errorEl
     .removeClass("hidden")
-    .text(response.body.message ?? "Failed to create contest");
+    .text(response.body.message ?? "Failed to save contest");
 }
 
 function openCreateContestModal(): void {
-  resetCreateContestForm();
-  void createContestModal.show({
+  contestFormState.mode = "create";
+  contestFormState.contestId = undefined;
+  resetContestForm();
+  updateContestFormModalUi();
+  void contestFormModal.show({
+    focusFirstInput: true,
+  });
+}
+
+function openEditContestModal(contestId: string): void {
+  const contest = state.contests.find((entry) => entry._id === contestId);
+  if (contest === undefined) {
+    Notifications.add("Contest not found", -1);
+    return;
+  }
+
+  contestFormState.mode = "edit";
+  contestFormState.contestId = contestId;
+  populateContestForm(contest);
+  updateContestFormModalUi();
+  void contestFormModal.show({
     focusFirstInput: true,
   });
 }
@@ -302,6 +399,12 @@ pageElement.on("click", ".sectionButtons button", function () {
 
 pageElement.on("click", ".createContestButton", () => {
   openCreateContestModal();
+});
+
+pageElement.on("click", ".editContestButton", function () {
+  const contestId = $(this).attr("data-contest-id");
+  if (contestId === undefined) return;
+  openEditContestModal(contestId);
 });
 
 export const page = new Page({

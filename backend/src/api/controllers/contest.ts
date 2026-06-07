@@ -1,8 +1,12 @@
 import {
   CreateContestResponse,
   GetContestsResponse,
+  UpdateContestParams,
 } from "@monkeytype/contracts/contests";
-import { CreateContestRequest } from "@monkeytype/schemas/contests";
+import {
+  CreateContestRequest,
+  UpdateContestRequest,
+} from "@monkeytype/schemas/contests";
 import * as ContestDAL from "../../dal/contest";
 import { MonkeyResponse } from "../../utils/monkey-response";
 import { replaceObjectId } from "../../utils/misc";
@@ -24,4 +28,12 @@ export async function createContest(
   const data = await ContestDAL.createContest(req.body);
 
   return new MonkeyResponse("Contest created", data);
+}
+
+export async function updateContest(
+  req: MonkeyRequest<undefined, UpdateContestRequest, UpdateContestParams>,
+): Promise<MonkeyResponse> {
+  await ContestDAL.updateContest(req.params.contestId, req.body);
+
+  return new MonkeyResponse("Contest updated", null);
 }

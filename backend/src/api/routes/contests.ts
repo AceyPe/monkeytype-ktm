@@ -11,4 +11,7 @@ export default s.router(contestsContract, {
   create: {
     handler: async (r) => callController(ContestController.createContest)(r),
   },
+  update: {
+    handler: async (r) => callController(ContestController.updateContest)(r),
+  },
 });

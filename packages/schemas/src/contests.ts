@@ -38,3 +38,6 @@ export const CreateContestRequestSchema = ContestSchema.omit({
   createdAt: true,
 }).strict();
 export type CreateContestRequest = z.infer<typeof CreateContestRequestSchema>;
+
+export const UpdateContestRequestSchema = CreateContestRequestSchema;
+export type UpdateContestRequest = z.infer<typeof UpdateContestRequestSchema>;

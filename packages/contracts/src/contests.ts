@@ -3,12 +3,13 @@ import { z } from "zod";
 import {
   CommonResponses,
   meta,
-  // MonkeyResponseSchema,
+  MonkeyResponseSchema,
   responseWithData,
 } from "./util/api";
 import {
   ContestSchema,
   CreateContestRequestSchema,
+  UpdateContestRequestSchema,
 } from "@monkeytype/schemas/contests";
 import { IdSchema } from "@monkeytype/schemas/util";
 
@@ -21,6 +22,11 @@ export const CreateContestResponseSchema = responseWithData(
   z.object({ contestId: IdSchema }),
 );
 export type CreateContestResponse = z.infer<typeof CreateContestResponseSchema>;
+
+export const UpdateContestParamsSchema = z.object({
+  contestId: IdSchema,
+});
+export type UpdateContestParams = z.infer<typeof UpdateContestParamsSchema>;
 
 const c = initContract();
 
@@ -52,6 +58,26 @@ export const contestsContract = c.router(
       },
       metadata: meta({
         rateLimit: "contestsAdd",
+        authenticationOptions: {
+          isPublic: true,
+        },
+      }),
+    },
+    update: {
+      summary: "update contest",
+      description: "Update an existing contest.",
+      method: "PATCH",
+      path: "/:contestId",
+      pathParams: UpdateContestParamsSchema,
+      body: UpdateContestRequestSchema,
+      responses: {
+        200: MonkeyResponseSchema,
+      },
+      metadata: meta({
+        rateLimit: "contestsEdit",
+        authenticationOptions: {
+          isPublic: true,
+        },
       }),
     },
   },

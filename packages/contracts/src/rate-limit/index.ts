@@ -130,6 +130,11 @@ export const limits = {
     max: 60,
   },
 
+  contestsEdit: {
+    window: "hour",
+    max: 60,
+  },
+
   // get public speed stats
   publicStatsGet: {
     window: "minute",

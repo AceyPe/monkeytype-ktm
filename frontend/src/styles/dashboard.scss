@@ -82,6 +82,27 @@
         display: grid;
         gap: 1rem;
 
+        .contestCardHeader {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 1rem;
+
+          .contestMeta {
+            display: grid;
+            gap: 0.35rem;
+            min-width: 0;
+          }
+
+          .editContestButton {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35em;
+            padding: 0.35em 0.65em;
+          }
+        }
+
         .contestTitle {
           font-size: 1.25rem;
           color: var(--main-color);
