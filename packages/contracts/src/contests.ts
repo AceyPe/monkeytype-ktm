@@ -80,6 +80,23 @@ export const contestsContract = c.router(
         },
       }),
     },
+    delete: {
+      summary: "delete contest",
+      description: "Delete an existing contest.",
+      method: "DELETE",
+      path: "/:contestId",
+      pathParams: UpdateContestParamsSchema,
+      body: c.noBody(),
+      responses: {
+        200: MonkeyResponseSchema,
+      },
+      metadata: meta({
+        rateLimit: "contestsRemove",
+        authenticationOptions: {
+          isPublic: true,
+        },
+      }),
+    },
   },
   {
     pathPrefix: "/contests",

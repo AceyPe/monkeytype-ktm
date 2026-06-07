@@ -14,4 +14,7 @@ export default s.router(contestsContract, {
   update: {
     handler: async (r) => callController(ContestController.updateContest)(r),
   },
+  delete: {
+    handler: async (r) => callController(ContestController.deleteContest)(r),
+  },
 });

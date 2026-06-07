@@ -1382,3 +1382,35 @@
     </button>
   </form>
 </dialog>
+
+<dialog id="deleteContestModal" class="modalWrapper hidden">
+  <form class="modal deleteContestModal">
+    <div class="title">Delete contest</div>
+    <p class="text">
+      This action cannot be undone. Type the phrase below exactly to confirm.
+    </p>
+    <p class="confirmPhrase"></p>
+    <label class="field">
+      <span class="label">Confirmation</span>
+      <input
+        type="text"
+        name="confirmText"
+        autocomplete="off"
+        placeholder="Type the phrase above"
+      />
+    </label>
+    <div class="formError hidden"></div>
+    <div class="buttonRow">
+      <button type="button" class="textButton cancelDeleteContestButton">
+        cancel
+      </button>
+      <button
+        type="submit"
+        class="submitButton deleteContestSubmitButton"
+        disabled
+      >
+        delete
+      </button>
+    </div>
+  </form>
+</dialog>

@@ -26,6 +26,11 @@ const contestFormState = {
   contestId: undefined as string | undefined,
 };
 
+const deleteContestState = {
+  contestId: undefined as string | undefined,
+  expectedPhrase: "",
+};
+
 const pageElement = $(".page.pageDashboard");
 
 function pad2(value: number): string {
@@ -48,6 +53,19 @@ function formatUtcDateInput(timestamp: number): string {
 
 function formatContestDate(timestamp: number): string {
   return `${format(new UTCDateMini(timestamp), "dd MMM yyyy")} UTC`;
+}
+
+function getUtcTodayStart(): number {
+  const now = new UTCDateMini();
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+}
+
+function isContestDateToday(contestDate: number): boolean {
+  return contestDate === getUtcTodayStart();
+}
+
+function getDeleteContestConfirmPhrase(title: string): string {
+  return `I am sure I want to delete the ${title} contest`;
 }
 
 function formatPrizeRange(fromPosition: number, toPosition?: number): string {
@@ -85,6 +103,12 @@ function renderContestsList(): void {
       )
       .join("");
 
+    const deleteDisabled = isContestDateToday(contest.date);
+    const deleteDisabledAttr = deleteDisabled ? "disabled" : "";
+    const deleteTitle = deleteDisabled
+      ? 'title="Cannot delete a contest scheduled for today"'
+      : "";
+
     list.append(`
       <div class="contestCard" data-contest-id="${contest._id}">
         <div class="contestCardHeader">
@@ -92,14 +116,34 @@ function renderContestsList(): void {
             <div class="contestTitle">${escapeHtml(contest.title)}</div>
             <div class="contestDate">${formatContestDate(contest.date)}</div>
           </div>
-          <button
-            type="button"
-            class="textButton editContestButton"
-            data-contest-id="${contest._id}"
-          >
-            <i class="fas fa-pencil-alt"></i>
-            edit
-          </button>
+          <div class="contestCardActions">
+            <button
+              type="button"
+              class="textButton editContestButton"
+              data-contest-id="${contest._id}"
+            >
+              <i class="fas fa-pencil-alt"></i>
+              edit
+            </button>
+            <button
+              type="button"
+              class="textButton leaderboardContestButton"
+              data-contest-id="${contest._id}"
+            >
+              <i class="fas fa-list-ol"></i>
+              leaderboard
+            </button>
+            <button
+              type="button"
+              class="textButton deleteContestButton"
+              data-contest-id="${contest._id}"
+              ${deleteDisabledAttr}
+              ${deleteTitle}
+            >
+              <i class="fas fa-trash-alt"></i>
+              delete
+            </button>
+          </div>
         </div>
         <table class="prizeTable">
           <thead>
@@ -307,6 +351,48 @@ const contestFormModal = new AnimatedModal({
   },
 });
 
+function getDeleteContestModal(): JQuery {
+  return $(deleteContestModal.getModal());
+}
+
+function updateDeleteContestSubmitState(): void {
+  const modal = getDeleteContestModal();
+  const input = (
+    modal.find("input[name='confirmText']").val() as string
+  ).trim();
+  modal
+    .find(".deleteContestSubmitButton")
+    .prop("disabled", input !== deleteContestState.expectedPhrase);
+}
+
+function resetDeleteContestForm(): void {
+  const form = deleteContestModal.getModal();
+  if (form instanceof HTMLFormElement) {
+    form.reset();
+  }
+
+  const modal = getDeleteContestModal();
+  modal.find(".formError").addClass("hidden").text("");
+  updateDeleteContestSubmitState();
+}
+
+const deleteContestModal = new AnimatedModal({
+  dialogId: "deleteContestModal",
+  setup: async (modalEl): Promise<void> => {
+    $(modalEl).on("input", "input[name='confirmText']", () => {
+      updateDeleteContestSubmitState();
+    });
+
+    $(modalEl).on("click", ".cancelDeleteContestButton", () => {
+      void deleteContestModal.hide();
+    });
+
+    $(modalEl).on("submit", (event) => {
+      void submitDeleteContest(event);
+    });
+  },
+});
+
 async function submitContestForm(event: {
   preventDefault: () => void;
 }): Promise<void> {
@@ -389,6 +475,75 @@ function openEditContestModal(contestId: string): void {
   });
 }
 
+function openDeleteContestModal(contestId: string): void {
+  const contest = state.contests.find((entry) => entry._id === contestId);
+  if (contest === undefined) {
+    Notifications.add("Contest not found", -1);
+    return;
+  }
+
+  if (isContestDateToday(contest.date)) {
+    Notifications.add("Cannot delete a contest scheduled for today", -1);
+    return;
+  }
+
+  deleteContestState.contestId = contestId;
+  deleteContestState.expectedPhrase = getDeleteContestConfirmPhrase(
+    contest.title,
+  );
+
+  const modal = getDeleteContestModal();
+  modal.find(".confirmPhrase").text(deleteContestState.expectedPhrase);
+  resetDeleteContestForm();
+
+  void deleteContestModal.show({
+    focusFirstInput: true,
+  });
+}
+
+async function submitDeleteContest(event: {
+  preventDefault: () => void;
+}): Promise<void> {
+  event.preventDefault();
+
+  const modal = getDeleteContestModal();
+  const errorEl = modal.find(".formError");
+  const confirmText = (
+    modal.find("input[name='confirmText']").val() as string
+  ).trim();
+  const contestId = deleteContestState.contestId;
+
+  if (contestId === undefined) {
+    errorEl.removeClass("hidden").text("Contest not found");
+    return;
+  }
+
+  if (confirmText !== deleteContestState.expectedPhrase) {
+    errorEl.removeClass("hidden").text("Confirmation phrase does not match");
+    return;
+  }
+
+  errorEl.addClass("hidden").text("");
+  modal.find(".deleteContestSubmitButton").prop("disabled", true);
+
+  const response = await Ape.contests.delete({
+    params: { contestId },
+  });
+
+  modal.find(".deleteContestSubmitButton").prop("disabled", false);
+
+  if (response.status === 200) {
+    Notifications.add("Contest deleted", 1);
+    void deleteContestModal.hide();
+    await fetchContests();
+    return;
+  }
+
+  errorEl
+    .removeClass("hidden")
+    .text(response.body.message ?? "Failed to delete contest");
+}
+
 pageElement.on("click", ".sectionButtons button", function () {
   const section = $(this).attr("data-section") as DashboardSection | undefined;
   if (section === undefined || state.section === section) return;
@@ -405,6 +560,13 @@ pageElement.on("click", ".editContestButton", function () {
   const contestId = $(this).attr("data-contest-id");
   if (contestId === undefined) return;
   openEditContestModal(contestId);
+});
+
+pageElement.on("click", ".deleteContestButton", function () {
+  if ($(this).prop("disabled") === true) return;
+  const contestId = $(this).attr("data-contest-id");
+  if (contestId === undefined) return;
+  openDeleteContestModal(contestId);
 });
 
 export const page = new Page({

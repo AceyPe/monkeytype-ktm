@@ -48,3 +48,28 @@ export async function updateContest(
     throw new MonkeyError(404, "Contest not found");
   }
 }
+
+function getUtcTodayStart(): number {
+  const now = new Date();
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+}
+
+export function isContestDateToday(contestDate: number): boolean {
+  return contestDate === getUtcTodayStart();
+}
+
+export async function deleteContest(contestId: string): Promise<void> {
+  const contest = await getContestsCollection().findOne({
+    _id: new ObjectId(contestId),
+  });
+
+  if (contest === null) {
+    throw new MonkeyError(404, "Contest not found");
+  }
+
+  if (isContestDateToday(contest.date)) {
+    throw new MonkeyError(403, "Cannot delete a contest scheduled for today");
+  }
+
+  await getContestsCollection().deleteOne({ _id: new ObjectId(contestId) });
+}

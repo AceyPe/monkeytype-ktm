@@ -94,12 +94,24 @@
             min-width: 0;
           }
 
-          .editContestButton {
+          .contestCardActions {
             flex-shrink: 0;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35em;
-            padding: 0.35em 0.65em;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.35rem;
+
+            button {
+              display: inline-flex;
+              align-items: center;
+              gap: 0.35em;
+              padding: 0.35em 0.65em;
+            }
+
+            button:disabled {
+              opacity: 0.45;
+              cursor: not-allowed;
+            }
           }
         }
 
@@ -198,6 +210,57 @@
   .formError {
     color: var(--error-color, #e74c3c);
     font-size: 0.85rem;
+  }
+}
+
+#deleteContestModal .deleteContestModal {
+  display: grid;
+  gap: 1rem;
+  min-width: min(100%, 32rem);
+
+  .text {
+    color: var(--sub-color);
+    margin: 0;
+  }
+
+  .confirmPhrase {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    background: var(--sub-alt-color);
+    border-radius: var(--roundness);
+    color: var(--main-color);
+    font-family: var(--font);
+    word-break: break-word;
+  }
+
+  .field {
+    display: grid;
+    gap: 0.35rem;
+
+    .label {
+      color: var(--sub-color);
+      font-size: 0.85rem;
+    }
+
+    input {
+      width: 100%;
+    }
+  }
+
+  .formError {
+    color: var(--error-color, #e74c3c);
+    font-size: 0.85rem;
+  }
+
+  .buttonRow {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .deleteContestSubmitButton:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 }
 

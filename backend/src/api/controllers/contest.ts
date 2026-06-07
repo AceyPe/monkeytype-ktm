@@ -37,3 +37,11 @@ export async function updateContest(
 
   return new MonkeyResponse("Contest updated", null);
 }
+
+export async function deleteContest(
+  req: MonkeyRequest<undefined, undefined, UpdateContestParams>,
+): Promise<MonkeyResponse> {
+  await ContestDAL.deleteContest(req.params.contestId);
+
+  return new MonkeyResponse("Contest deleted", null);
+}
