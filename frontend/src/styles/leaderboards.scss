@@ -76,6 +76,30 @@
         }
       }
 
+      .tableToolbar {
+        margin-bottom: 0.75em;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 1.5rem;
+        align-items: flex-end;
+
+        .lbFilterGroup {
+          display: grid;
+          gap: 0.35em;
+          min-width: min(100%, 16rem);
+          flex: 1 1 16rem;
+
+          label {
+            font-size: 0.75em;
+            color: var(--sub-color);
+          }
+
+          .ss-main {
+            width: 100%;
+          }
+        }
+      }
+
       & > .title {
         font-size: 1.25rem;
         color: var(--sub-color);
@@ -214,6 +238,12 @@
 
         .rankColLabelShort {
           display: none;
+        }
+
+        &.rankScopeGlobal thead .rankColGlobal,
+        &.rankScopeRegion thead .rankColRegion,
+        &.rankScopeSection thead .rankColSection {
+          color: var(--main-color);
         }
 
         td.nameCol {

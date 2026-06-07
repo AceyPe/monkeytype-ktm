@@ -454,3 +454,27 @@ export function getSectionNameByGeocode(geocode?: string): string | null {
   if (normalized === "") return null;
   return SECTION_NAME_BY_GEOCODE[normalized] ?? null;
 }
+
+export const REGIONS = [
+  { code: "1", name: "Region 1" },
+  { code: "2", name: "Region 2" },
+  { code: "3", name: "Region 3" },
+  { code: "4", name: "Region 4" },
+  { code: "5", name: "Region 5" },
+  { code: "6", name: "Region 6" },
+  { code: "7", name: "Region 7" },
+  { code: "8", name: "Region 8" },
+  { code: "9", name: "Region 9" },
+  { code: "10", name: "Region 10" },
+] as const;
+
+export type RegionCode = (typeof REGIONS)[number]["code"];
+
+export const SECTIONS = Object.entries(SECTION_NAME_BY_GEOCODE)
+  .map(([geocode, name]) => ({ geocode, name }))
+  .sort((a, b) => a.name.localeCompare(b.name));
+
+export function getRegionNameByCode(code?: string): string | null {
+  if (code === undefined || code.trim() === "") return null;
+  return REGIONS.find((region) => region.code === code)?.name ?? null;
+}

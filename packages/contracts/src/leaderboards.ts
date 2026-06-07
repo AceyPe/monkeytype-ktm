@@ -35,6 +35,30 @@ const FriendsOnlyQuerySchema = z.object({
 });
 export type FriendsOnlyQuery = z.infer<typeof FriendsOnlyQuerySchema>;
 
+export const RankScopeSchema = z
+  .enum(["global", "region", "section"])
+  .default("global");
+export type RankScope = z.infer<typeof RankScopeSchema>;
+
+const RankScopeQuerySchema = z.object({
+  rankScope: RankScopeSchema.optional(),
+});
+export type RankScopeQuery = z.infer<typeof RankScopeQuerySchema>;
+
+const RegionFilterSchema = z
+  .enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
+  .optional();
+export type RegionFilter = z.infer<typeof RegionFilterSchema>;
+
+const SectionFilterSchema = z.string().min(1).optional();
+export type SectionFilter = z.infer<typeof SectionFilterSchema>;
+
+const RankFilterQuerySchema = z.object({
+  regionFilter: RegionFilterSchema,
+  sectionFilter: SectionFilterSchema,
+});
+export type RankFilterQuery = z.infer<typeof RankFilterQuerySchema>;
+
 const LeaderboardResponseSchema = z.object({
   count: z.number().int().nonnegative(),
   pageSize: z.number().int().positive(),
@@ -44,7 +68,10 @@ const LeaderboardResponseSchema = z.object({
 
 export const GetLeaderboardQuerySchema = LanguageAndModeQuerySchema.merge(
   PaginationQuerySchema,
-).merge(FriendsOnlyQuerySchema);
+)
+  .merge(FriendsOnlyQuerySchema)
+  .merge(RankScopeQuerySchema)
+  .merge(RankFilterQuerySchema);
 export type GetLeaderboardQuery = z.infer<typeof GetLeaderboardQuerySchema>;
 
 export const GetLeaderboardResponseSchema = responseWithData(
@@ -60,7 +87,9 @@ export type GetLeaderboardResponse = z.infer<
 
 export const GetLeaderboardRankQuerySchema = LanguageAndModeQuerySchema.merge(
   FriendsOnlyQuerySchema,
-);
+)
+  .merge(RankScopeQuerySchema)
+  .merge(RankFilterQuerySchema);
 export type GetLeaderboardRankQuery = z.infer<
   typeof GetLeaderboardRankQuerySchema
 >;
@@ -75,7 +104,10 @@ export type GetLeaderboardRankResponse = z.infer<
 
 export const DailyLeaderboardQuerySchema = LanguageAndModeQuerySchema.extend({
   daysBefore: z.literal(1).optional(),
-}).merge(FriendsOnlyQuerySchema);
+})
+  .merge(FriendsOnlyQuerySchema)
+  .merge(RankScopeQuerySchema)
+  .merge(RankFilterQuerySchema);
 export type DailyLeaderboardQuery = z.infer<typeof DailyLeaderboardQuerySchema>;
 
 export const GetDailyLeaderboardQuerySchema = DailyLeaderboardQuerySchema.merge(
@@ -114,7 +146,9 @@ const WeeklyXpLeaderboardQuerySchema = z
   .object({
     weeksBefore: z.literal(1).optional(),
   })
-  .merge(FriendsOnlyQuerySchema);
+  .merge(FriendsOnlyQuerySchema)
+  .merge(RankScopeQuerySchema)
+  .merge(RankFilterQuerySchema);
 
 export const GetWeeklyXpLeaderboardQuerySchema =
   WeeklyXpLeaderboardQuerySchema.merge(PaginationQuerySchema);

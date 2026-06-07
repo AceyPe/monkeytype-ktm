@@ -15,6 +15,12 @@ import MonkeyError from "./error";
 import { Mode, Mode2 } from "@monkeytype/schemas/shared";
 import { getCurrentDayTimestamp } from "@monkeytype/util/date-and-time";
 import { getUsersCollection } from "../dal/user";
+import {
+  applyRankScopeToEntries,
+  getRegionCodeFromGeocode,
+  normalizeGeocode,
+  RankFilterTarget,
+} from "./geocode-rank-scope";
 
 const dailyLeaderboardNamespace = "monkeytype:dailyleaderboard";
 const scoresNamespace = `${dailyLeaderboardNamespace}:scores`;
@@ -32,19 +38,6 @@ type RankMaps = {
   regionRankByUid: Map<string, number>;
   sectionRankByUid: Map<string, number>;
 };
-
-function normalizeGeocode(geocode?: string): string | null {
-  if (geocode === undefined) return null;
-  const normalized = geocode.trim().toUpperCase();
-  return normalized === "" ? null : normalized;
-}
-
-function getRegionCodeFromGeocode(geocode?: string): string | null {
-  const firstDigit = geocode?.match(/\d/)?.[0];
-  if (firstDigit === undefined) return null;
-  if (firstDigit === "0") return "10";
-  return firstDigit;
-}
 
 export class DailyLeaderboard {
   private leaderboardResultsKeyName: string;
@@ -141,6 +134,7 @@ export class DailyLeaderboard {
     dailyLeaderboardsConfig: Configuration["dailyLeaderboards"],
     premiumFeaturesEnabled: boolean,
     userIds?: string[],
+    rankFilter: RankFilterTarget = { rankScope: "global" },
   ): Promise<{
     entries: LeaderboardEntry[];
     count: number;
@@ -160,27 +154,40 @@ export class DailyLeaderboard {
     }
 
     const isFriends = userIds !== undefined;
-    const minRank = page * pageSize;
-    const maxRank = minRank + pageSize - 1;
-
     const { leaderboardScoresKey, leaderboardResultsKey } =
       this.getTodaysLeaderboardKeys();
 
-    const [results, _, count, [_uid, minScore], ranks] =
-      await connection.getResults(
-        2,
-        leaderboardScoresKey,
-        leaderboardResultsKey,
-        minRank,
-        maxRank,
-        "false",
-        userIds?.join(",") ?? "",
-      );
+    const [, , totalCountRaw, minScoreRaw] = await connection.getResults(
+      2,
+      leaderboardScoresKey,
+      leaderboardResultsKey,
+      0,
+      0,
+      "false",
+      userIds?.join(",") ?? "",
+    );
 
+    const totalCount = parseInt(totalCountRaw, 10);
+    const minScore = Array.isArray(minScoreRaw) ? minScoreRaw[1] : minScoreRaw;
     const minWpm =
       minScore !== undefined
         ? parseInt(minScore.toString().slice(1, 6)) / 100
         : 0;
+
+    const fetchMaxRank = Math.max(0, totalCount - 1);
+    const useScopedRank = rankFilter.rankScope !== "global";
+    const minRank = useScopedRank ? 0 : page * pageSize;
+    const maxRank = useScopedRank ? fetchMaxRank : minRank + pageSize - 1;
+
+    const [results, _, count, , ranks] = await connection.getResults(
+      2,
+      leaderboardScoresKey,
+      leaderboardResultsKey,
+      minRank,
+      maxRank,
+      "false",
+      userIds?.join(",") ?? "",
+    );
 
     if (results === undefined) {
       throw new Error(
@@ -225,6 +232,16 @@ export class DailyLeaderboard {
 
     if (!premiumFeaturesEnabled) {
       resultsWithRanks = resultsWithRanks.map((it) => omit(it, ["isPremium"]));
+    }
+
+    if (useScopedRank) {
+      const scoped = applyRankScopeToEntries(
+        resultsWithRanks,
+        page,
+        pageSize,
+        rankFilter,
+      );
+      return { entries: scoped.entries, count: scoped.count, minWpm };
     }
 
     return { entries: resultsWithRanks, count: parseInt(count), minWpm };
