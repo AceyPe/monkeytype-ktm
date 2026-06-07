@@ -9,6 +9,7 @@ import * as Keymap from "../elements/keymap";
 import * as TestConfig from "../test/test-config";
 import * as ScrollToTop from "../elements/scroll-to-top";
 import { blurInputElement } from "../input/input-element";
+import * as TestModeHeader from "../elements/test-mode-header";
 
 export const page = new Page({
   id: "test",
@@ -29,6 +30,7 @@ export const page = new Page({
   beforeShow: async (): Promise<void> => {
     $(".page.pageTest").removeClass("contest-mode");
     TestConfig.show();
+    void TestModeHeader.updateTestModeHeader();
     updateFooterAndVerticalAds(false);
     TestStats.resetIncomplete();
     ManualRestart.set();

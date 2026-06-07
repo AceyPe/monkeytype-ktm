@@ -75,13 +75,57 @@
 }
 
 .pageTest.contest-mode {
-  #testConfig,
+  #testTopSection,
   #mobileTestConfigButton {
     display: none !important;
   }
 }
 
 .pageTest {
+  .testTopSection {
+    grid-row: 1;
+    align-self: end;
+    display: grid;
+    gap: 0.75rem;
+    justify-items: center;
+    justify-self: center;
+    width: max-content;
+    max-width: 100%;
+
+    &.hidden {
+      display: none;
+    }
+  }
+
+  .testModeHeader {
+    text-align: center;
+
+    &.hidden {
+      display: none;
+    }
+
+    .practiceModeTitle {
+      font-size: 1.5rem;
+      color: var(--main-color);
+    }
+
+    .marathonCallout {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.9rem;
+      color: var(--sub-color);
+      text-decoration: underline;
+
+      &:hover {
+        color: var(--main-color);
+      }
+
+      &.hidden {
+        display: none;
+      }
+    }
+  }
+
   position: relative;
 
   #testInitFailed {
@@ -1373,7 +1417,7 @@
   // Only add rows; keep .content-grid column tracks (side padding) intact.
   grid-template-rows: 1fr auto 1fr;
 
-  #testConfig,
+  #testTopSection,
   #mobileTestConfigButton {
     grid-row: 1;
     align-self: end;
@@ -1541,7 +1585,7 @@ main.focus .pageTest {
   #testModesNotice {
     opacity: 0 !important;
   }
-  #testConfig {
+  #testTopSection {
     opacity: 0 !important;
   }
   #mobileTestConfigButton {

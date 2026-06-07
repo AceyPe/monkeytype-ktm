@@ -121,3 +121,22 @@
     background-position: 0% 50%;
   }
 }
+
+@keyframes marathonFadeBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.marathon-blink {
+  animation: marathonFadeBlink 2000ms ease-in-out infinite;
+
+  &:hover {
+    animation-play-state: paused;
+    opacity: 1;
+  }
+}
