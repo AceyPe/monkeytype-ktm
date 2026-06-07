@@ -1,0 +1,194 @@
+.pageDashboard {
+  .content {
+    display: grid;
+    gap: 2rem;
+    grid-template-areas: "buttons main";
+    grid-template-columns: 20rem 1fr;
+    height: 100%;
+
+    .sideButtons {
+      align-content: start;
+      grid-area: buttons;
+      display: grid;
+      gap: 1em;
+      background: var(--sub-alt-color);
+      height: max-content;
+      border-radius: var(--roundness);
+      padding: 1rem;
+
+      button {
+        justify-content: start;
+        padding-left: 0.75em;
+      }
+
+      .buttonGroup {
+        display: grid;
+        gap: 1em;
+      }
+    }
+
+    .mainContent {
+      grid-area: main;
+      min-width: 0;
+    }
+
+    .sectionPanel {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .sectionHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+
+      .bigtitle {
+        font-size: 2em;
+      }
+
+      .createContestButton {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
+        padding: 0.5em 1em;
+      }
+    }
+
+    .loading,
+    .error {
+      color: var(--sub-color);
+      display: flex;
+      align-items: center;
+      gap: 0.75em;
+    }
+
+    .contestsList {
+      display: grid;
+      gap: 1rem;
+
+      .empty {
+        color: var(--sub-color);
+        padding: 2rem;
+        text-align: center;
+        background: var(--sub-alt-color);
+        border-radius: var(--roundness);
+      }
+
+      .contestCard {
+        background: var(--sub-alt-color);
+        border-radius: var(--roundness);
+        padding: 1.25rem;
+        display: grid;
+        gap: 1rem;
+
+        .contestTitle {
+          font-size: 1.25rem;
+          color: var(--main-color);
+        }
+
+        .contestDate {
+          color: var(--sub-color);
+          font-size: 0.9rem;
+        }
+
+        .prizeTable {
+          width: 100%;
+          border-collapse: collapse;
+
+          th,
+          td {
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+          }
+
+          th {
+            color: var(--sub-color);
+            font-size: 0.85rem;
+            font-weight: normal;
+          }
+
+          tbody tr:nth-child(even) {
+            background: var(--bg-color);
+          }
+        }
+      }
+    }
+  }
+}
+
+#createContestModal .createContestModal {
+  display: grid;
+  gap: 1rem;
+  min-width: min(100%, 32rem);
+
+  .field {
+    display: grid;
+    gap: 0.35rem;
+
+    .label {
+      color: var(--sub-color);
+      font-size: 0.85rem;
+    }
+
+    .hint {
+      color: var(--sub-color);
+      font-size: 0.75rem;
+    }
+
+    input {
+      width: 100%;
+    }
+  }
+
+  .prizesField {
+    .labelRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .prizeList {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .prizeRow {
+      display: grid;
+      grid-template-columns: 1fr 1fr 2fr auto;
+      gap: 0.5rem;
+      align-items: end;
+
+      label {
+        display: grid;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        color: var(--sub-color);
+      }
+
+      .removePrizeButton {
+        padding: 0.5em;
+        align-self: end;
+      }
+    }
+  }
+
+  .formError {
+    color: var(--error-color, #e74c3c);
+    font-size: 0.85rem;
+  }
+}
+
+@media only screen and (max-width: calc(900px + 5rem)) {
+  .pageDashboard .content {
+    grid-template-areas:
+      "buttons"
+      "main";
+    grid-template-columns: 1fr;
+
+    #createContestModal .createContestModal .prizeRow {
+      grid-template-columns: 1fr;
+    }
+  }
+}

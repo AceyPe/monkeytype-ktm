@@ -17,7 +17,8 @@ export type OpenApiTag =
   | "quotes"
   | "webhooks"
   | "connections"
-  | "contact";
+  | "contact"
+  | "contests";
 
 export type PermissionId =
   | "quoteMod"

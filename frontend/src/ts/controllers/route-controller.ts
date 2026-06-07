@@ -202,6 +202,12 @@ const routes: Route[] = [
       await PageController.change("friends", options);
     },
   },
+  {
+    path: "/dashboard",
+    load: async (_params, options) => {
+      await PageController.change("dashboard", options);
+    },
+  },
 ];
 
 export async function navigate(

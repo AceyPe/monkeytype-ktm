@@ -1350,3 +1350,33 @@
     <button class="edit-profile-submit" type="submit">save</button>
   </form>
 </dialog>
+
+<dialog id="createContestModal" class="modalWrapper hidden">
+  <form class="modal createContestModal">
+    <div class="title">Create contest</div>
+    <label class="field">
+      <span class="label">Title</span>
+      <input type="text" name="title" placeholder="Contest title" required />
+    </label>
+    <label class="field">
+      <span class="label">Date (UTC)</span>
+      <input type="date" name="date" required />
+      <span class="hint">Date is interpreted as UTC.</span>
+    </label>
+    <div class="field prizesField">
+      <div class="labelRow">
+        <span class="label">Prizes</span>
+        <button
+          type="button"
+          class="textButton addPrizeButton"
+          aria-label="Add prize"
+        >
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+      <div class="prizeList"></div>
+    </div>
+    <div class="formError hidden"></div>
+    <button type="submit" class="submitButton">create</button>
+  </form>
+</dialog>
