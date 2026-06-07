@@ -31,7 +31,8 @@ export async function sendContactMessage(
   const { name, email, contactType, message } = req.body;
 
   const receiverEmail = process.env["CONTACT_RECEIVER_EMAIL"];
-  const fromEmail = process.env["RESEND_FROM_EMAIL"];
+  // const fromEmail = process.env["RESEND_FROM_EMAIL"];
+  const fromEmail = "IEEE KTM <noreply@api.ieeektm.org>";
 
   if (!receiverEmail) {
     throw new MonkeyError(

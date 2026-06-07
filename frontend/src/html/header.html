@@ -75,6 +75,7 @@
       <div class="icon">
         <i class="fas fa-fw fa-keyboard"></i>
       </div>
+      <span class="label">Test</span>
     </a>
     <!-- <button
       class="textButton leaderboards view-leaderboards"
@@ -95,6 +96,7 @@
       <div class="icon">
         <i class="fas fa-fw fa-crown"></i>
       </div>
+      <span class="label">Leaderboards</span>
     </a>
     <div>
       <a
@@ -107,6 +109,7 @@
         <div class="icon">
           <i class="fas fa-fw fa-info"></i>
         </div>
+        <span class="label">About</span>
       </a>
       <a
         class="textButton view-team"
@@ -118,6 +121,7 @@
         <div class="icon">
           <i class="fas fa-fw fa-users"></i>
         </div>
+        <span class="label">Team</span>
       </a>
     </div>
     <!-- <a
@@ -131,6 +135,19 @@
         <i class="fab fa-discord"></i>
       </div>
     </a> -->
+
+    <!-- <a
+      class="textButton view-contests"
+      href="/contests"
+      onclick="this.blur()"
+      router-link
+      title="contests"
+    >
+      <div class="icon">
+        <i class="fas fa-fw fa-trophy"></i>
+      </div>
+      <span class="label">Contests</span>
+    </a> -->
     <a
       class="textButton view-settings"
       href="/settings"
@@ -141,12 +158,25 @@
       <div class="icon">
         <i class="fas fa-fw fa-cog"></i>
       </div>
+      <span class="label">Settings</span>
     </a>
+    <!-- <a
+      class="textButton view-settings"
+      href="/"
+      onclick="this.blur()"
+      router-link
+      title="button >:("
+    >
+      <div class="icon">
+        <i class="fas fa-fw fa-cog"></i>
+      </div>
+    </a> -->
     <div></div>
     <button class="text showAlerts" onclick="this.blur()">
       <div class="icon">
         <i class="fas fa-fw fa-bell"></i>
       </div>
+      <!-- <span class="label">Alerts</span> -->
       <div class="notificationBubble hidden"></div>
     </button>
     <a
@@ -156,7 +186,10 @@
       router-link
       title="Sign in"
     >
-      <i class="far fa-fw fa-user"></i>
+      <div class="icon">
+        <i class="far fa-fw fa-user"></i>
+      </div>
+      <!-- <span class="label">Sign in</span> -->
     </a>
     <div class="accountButtonAndMenu hidden">
       <a

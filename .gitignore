@@ -134,3 +134,5 @@ frontend/.env.sentry-build-plugin
 deploy.secrets.yml
 
 notes.md
+
+deploy.config

@@ -12,6 +12,13 @@ import MonkeyError from "../utils/error";
 import { parseWithSchema as parseJsonWithSchema } from "@monkeytype/util/json";
 import { omit } from "../utils/misc";
 import { getUsersCollection } from "../dal/user";
+import {
+  applyRankScopeToEntries,
+  getRegionCodeFromGeocode,
+  normalizeGeocode,
+  RankFilterTarget,
+  RankSortOptions,
+} from "../utils/geocode-rank-scope";
 
 const MAX_WEEKLY_RANK_SCAN = 50_000;
 
@@ -27,19 +34,6 @@ type WeeklyLeaderboardIdentityFields = {
   lastName?: string;
   geocode?: string;
 };
-
-function normalizeGeocode(geocode?: string): string | null {
-  if (geocode === undefined) return null;
-  const normalized = geocode.trim().toUpperCase();
-  return normalized === "" ? null : normalized;
-}
-
-function getRegionCodeFromGeocode(geocode?: string): string | null {
-  const firstDigit = geocode?.match(/\d/)?.[0];
-  if (firstDigit === undefined) return null;
-  if (firstDigit === "0") return "10";
-  return firstDigit;
-}
 
 export type AddResultOpts = {
   entry: RedisXpLeaderboardEntry;
@@ -151,6 +145,8 @@ export class WeeklyXpLeaderboard {
     weeklyXpLeaderboardConfig: Configuration["leaderboards"]["weeklyXp"],
     premiumFeaturesEnabled: boolean,
     userIds?: string[],
+    rankFilter: RankFilterTarget = { rankScope: "global" },
+    rankSort: RankSortOptions = { sortBy: "global", sortDirection: "asc" },
   ): Promise<{
     entries: XpLeaderboardEntry[];
     count: number;
@@ -169,11 +165,28 @@ export class WeeklyXpLeaderboard {
     }
 
     const isFriends = userIds !== undefined;
-    const minRank = page * pageSize;
-    const maxRank = minRank + pageSize - 1;
-
     const { weeklyXpLeaderboardScoresKey, weeklyXpLeaderboardResultsKey } =
       this.getThisWeeksXpLeaderboardKeys();
+
+    const [, , totalCountRaw] = await connection.getResults(
+      2,
+      weeklyXpLeaderboardScoresKey,
+      weeklyXpLeaderboardResultsKey,
+      0,
+      0,
+      "false",
+      userIds?.join(",") ?? "",
+    );
+
+    const totalCount = parseInt(totalCountRaw, 10);
+    const needsCustomSort =
+      rankSort.sortBy !== "global" || rankSort.sortDirection !== "asc";
+    const useFullFetch = rankFilter.rankScope !== "global" || needsCustomSort;
+    const fetchMaxRank = useFullFetch
+      ? Math.min(Math.max(0, totalCount - 1), MAX_WEEKLY_RANK_SCAN - 1)
+      : page * pageSize + pageSize - 1;
+    const minRank = useFullFetch ? 0 : page * pageSize;
+    const maxRank = useFullFetch ? fetchMaxRank : minRank + pageSize - 1;
 
     const [results, scores, count, _, ranks] = await connection.getResults(
       2,
@@ -243,6 +256,17 @@ export class WeeklyXpLeaderboard {
 
     if (!premiumFeaturesEnabled) {
       resultsWithRanks = resultsWithRanks.map((it) => omit(it, ["isPremium"]));
+    }
+
+    if (useFullFetch) {
+      const processed = applyRankScopeToEntries(
+        resultsWithRanks,
+        page,
+        pageSize,
+        rankFilter,
+        rankSort,
+      );
+      return { entries: processed.entries, count: processed.count };
     }
 
     return { entries: resultsWithRanks, count: parseInt(count) };

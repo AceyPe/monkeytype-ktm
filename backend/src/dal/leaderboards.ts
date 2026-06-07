@@ -14,6 +14,14 @@ import { LeaderboardEntry } from "@monkeytype/schemas/leaderboards";
 import { DBUser, getUsersCollection } from "./user";
 import MonkeyError from "../utils/error";
 import { aggregateWithAcceptedConnections } from "./connections";
+import {
+  // applyRankScopeToEntries,
+  getRankSortField,
+  // getRegionCodeFromGeocode,
+  // normalizeGeocode,
+  RankFilterTarget,
+  RankSortOptions,
+} from "../utils/geocode-rank-scope";
 
 export type DBLeaderboardEntry = LeaderboardEntry & {
   _id: ObjectId;
@@ -37,6 +45,91 @@ export const getCollection = (key: {
   mode2: string;
 }): Collection<DBLeaderboardEntry> =>
   db.collection<DBLeaderboardEntry>(getCollectionName(key));
+
+function buildRankScopeMatchStages(target: RankFilterTarget): Document[] {
+  if (target.rankScope === "global") {
+    return [];
+  }
+
+  if (target.rankScope === "region" && target.regionCode !== undefined) {
+    return [
+      {
+        $addFields: {
+          _regionCode: {
+            $let: {
+              vars: {
+                firstDigit: {
+                  $ifNull: [
+                    {
+                      $getField: {
+                        field: "match",
+                        input: {
+                          $regexFind: {
+                            input: { $ifNull: ["$geocode", ""] },
+                            regex: "[0-9]",
+                          },
+                        },
+                      },
+                    },
+                    "",
+                  ],
+                },
+              },
+              in: {
+                $cond: [
+                  { $eq: ["$$firstDigit", ""] },
+                  "__unknown",
+                  {
+                    $cond: [
+                      { $eq: ["$$firstDigit", "0"] },
+                      "10",
+                      "$$firstDigit",
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          _regionCode: target.regionCode,
+          regionRank: { $exists: true },
+        },
+      },
+    ];
+  }
+
+  if (target.rankScope === "section" && target.sectionGeocode !== undefined) {
+    return [
+      {
+        $addFields: {
+          _normalizedGeocode: {
+            $let: {
+              vars: {
+                g: {
+                  $toUpper: { $trim: { input: { $ifNull: ["$geocode", ""] } } },
+                },
+              },
+              in: {
+                $cond: [{ $ne: ["$$g", ""] }, "$$g", "__unknown"],
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          _normalizedGeocode: target.sectionGeocode,
+          sectionRank: { $exists: true },
+        },
+      },
+    ];
+  }
+
+  return [];
+}
 
 /** Single scalar for $setWindowFields + $documentNumber on Atlas (no array/tuple sort keys). */
 function lbWindowSortKeyExpr(lbKey: string): Document {
@@ -148,6 +241,8 @@ export async function get(
   pageSize: number,
   premiumFeaturesEnabled: boolean = false,
   uid?: string,
+  rankFilter: RankFilterTarget = { rankScope: "global" },
+  rankSort: RankSortOptions = { sortBy: "global", sortDirection: "asc" },
 ): Promise<DBLeaderboardEntry[] | false> {
   if (page < 0 || pageSize < 0) {
     throw new MonkeyError(500, "Invalid page or pageSize");
@@ -155,11 +250,14 @@ export async function get(
 
   const skip = page * pageSize;
   const limit = pageSize;
+  const sortField = getRankSortField(rankSort.sortBy);
+  const sortDir = rankSort.sortDirection === "asc" ? 1 : -1;
 
   let leaderboard: DBLeaderboardEntry[] | false = [];
 
   const pipeline: Document[] = [
-    { $sort: { rank: 1 } },
+    ...buildRankScopeMatchStages(rankFilter),
+    { $sort: { [sortField]: sortDir } },
     { $skip: skip },
     { $limit: limit },
   ];
@@ -210,12 +308,17 @@ export async function getCount(
   mode2: string,
   language: string,
   uid?: string,
+  rankFilter: RankFilterTarget = { rankScope: "global" },
 ): Promise<number> {
-  const key = `${language}_${mode}_${mode2}`;
-  if (uid === undefined && cachedCounts.has(key)) {
+  const key = `${language}_${mode}_${mode2}_${rankFilter.rankScope}_${rankFilter.regionCode ?? ""}_${rankFilter.sectionGeocode ?? ""}`;
+  if (
+    uid === undefined &&
+    rankFilter.rankScope === "global" &&
+    cachedCounts.has(key)
+  ) {
     return cachedCounts.get(key) as number;
   } else {
-    if (uid === undefined) {
+    if (uid === undefined && rankFilter.rankScope === "global") {
       const count = await getCollection({
         language,
         mode,
@@ -223,6 +326,14 @@ export async function getCount(
       }).estimatedDocumentCount();
       cachedCounts.set(key, count);
       return count;
+    } else if (uid === undefined) {
+      const countResult = await getCollection({ language, mode, mode2 })
+        .aggregate<{ count: number }>([
+          ...buildRankScopeMatchStages(rankFilter),
+          { $count: "count" },
+        ])
+        .toArray();
+      return countResult[0]?.count ?? 0;
     } else {
       return (
         await aggregateWithAcceptedConnections(
@@ -230,7 +341,10 @@ export async function getCount(
             collectionName: getCollectionName({ language, mode, mode2 }),
             uid,
           },
-          [{ $project: { _id: true } }],
+          [
+            ...buildRankScopeMatchStages(rankFilter),
+            { $project: { _id: true } },
+          ],
         )
       ).length;
     }

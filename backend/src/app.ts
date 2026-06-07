@@ -17,7 +17,6 @@ const etagFn = createETagGenerator({ weak: true });
 
 function buildApp(): express.Application {
   const app = express();
-
   app.use(urlencoded({ extended: true }));
   app.use(json());
   app.use(

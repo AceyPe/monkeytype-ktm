@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+set -e
+
+CONFIG=""
+KEY=""
+PROJECT=""
+SERVER=""
+
+REMOTE_DIR="/home/ubuntu/webapp"
+NODE_VERSION="24.11.0"
+PM2_APP="my-app"
+
+# -------------------------
+# 1. Parse arguments
+# -------------------------
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -c|--config)
+      CONFIG="$2"
+      shift 2
+      ;;
+    -k|--key)
+      KEY="$2"
+      shift 2
+      ;;
+    -p|--project)
+      PROJECT="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      exit 1
+      ;;
+  esac
+done
+
+# -------------------------
+# 2. Load config file (if provided)
+# -------------------------
+if [[ -n "$CONFIG" ]]; then
+  echo "Using config file: $CONFIG"
+
+  # shellcheck disable=SC1090
+  source "$CONFIG"
+fi
+
+# -------------------------
+# 3. Interactive fallback
+# -------------------------
+if [[ -z "$KEY" ]]; then
+  read -rp "SSH key path: " KEY
+fi
+
+if [[ -z "$PROJECT" ]]; then
+  read -rp "Project path: " PROJECT
+fi
+
+if [[ -z "$SERVER" ]]; then
+  read -rp "Server (user@host): " SERVER
+fi
+
+if [[ -z "$REMOTE_DIR" ]]; then
+  read -rp "Remote dir: " REMOTE_DIR
+fi
+
+# -------------------------
+# 4. Validation
+# -------------------------
+if [[ -z "$KEY" || -z "$PROJECT" ]]; then
+  echo "Missing required values (KEY / PROJECT)"
+  exit 1
+fi
+
+# -------------------------
+# 5. Build backend
+# -------------------------
+echo "Building Backend"
+
+source ~/.nvm/nvm.sh
+nvm use "$NODE_VERSION"
+
+cd "$PROJECT/backend"
+npm run build
+
+echo "Project Built"
+
+# -------------------------
+# 6. Upload files
+# -------------------------
+echo "Uploading Files to the server $SERVER"
+
+rsync -avz \
+  --exclude 'node_modules' \
+  --exclude '.git' \
+  --exclude 'frontend' \
+  --exclude '.env' \
+  --exclude 'backend/.env' \
+  -e "ssh -i $KEY" \
+  "$PROJECT" \
+  "$SERVER:$REMOTE_DIR"
+
+echo "Files Uploaded"
+
+# -------------------------
+# 7. Restart backend
+# -------------------------
+echo "Restarting the backend"
+
+ssh -i "$KEY" "$SERVER" "
+  source ~/.nvm/nvm.sh
+  pm2 restart $PM2_APP
+"
+
+echo "Backend restarted"

@@ -43,16 +43,43 @@ import * as ActivePage from "../states/active-page";
 import {
   PaginationQuery,
   FriendsOnlyQuery,
+  RankScope,
+  RankSortBy,
+  RankSortBySchema,
+  RankSortDirection,
+  RankSortDirectionSchema,
 } from "@monkeytype/contracts/leaderboards";
 import { Language, LanguageSchema } from "@monkeytype/schemas/languages";
 import { isSafeNumber } from "@monkeytype/util/numbers";
 import { Mode, Mode2, ModeSchema } from "@monkeytype/schemas/shared";
 import * as ServerConfiguration from "../ape/server-configuration";
 import { getAvatarElement } from "../utils/discord-avatar";
-import { getSectionNameByGeocode } from "../constants/sections-by-geocode";
+import {
+  getRegionNameByCode,
+  getSectionNameByGeocode,
+  type RegionCode,
+} from "../constants/sections-by-geocode";
+import {
+  destroyLeaderboardFilterDropdowns,
+  initLeaderboardFilterDropdowns,
+  setLeaderboardFilterValues,
+  type LeaderboardFilterValues,
+} from "../elements/leaderboard-filter-dropdowns";
 
 const LeaderboardTypeSchema = z.enum(["allTime", "weekly", "daily"]);
 type LeaderboardType = z.infer<typeof LeaderboardTypeSchema>;
+const RegionFilterSchema = z.enum([
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+]);
 const utcDateFormat = "EEEE, do MMMM yyyy";
 const localDateFormat = "EEEE, do MMMM yyyy HH:mm";
 
@@ -79,6 +106,109 @@ function getRegionAvatarUrl(geocode?: string): string | undefined {
 
 function getSectionCellText(geocode?: string): string {
   return getSectionNameByGeocode(geocode) ?? "-";
+}
+
+function normalizeGeocode(geocode?: string): string | null {
+  if (geocode === undefined) return null;
+  const normalized = geocode.trim().toUpperCase();
+  return normalized === "" ? null : normalized;
+}
+
+function syncRankScopeFromFilters(): void {
+  if (state.sectionFilter !== "") {
+    state.rankScope = "section";
+  } else if (state.regionFilter !== "") {
+    state.rankScope = "region";
+  } else {
+    state.rankScope = "global";
+  }
+}
+
+function getActiveFilterLabel(): string {
+  if (state.sectionFilter !== "") {
+    return getSectionNameByGeocode(state.sectionFilter) ?? "Section";
+  }
+  if (state.regionFilter !== "") {
+    return getRegionNameByCode(state.regionFilter) ?? "Region";
+  }
+  return "";
+}
+
+function userMatchesActiveFilter(
+  userData: Pick<LeaderboardEntry | XpLeaderboardEntry, "geocode">,
+): boolean {
+  if (state.rankScope === "global") return true;
+  if (state.rankScope === "region" && state.regionFilter !== "") {
+    const userRegion = getRegionNumberFromGeocode(userData.geocode);
+    return userRegion !== null && String(userRegion) === state.regionFilter;
+  }
+  if (state.rankScope === "section" && state.sectionFilter !== "") {
+    return (
+      normalizeGeocode(userData.geocode) ===
+      normalizeGeocode(state.sectionFilter)
+    );
+  }
+  return true;
+}
+
+function handleFilterChange(values: LeaderboardFilterValues): void {
+  if (
+    values.regionFilter === state.regionFilter &&
+    values.sectionFilter === state.sectionFilter
+  ) {
+    return;
+  }
+  state.regionFilter = values.regionFilter;
+  state.sectionFilter = values.sectionFilter;
+  syncRankScopeFromFilters();
+  state.page = 0;
+  void requestData();
+  updateTitle();
+  updateContent();
+  updateGetParameters();
+}
+
+function getSortRank(
+  entry: Pick<
+    LeaderboardEntry | XpLeaderboardEntry,
+    "rank" | "regionRank" | "sectionRank"
+  >,
+  sortBy: RankSortBy,
+): number | undefined {
+  if (sortBy === "region") return entry.regionRank;
+  if (sortBy === "section") return entry.sectionRank;
+  return entry.rank;
+}
+
+function getScopedRank(
+  entry: Pick<
+    LeaderboardEntry | XpLeaderboardEntry,
+    "rank" | "regionRank" | "sectionRank"
+  >,
+  rankScope: RankScope,
+): number | undefined {
+  return getSortRank(entry, rankScope);
+}
+
+function updateRankSortHeaders(): void {
+  $(".page.pageLeaderboards .rankSortButton").removeClass("sortAsc sortDesc");
+  $(
+    `.page.pageLeaderboards .rankSortButton[data-sort-by='${state.rankSortBy}']`,
+  ).addClass(state.rankSortDirection === "asc" ? "sortAsc" : "sortDesc");
+}
+
+function handleRankSortButtonClick(sortBy: RankSortBy): void {
+  if (state.rankSortBy === sortBy) {
+    state.rankSortDirection =
+      state.rankSortDirection === "asc" ? "desc" : "asc";
+  } else {
+    state.rankSortBy = sortBy;
+    state.rankSortDirection = "asc";
+  }
+  state.page = 0;
+  updateRankSortHeaders();
+  updateGetParameters();
+  void requestData(true);
 }
 
 type LeaderboardStatsModalRow = [label: string, value: string];
@@ -240,6 +370,11 @@ type State = {
   page: number;
   pageSize: number;
   friendsOnly: boolean;
+  rankScope: RankScope;
+  rankSortBy: RankSortBy;
+  rankSortDirection: RankSortDirection;
+  regionFilter: RegionCode | "";
+  sectionFilter: string;
   title: string;
   error?: string;
   scrollToUserAfterFill: boolean;
@@ -257,6 +392,11 @@ const state = {
   page: 0,
   pageSize: 50,
   friendsOnly: false,
+  rankScope: "global",
+  rankSortBy: "global",
+  rankSortDirection: "asc",
+  regionFilter: "",
+  sectionFilter: "",
   title: "All-time English Time 15 Leaderboard",
   scrollToUserAfterFill: false,
   goToUserPage: false,
@@ -270,6 +410,10 @@ const SelectorSchema = z.object({
   yesterday: z.boolean().optional(),
   lastWeek: z.boolean().optional(),
   friendsOnly: z.boolean().optional(),
+  regionFilter: RegionFilterSchema.optional(),
+  sectionFilter: z.string().optional(),
+  rankSortBy: RankSortBySchema.optional(),
+  rankSortDirection: RankSortDirectionSchema.optional(),
 });
 const UrlParameterSchema = SelectorSchema.extend({
   page: z.number(),
@@ -311,6 +455,8 @@ function updateTitle(): void {
         : "Daily";
 
   const friend = state.friendsOnly ? "Friends " : "";
+  const filterLabel = getActiveFilterLabel();
+  const rankScopeLabel = filterLabel === "" ? "" : `${filterLabel} `;
 
   const language =
     state.type !== "weekly" ? capitalizeFirstLetter(state.language) : "";
@@ -320,7 +466,7 @@ function updateTitle(): void {
       ? ` ${capitalizeFirstLetter(state.mode)} ${state.mode2}`
       : "";
 
-  state.title = `${type} ${language} ${mode} ${friend}Leaderboard`;
+  state.title = `${rankScopeLabel}${type} ${language} ${mode} ${friend}Leaderboard`;
   $(".page.pageLeaderboards .bigtitle >.text").text(state.title);
 
   $(".page.pageLeaderboards .bigtitle .subtext").addClass("hidden");
@@ -417,7 +563,15 @@ async function requestData(update = false): Promise<void> {
 
   const defineRequests = <TQuery, TRank, TData>(
     data: (args: {
-      query: TQuery & PaginationQuery & FriendsOnlyQuery;
+      query: TQuery &
+        PaginationQuery &
+        FriendsOnlyQuery & {
+          rankScope?: RankScope;
+          regionFilter?: string;
+          sectionFilter?: string;
+          rankSortBy?: RankSortBy;
+          rankSortDirection?: RankSortDirection;
+        };
     }) => Promise<TData>,
     rank: (args: { query: TQuery }) => Promise<TRank>,
     baseQuery: TQuery,
@@ -439,6 +593,17 @@ async function requestData(update = false): Promise<void> {
           page: state.page,
           pageSize: state.pageSize,
           friendsOnly: state.friendsOnly || undefined,
+          rankScope: state.rankScope === "global" ? undefined : state.rankScope,
+          regionFilter: state.regionFilter || undefined,
+          sectionFilter: state.sectionFilter || undefined,
+          rankSortBy:
+            state.rankSortBy === "global" && state.rankSortDirection === "asc"
+              ? undefined
+              : state.rankSortBy,
+          rankSortDirection:
+            state.rankSortBy === "global" && state.rankSortDirection === "asc"
+              ? undefined
+              : state.rankSortDirection,
         },
       }),
   });
@@ -486,7 +651,10 @@ async function requestData(update = false): Promise<void> {
       rankResponse.body.data !== null
     ) {
       state.userData = rankResponse.body.data;
-      state.page = Math.floor((state.userData.rank - 1) / state.pageSize);
+      const scopedRank = getSortRank(state.userData, state.rankSortBy);
+      if (scopedRank !== undefined) {
+        state.page = Math.floor((scopedRank - 1) / state.pageSize);
+      }
       updateGetParameters();
     }
     requests.rank = undefined;
@@ -567,11 +735,16 @@ function updateJumpButtons(): void {
     if (!state.userData) {
       userButton.addClass("disabled");
     } else {
-      const userPage = Math.floor((state.userData.rank - 1) / state.pageSize);
-      if (state.page === userPage) {
+      const scopedRank = getSortRank(state.userData, state.rankSortBy);
+      if (scopedRank === undefined) {
         userButton.addClass("disabled");
       } else {
-        userButton.removeClass("disabled");
+        const userPage = Math.floor((scopedRank - 1) / state.pageSize);
+        if (state.page === userPage) {
+          userButton.addClass("disabled");
+        } else {
+          userButton.removeClass("disabled");
+        }
       }
     }
   }
@@ -759,6 +932,10 @@ function fillTable(): void {
     table.parent().removeClass("friendsOnly");
   }
 
+  tableElement.removeClass("rankScopeGlobal rankScopeRegion rankScopeSection");
+  tableElement.addClass(`rankScope${capitalizeFirstLetter(state.rankSortBy)}`);
+  updateRankSortHeaders();
+
   $(".page.pageLeaderboards table thead").addClass("hidden");
   if (state.type === "allTime" || state.type === "daily") {
     tableElement.addClass("mobileStatsInModal");
@@ -863,6 +1040,20 @@ function fillUser(): void {
     return;
   }
 
+  if (
+    isAuthenticated() &&
+    !state.friendsOnly &&
+    state.rankScope !== "global" &&
+    state.userData !== null &&
+    (!userMatchesActiveFilter(state.userData) ||
+      getScopedRank(state.userData, state.rankScope) === undefined)
+  ) {
+    $(".page.pageLeaderboards .bigUser").html(
+      `<div class="warning">Not ranked in the selected ${state.rankScope}</div>`,
+    );
+    return;
+  }
+
   if (state.data === null) {
     return;
   }
@@ -879,7 +1070,7 @@ function fillUser(): void {
     const userData = state.userData;
     const rank = state.friendsOnly
       ? (userData.friendsRank as number)
-      : userData.rank;
+      : (getSortRank(userData, state.rankSortBy) as number);
     const percentile = (rank / state.count) * 100;
 
     let percentileString = `Top ${percentile.toFixed(2)}%`;
@@ -974,7 +1165,7 @@ function fillUser(): void {
     const userData = state.userData;
     const rank = state.friendsOnly
       ? (userData.friendsRank as number)
-      : userData.rank;
+      : (getSortRank(userData, state.rankSortBy) as number);
     const percentile = (rank / state.count) * 100;
 
     let percentileString = `Top ${percentile.toFixed(2)}%`;
@@ -1078,6 +1269,7 @@ function updateContent(): void {
   if (state.error !== undefined) {
     $(".page.pageLeaderboards .error").removeClass("hidden");
     $(".page.pageLeaderboards .error p").text(state.error);
+    $(".page.pageLeaderboards .tableToolbar").addClass("hidden");
     enableButtons();
     return;
   }
@@ -1090,6 +1282,7 @@ function updateContent(): void {
     disableButtons();
     $(".page.pageLeaderboards .bigUser").addClass("hidden");
     $(".page.pageLeaderboards .titleAndButtons").addClass("hidden");
+    $(".page.pageLeaderboards .tableToolbar").addClass("hidden");
     $(".page.pageLeaderboards .loading").removeClass("hidden");
     $(".page.pageLeaderboards table").addClass("hidden");
     return;
@@ -1109,6 +1302,7 @@ function updateContent(): void {
   }
 
   $(".page.pageLeaderboards .titleAndButtons").removeClass("hidden");
+  $(".page.pageLeaderboards .tableToolbar").removeClass("hidden");
   updateJumpButtons();
   updateTimerVisibility();
   fillTable();
@@ -1464,7 +1658,9 @@ function handleJumpButton(action: Action, page?: number): void {
     state.page = page;
   } else if (action === "userPage") {
     if (isAuthenticated()) {
-      const rank = state.userData?.rank;
+      const rank = state.userData
+        ? getSortRank(state.userData, state.rankSortBy)
+        : undefined;
       if (isSafeNumber(rank)) {
         // - 1 to make sure position 50 with page size 50 is on the first page (page 0)
         const page = Math.floor((rank - 1) / state.pageSize);
@@ -1527,14 +1723,45 @@ function updateGetParameters(): void {
   if (state.friendsOnly) {
     params.friendsOnly = true;
   }
+  if (state.regionFilter !== "") {
+    params.regionFilter = state.regionFilter;
+  }
+  if (state.sectionFilter !== "") {
+    params.sectionFilter = state.sectionFilter;
+  }
+  if (state.rankSortBy !== "global" || state.rankSortDirection !== "asc") {
+    params.rankSortBy = state.rankSortBy;
+    params.rankSortDirection = state.rankSortDirection;
+  }
   page.setUrlParams(params);
 
-  selectorLS.set(state);
+  selectorLS.set({
+    type: state.type,
+    mode: state.type !== "weekly" ? state.mode : undefined,
+    mode2: state.type !== "weekly" ? state.mode2 : undefined,
+    language: state.type === "daily" ? state.language : undefined,
+    yesterday: state.type === "daily" && state.yesterday ? true : undefined,
+    lastWeek: state.type === "weekly" && state.lastWeek ? true : undefined,
+    friendsOnly: state.friendsOnly || undefined,
+    regionFilter: state.regionFilter || undefined,
+    sectionFilter: state.sectionFilter || undefined,
+    rankSortBy:
+      state.rankSortBy !== "global" || state.rankSortDirection !== "asc"
+        ? state.rankSortBy
+        : undefined,
+    rankSortDirection:
+      state.rankSortBy !== "global" || state.rankSortDirection !== "asc"
+        ? state.rankSortDirection
+        : undefined,
+  });
 }
 
 function readGetParameters(params?: UrlParameter): void {
   if (params === undefined) {
     Object.assign(state, selectorLS.get());
+    state.rankSortBy = state.rankSortBy ?? "global";
+    state.rankSortDirection = state.rankSortDirection ?? "asc";
+    syncRankScopeFromFilters();
     return;
   }
 
@@ -1543,6 +1770,11 @@ function readGetParameters(params?: UrlParameter): void {
   }
 
   state.friendsOnly = params.friendsOnly ?? false;
+  state.regionFilter = (params.regionFilter ?? "") as RegionCode | "";
+  state.sectionFilter = params.sectionFilter ?? "";
+  state.rankSortBy = params.rankSortBy ?? "global";
+  state.rankSortDirection = params.rankSortDirection ?? "asc";
+  syncRankScopeFromFilters();
 
   if (state.type === "allTime") {
     if (params.mode2 !== undefined) {
@@ -1716,6 +1948,12 @@ $(".page.pageLeaderboards .buttonGroup.friendsOnlyButtons").on(
   },
 );
 
+$(".page.pageLeaderboards").on("click", ".rankSortButton", function () {
+  const sortBy = $(this).attr("data-sort-by") as RankSortBy | undefined;
+  if (sortBy === undefined) return;
+  handleRankSortButtonClick(sortBy);
+});
+
 export const page = new PageWithUrlParams({
   id: "leaderboards",
   element: $(".page.pageLeaderboards"),
@@ -1724,6 +1962,7 @@ export const page = new PageWithUrlParams({
 
   afterHide: async (): Promise<void> => {
     Skeleton.remove("pageLeaderboards");
+    destroyLeaderboardFilterDropdowns();
     stopTimer();
   },
   beforeShow: async (options): Promise<void> => {
@@ -1733,6 +1972,12 @@ export const page = new PageWithUrlParams({
     await appendModeAndLanguageButtons();
     readGetParameters(options.urlParams);
     checkIfLeaderboardIsValid();
+    initLeaderboardFilterDropdowns(handleFilterChange);
+    setLeaderboardFilterValues({
+      regionFilter: state.regionFilter,
+      sectionFilter: state.sectionFilter,
+    });
+    updateRankSortHeaders();
     startTimer();
     updateTitle();
     updateContent();

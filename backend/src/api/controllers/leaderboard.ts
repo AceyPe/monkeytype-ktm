@@ -19,6 +19,10 @@ import {
   GetWeeklyXpLeaderboardRankResponse,
   GetWeeklyXpLeaderboardResponse,
 } from "@monkeytype/contracts/leaderboards";
+import {
+  resolveRankFilterTarget,
+  resolveRankSortOptions,
+} from "../../utils/geocode-rank-scope";
 import { Configuration } from "@monkeytype/schemas/configuration";
 import {
   getCurrentDayTimestamp,
@@ -31,9 +35,27 @@ import { omit } from "../../utils/misc";
 export async function getLeaderboard(
   req: MonkeyRequest<GetLeaderboardQuery>,
 ): Promise<GetLeaderboardResponse> {
-  const { language, mode, mode2, page, pageSize, friendsOnly } = req.query;
+  const {
+    language,
+    mode,
+    mode2,
+    page,
+    pageSize,
+    friendsOnly,
+    rankScope,
+    regionFilter,
+    sectionFilter,
+    rankSortBy,
+    rankSortDirection,
+  } = req.query;
   const { uid } = req.ctx.decodedToken;
   const connectionsConfig = req.ctx.configuration.connections;
+  const rankFilter = resolveRankFilterTarget({
+    rankScope,
+    regionFilter,
+    sectionFilter,
+  });
+  const rankSort = resolveRankSortOptions({ rankSortBy, rankSortDirection });
 
   if (
     mode !== "time" ||
@@ -53,6 +75,8 @@ export async function getLeaderboard(
     pageSize,
     req.ctx.configuration.users.premium.enabled,
     friendsOnlyUid,
+    rankFilter,
+    rankSort,
   );
 
   if (leaderboard === false) {
@@ -67,6 +91,7 @@ export async function getLeaderboard(
     mode2,
     language,
     friendsOnlyUid,
+    rankFilter,
   );
   const normalizedLeaderboard = leaderboard.map((it) => omit(it, ["_id"]));
 
@@ -130,9 +155,24 @@ function getDailyLeaderboardWithError(
 export async function getDailyLeaderboard(
   req: MonkeyRequest<GetDailyLeaderboardQuery>,
 ): Promise<GetDailyLeaderboardResponse> {
-  const { page, pageSize, friendsOnly } = req.query;
+  const {
+    page,
+    pageSize,
+    friendsOnly,
+    rankScope,
+    regionFilter,
+    sectionFilter,
+    rankSortBy,
+    rankSortDirection,
+  } = req.query;
   const { uid } = req.ctx.decodedToken;
   const connectionsConfig = req.ctx.configuration.connections;
+  const rankFilter = resolveRankFilterTarget({
+    rankScope,
+    regionFilter,
+    sectionFilter,
+  });
+  const rankSort = resolveRankSortOptions({ rankSortBy, rankSortDirection });
 
   const friendUids = await getFriendsUids(
     uid,
@@ -151,6 +191,8 @@ export async function getDailyLeaderboard(
     req.ctx.configuration.dailyLeaderboards,
     req.ctx.configuration.users.premium.enabled,
     friendUids,
+    rankFilter,
+    rankSort,
   );
 
   return new MonkeyResponse("Daily leaderboard retrieved", {
@@ -208,10 +250,26 @@ function getWeeklyXpLeaderboardWithError(
 export async function getWeeklyXpLeaderboard(
   req: MonkeyRequest<GetWeeklyXpLeaderboardQuery>,
 ): Promise<GetWeeklyXpLeaderboardResponse> {
-  const { page, pageSize, weeksBefore, friendsOnly } = req.query;
+  const {
+    page,
+    pageSize,
+    weeksBefore,
+    friendsOnly,
+    rankScope,
+    regionFilter,
+    sectionFilter,
+    rankSortBy,
+    rankSortDirection,
+  } = req.query;
 
   const { uid } = req.ctx.decodedToken;
   const connectionsConfig = req.ctx.configuration.connections;
+  const rankFilter = resolveRankFilterTarget({
+    rankScope,
+    regionFilter,
+    sectionFilter,
+  });
+  const rankSort = resolveRankSortOptions({ rankSortBy, rankSortDirection });
 
   const friendUids = await getFriendsUids(
     uid,
@@ -229,6 +287,8 @@ export async function getWeeklyXpLeaderboard(
     req.ctx.configuration.leaderboards.weeklyXp,
     req.ctx.configuration.users.premium.enabled,
     friendUids,
+    rankFilter,
+    rankSort,
   );
 
   return new MonkeyResponse("Weekly xp leaderboard retrieved", {
