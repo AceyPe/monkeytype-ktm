@@ -28,6 +28,7 @@ import * as Dates from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
 import * as BlocklistDal from "../../dal/blocklist";
 import crypto from "crypto";
+import { isStoredUserEmail } from "../../utils/user-email";
 import {
   AllTimeLbs,
   ResultFilters,
@@ -172,10 +173,15 @@ function generateUidFromEmail(email: string): string {
   return crypto.createHash("sha256").update(email.toLowerCase()).digest("hex");
 }
 
-function looksLikeIeeeMemberId(text: string): boolean {
-  const trimmed = text.trim();
-  if (trimmed === "") return false;
-  return /^\d{5,}$/.test(trimmed);
+function collectProfileStrings(value: unknown): string[] {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed === "" ? [] : [trimmed];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap(collectProfileStrings);
+  }
+  return [];
 }
 
 function getProfileString(
@@ -205,25 +211,51 @@ function getProfileString(
 }
 
 function resolveSamlEmail(profile: SamlUtils.SamlProfile): string | undefined {
-  const emailFromClaims = getProfileString(profile, [
+  const preferredKeys = [
     "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+    "urn:oid:0.9.2342.19200300.100.1.3",
     "Email",
     "email",
     "mail",
-  ]);
+    "Mail",
+    "E-mail",
+    "emailAddress",
+    "EmailAddress",
+    "userPrincipalName",
+  ];
 
-  const candidates = [emailFromClaims, profile.email, profile.nameID].filter(
-    (value): value is string =>
-      typeof value === "string" && value.trim() !== "",
-  );
-
-  for (const candidate of candidates) {
-    const trimmed = candidate.trim();
-    if (looksLikeIeeeMemberId(trimmed)) continue;
-    if (trimmed.includes("@")) return trimmed;
+  for (const key of preferredKeys) {
+    const value = getProfileString(profile, [key]);
+    if (value !== undefined && isStoredUserEmail(value)) {
+      return value.toLowerCase();
+    }
   }
 
-  return candidates[0]?.trim();
+  if (typeof profile.email === "string" && isStoredUserEmail(profile.email)) {
+    return profile.email.trim().toLowerCase();
+  }
+
+  const attributes =
+    typeof profile["attributes"] === "object" && profile["attributes"] !== null
+      ? (profile["attributes"] as Record<string, unknown>)
+      : undefined;
+
+  const buckets: Record<string, unknown>[] = [profile];
+  if (attributes !== undefined) {
+    buckets.push(attributes);
+  }
+
+  for (const bucket of buckets) {
+    for (const value of Object.values(bucket)) {
+      for (const candidate of collectProfileStrings(value)) {
+        if (isStoredUserEmail(candidate)) {
+          return candidate.toLowerCase();
+        }
+      }
+    }
+  }
+
+  return undefined;
 }
 
 async function generateAvailableUsername(
@@ -268,8 +300,12 @@ async function findOrCreateUser(
   } catch (error: unknown) {
     if (error instanceof MonkeyError && error.status === 404) {
       // User doesn't exist, create new user
-      const username = await generateAvailableUsername(emailRaw, uid);
-      await UserDAL.addUser(username, normalizedEmail, uid);
+      const usernameSource = isStoredUserEmail(emailRaw) ? emailRaw : uid;
+      const username = await generateAvailableUsername(usernameSource, uid);
+      const storedEmail = isStoredUserEmail(normalizedEmail)
+        ? normalizedEmail
+        : "";
+      await UserDAL.addUser(username, storedEmail, uid);
       void addImportantLog("user_created_saml", `${username} ${emailRaw}`, uid);
       return uid;
     }
@@ -341,23 +377,37 @@ export async function acs(
     "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/picture",
   ]);
 
-  if (emailRaw === undefined || emailRaw === null || emailRaw === "") {
-    throw new MonkeyError(400, "Email not found in SAML response");
+  const uidFromSaml = (
+    ssoid ??
+    getProfileString(profile, ["nameID"]) ??
+    ""
+  ).trim();
+  const normalizedEmail = emailRaw?.toLowerCase();
+
+  if (
+    uidFromSaml === "" &&
+    (normalizedEmail === undefined || !isStoredUserEmail(normalizedEmail))
+  ) {
+    throw new MonkeyError(400, "User identifier not found in SAML response");
   }
 
-  // Normalize email
-  const normalizedEmail = emailRaw.toLowerCase();
-
   // Prefer IEEE/SAML identifier as uid; fall back to deterministic email hash.
-  const uidFromSaml = (ssoid ?? "").trim();
   const resolvedUid =
-    uidFromSaml === "" ? generateUidFromEmail(normalizedEmail) : uidFromSaml;
+    uidFromSaml !== ""
+      ? uidFromSaml
+      : generateUidFromEmail(normalizedEmail as string);
 
   // Find or create user
-  const uid = await findOrCreateUser(resolvedUid, normalizedEmail, emailRaw);
+  const uid = await findOrCreateUser(
+    resolvedUid,
+    normalizedEmail ?? "",
+    emailRaw ?? resolvedUid,
+  );
 
   await UserDAL.updateSamlUserFields(uid, {
-    email: normalizedEmail,
+    ...(normalizedEmail !== undefined && isStoredUserEmail(normalizedEmail)
+      ? { email: normalizedEmail }
+      : {}),
     geocode,
     status,
     ssoid,
@@ -368,7 +418,12 @@ export async function acs(
 
   // Get user email for JWT token
   const user = await UserDAL.getPartialUser(uid, "saml acs", ["email"]);
-  const userEmail = user.email ?? normalizedEmail;
+  const userEmail =
+    user.email !== undefined && isStoredUserEmail(user.email)
+      ? user.email
+      : normalizedEmail !== undefined && isStoredUserEmail(normalizedEmail)
+        ? normalizedEmail
+        : "";
 
   // Generate JWT token with security standards
   const token = AuthUtil.generateJwtToken(uid, userEmail, "1d", {

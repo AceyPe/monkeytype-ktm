@@ -67,9 +67,9 @@ export async function deleteContest(contestId: string): Promise<void> {
     throw new MonkeyError(404, "Contest not found");
   }
 
-  if (isContestDateToday(contest.date)) {
-    throw new MonkeyError(403, "Cannot delete a contest scheduled for today");
-  }
+  // if (isContestDateToday(contest.date)) {
+  //   throw new MonkeyError(403, "Cannot delete a contest scheduled for today");
+  // }
 
   await getContestsCollection().deleteOne({ _id: new ObjectId(contestId) });
 }

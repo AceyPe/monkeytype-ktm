@@ -264,6 +264,12 @@
       gap: 0.75em;
     }
 
+    .usersTableCount {
+      color: var(--sub-color);
+      font-size: 0.85rem;
+      margin: 0.75rem 0 0.5rem;
+    }
+
     .usersTableToolbar {
       display: flex;
       flex-wrap: wrap;

@@ -10,6 +10,7 @@ import {
 } from "@monkeytype/schemas/contests";
 import { AdminUserListItem } from "@monkeytype/schemas/users";
 import {
+  getRegionNameByCode,
   getSectionNameByGeocode,
   type RegionCode,
 } from "../constants/sections-by-geocode";
@@ -156,15 +157,6 @@ function formatContestDate(timestamp: number): string {
   return `${format(new UTCDateMini(timestamp), "dd MMM yyyy")} UTC`;
 }
 
-function getUtcTodayStart(): number {
-  const now = new UTCDateMini();
-  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-}
-
-function isContestDateToday(contestDate: number): boolean {
-  return contestDate === getUtcTodayStart();
-}
-
 function getDeleteContestConfirmPhrase(title: string): string {
   return `I am sure I want to delete the ${title} contest`;
 }
@@ -204,12 +196,6 @@ function renderContestsList(): void {
       )
       .join("");
 
-    const deleteDisabled = isContestDateToday(contest.date);
-    const deleteDisabledAttr = deleteDisabled ? "disabled" : "";
-    const deleteTitle = deleteDisabled
-      ? 'title="Cannot delete a contest scheduled for today"'
-      : "";
-
     list.append(`
       <div class="contestCard" data-contest-id="${contest._id}">
         <div class="contestCardHeader">
@@ -238,8 +224,6 @@ function renderContestsList(): void {
               type="button"
               class="textButton deleteContestButton"
               data-contest-id="${contest._id}"
-              ${deleteDisabledAttr}
-              ${deleteTitle}
             >
               <i class="fas fa-trash-alt"></i>
               delete
@@ -322,11 +306,18 @@ function handleUsersFilterChange(values: DashboardUsersFilterValues): void {
   updateContent();
 }
 
+function updateUsersTableCount(displayedCount: number): void {
+  const countLabel =
+    displayedCount === 1 ? "1 user" : `${displayedCount} users`;
+  pageElement.find(".usersTableCount").text(countLabel);
+}
+
 function renderUsersList(): void {
   const list = pageElement.find(".usersList");
   list.empty();
 
   const users = getFilteredUsers();
+  updateUsersTableCount(users.length);
 
   if (state.users.length === 0) {
     list.append(`<div class="empty">No users found</div>`);
@@ -342,6 +333,14 @@ function renderUsersList(): void {
     .map((user) => {
       const displayName =
         user.displayName.trim() === "" ? "Member" : user.displayName;
+      const regionNumber = getRegionNumberFromGeocode(user.geocode);
+      const region =
+        regionNumber !== null
+          ? escapeHtml(
+              getRegionNameByCode(String(regionNumber)) ??
+                `Region ${regionNumber}`,
+            )
+          : '<span class="emptyCell">—</span>';
       const section =
         user.geocode !== undefined
           ? escapeHtml(getSectionNameByGeocode(user.geocode) ?? user.geocode)
@@ -371,6 +370,7 @@ function renderUsersList(): void {
                 : ""
             }
           </td>
+          <td>${region}</td>
           <td>${section}</td>
           <td>${grade}</td>
           <td>${status}</td>
@@ -400,6 +400,7 @@ function renderUsersList(): void {
       <thead>
         <tr>
           <th>name</th>
+          <th>region</th>
           <th>section</th>
           <th>grade</th>
           <th>status</th>
@@ -453,14 +454,13 @@ function updateContent(): void {
     .find(".usersPanel .usersError")
     .toggleClass("hidden", state.usersError === undefined);
   pageElement.find(".usersPanel .usersError p").text(state.usersError ?? "");
+  const usersTableHidden = state.usersLoading || state.usersError !== undefined;
   pageElement
     .find(".usersTableToolbar")
-    .toggleClass(
-      "hidden",
-      state.usersLoading || state.usersError !== undefined,
-    );
+    .toggleClass("hidden", usersTableHidden);
+  pageElement.find(".usersTableCount").toggleClass("hidden", usersTableHidden);
 
-  if (state.usersLoading || state.usersError !== undefined) {
+  if (usersTableHidden) {
     pageElement.find(".usersList").empty();
     return;
   }
@@ -790,10 +790,10 @@ function openDeleteContestModal(contestId: string): void {
     return;
   }
 
-  if (isContestDateToday(contest.date)) {
-    Notifications.add("Cannot delete a contest scheduled for today", -1);
-    return;
-  }
+  // if (isContestDateToday(contest.date)) {
+  //   Notifications.add("Cannot delete a contest scheduled for today", -1);
+  //   return;
+  // }
 
   deleteContestState.contestId = contestId;
   deleteContestState.expectedPhrase = getDeleteContestConfirmPhrase(

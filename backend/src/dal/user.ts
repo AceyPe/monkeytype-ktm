@@ -33,6 +33,11 @@ import { Mode, Mode2, PersonalBest } from "@monkeytype/schemas/shared";
 import { addImportantLog } from "./logs";
 import { Result as ResultType } from "@monkeytype/schemas/results";
 import { Configuration } from "@monkeytype/schemas/configuration";
+import {
+  getAdminDisplayEmail,
+  isStoredUserEmail,
+  looksLikeIeeeMemberId,
+} from "../utils/user-email";
 import { isToday, isYesterday } from "@monkeytype/util/date-and-time";
 import GeorgeQueue from "../queues/george-queue";
 import { aggregateWithAcceptedConnections } from "./connections";
@@ -285,12 +290,6 @@ export async function getUserByEmail(
   );
 }
 
-function looksLikeIeeeMemberId(text: string): boolean {
-  const trimmed = text.trim();
-  if (trimmed === "") return false;
-  return /^\d{5,}$/.test(trimmed);
-}
-
 function getDisplayNameFromParts(
   firstName?: string,
   lastName?: string,
@@ -329,6 +328,7 @@ export async function getAllUsersForAdmin(
         projection: {
           uid: 1,
           name: 1,
+          email: 1,
           role: 1,
           firstName: 1,
           lastName: 1,
@@ -344,6 +344,7 @@ export async function getAllUsersForAdmin(
   return users.map((user) => ({
     uid: user.uid,
     displayName: getAdminUserDisplayName(user),
+    email: getAdminDisplayEmail(user),
     geocode: user.geocode,
     grade: user.grade,
     status: user.status,
@@ -352,7 +353,7 @@ export async function getAllUsersForAdmin(
 }
 
 type SamlUserFields = {
-  email: string;
+  email?: string;
   geocode?: string;
   status?: string;
   ssoid?: string;
@@ -376,9 +377,11 @@ export async function updateSamlUserFields(
       | "lastName"
       | "grade"
     >
-  > = {
-    email: fields.email,
-  };
+  > = {};
+
+  if (fields.email !== undefined && isStoredUserEmail(fields.email)) {
+    setFields.email = fields.email.toLowerCase();
+  }
 
   if (fields.geocode !== undefined) setFields.geocode = fields.geocode;
   if (fields.status !== undefined) setFields.status = fields.status;

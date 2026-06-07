@@ -278,6 +278,7 @@ export const AdminUserListItemSchema = z
   .object({
     uid: z.string(),
     displayName: z.string(),
+    email: z.string().optional(),
     geocode: z.string().optional(),
     grade: z.string().optional(),
     status: z.string().optional(),
