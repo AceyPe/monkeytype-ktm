@@ -38,6 +38,7 @@ import * as Result from "./result";
 import * as MonkeyPower from "../elements/monkey-power";
 import * as ActivePage from "../states/active-page";
 import * as ContestClient from "../contest/contest-client";
+import * as ContestBestScore from "../elements/contest-best-score";
 import * as TestInput from "./test-input";
 import * as TestWords from "./test-words";
 import * as WordsGenerator from "./words-generator";
@@ -861,6 +862,11 @@ export async function retrySavingResult(): Promise<void> {
 
   Notifications.add("Retrying to save...");
 
+  if (ActivePage.isContestPage()) {
+    await saveContestResult(completedEvent, true);
+    return;
+  }
+
   await saveResult(completedEvent, true);
 }
 
@@ -1366,7 +1372,70 @@ export async function finish(difficultyFailed = false): Promise<void> {
 
   completedEvent.hash = objectHash(completedEvent);
 
+  if (ActivePage.isContestPage()) {
+    await saveContestResult(completedEvent, false);
+    return;
+  }
+
   await saveResult(completedEvent, false);
+}
+
+async function saveContestResult(
+  completedEvent: CompletedEvent,
+  isRetrying: boolean,
+): Promise<void> {
+  if (!TestState.savingEnabled) {
+    Notifications.add("Result not saved: disabled by user", -1, {
+      duration: 3,
+      customTitle: "Notice",
+      important: true,
+    });
+    AccountButton.loading(false);
+    return;
+  }
+
+  if (!ConnectionState.get()) {
+    Notifications.add("Result not saved: offline", -1, {
+      duration: 2,
+      customTitle: "Notice",
+      important: true,
+    });
+    AccountButton.loading(false);
+    retrySaving.canRetry = true;
+    $("#retrySavingResultButton").removeClass("hidden");
+    if (!isRetrying) {
+      retrySaving.completedEvent = completedEvent;
+    }
+    return;
+  }
+
+  const response = await Ape.contests.addTodayResult({
+    body: { result: completedEvent },
+  });
+
+  AccountButton.loading(false);
+
+  if (response.status !== 200) {
+    if (![460, 461, 463, 464, 465, 466].includes(response.status)) {
+      retrySaving.canRetry = true;
+      $("#retrySavingResultButton").removeClass("hidden");
+      if (!isRetrying) {
+        retrySaving.completedEvent = completedEvent;
+      }
+    }
+    Notifications.add(
+      "Failed to save contest result: " + response.body.message,
+      -1,
+    );
+    return;
+  }
+
+  const data = response.body.data;
+  ContestBestScore.update(data.best);
+
+  $("#retrySavingResultButton").addClass("hidden");
+
+  void AnalyticsController.log("testCompleted");
 }
 
 async function saveResult(

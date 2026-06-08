@@ -14,6 +14,9 @@ import * as Misc from "../utils/misc";
 import * as ContestMode from "../contest/contest-mode";
 import * as ContestClient from "../contest/contest-client";
 import * as ContestMarathonHeader from "../elements/contest-marathon-header";
+import * as ContestBestScore from "../elements/contest-best-score";
+import { getTodaysContest } from "../utils/contest-today";
+import { navigate } from "../controllers/route-controller";
 
 export const page = new Page({
   id: "contest",
@@ -27,6 +30,7 @@ export const page = new Page({
     await ContestClient.disconnect();
     $(".page.pageTest").removeClass("contest-mode");
     ContestMarathonHeader.hide();
+    ContestBestScore.hide();
     ContestMode.restore();
     ManualRestart.set();
     TestLogic.restart({
@@ -38,8 +42,17 @@ export const page = new Page({
     TestConfig.show();
   },
   beforeShow: async (): Promise<void> => {
+    const todaysContest = await getTodaysContest();
+    if (todaysContest === null) {
+      Notifications.add("No contest is active today", -1, { important: true });
+      await navigate("/", { force: true });
+      return;
+    }
+
     $(".page.pageTest").addClass("contest-mode");
     ContestMode.apply();
+    ContestBestScore.show();
+    void ContestBestScore.refresh();
     try {
       await ContestClient.startSession();
     } catch (e) {

@@ -64,6 +64,8 @@ import { MonkeyRequest } from "../types";
 import { getFunbox, checkCompatibility } from "@monkeytype/funbox";
 import { tryCatch } from "@monkeytype/util/trycatch";
 import { getCachedConfiguration } from "../../init/configuration";
+import * as ContestDAL from "../../dal/contest";
+import { isContestShapedResult } from "./contest-result";
 
 function getLeaderboardDisplayName(
   user: Pick<UserDAL.DBUser, "uid" | "name" | "firstName" | "lastName">,
@@ -221,6 +223,16 @@ export async function addResult(
 
   const completedEvent = req.body.result;
   completedEvent.uid = uid;
+
+  if (isContestShapedResult(completedEvent)) {
+    const todaysContest = await ContestDAL.getTodaysContest();
+    if (todaysContest !== null) {
+      throw new MonkeyError(
+        400,
+        "Contest results must be submitted from the contest page",
+      );
+    }
+  }
 
   if (isTestTooShort(completedEvent)) {
     const status = MonkeyStatusCodes.TEST_TOO_SHORT;

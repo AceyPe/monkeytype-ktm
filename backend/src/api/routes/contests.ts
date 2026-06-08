@@ -1,6 +1,7 @@
 import { contestsContract } from "@monkeytype/contracts/contests";
 import { initServer } from "@ts-rest/express";
 import * as ContestController from "../controllers/contest";
+import * as ContestResultController from "../controllers/contest-result";
 import { callController } from "../ts-rest-adapter";
 
 const s = initServer();
@@ -16,5 +17,13 @@ export default s.router(contestsContract, {
   },
   delete: {
     handler: async (r) => callController(ContestController.deleteContest)(r),
+  },
+  addTodayResult: {
+    handler: async (r) =>
+      callController(ContestResultController.addTodayContestResult)(r),
+  },
+  getTodayBestResult: {
+    handler: async (r) =>
+      callController(ContestResultController.getTodayContestBestResult)(r),
   },
 });

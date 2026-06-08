@@ -76,12 +76,28 @@ const routes: Route[] = [
   {
     path: "/contest",
     load: async (_params, options) => {
+      if (!isAuthAvailable()) {
+        await navigate("/", options);
+        return;
+      }
+      if (!isAuthenticated()) {
+        await navigate("/login", options);
+        return;
+      }
       await PageController.change("contest", options);
     },
   },
   {
     path: "/contests",
     load: async (_params, options) => {
+      if (!isAuthAvailable()) {
+        await navigate("/", options);
+        return;
+      }
+      if (!isAuthenticated()) {
+        await navigate("/login", options);
+        return;
+      }
       await PageController.change("contest", options);
     },
   },

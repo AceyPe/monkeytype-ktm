@@ -11,6 +11,11 @@ import {
   CreateContestRequestSchema,
   UpdateContestRequestSchema,
 } from "@monkeytype/schemas/contests";
+import {
+  AddContestResultRequestSchema,
+  AddContestResultResponseDataSchema,
+  GetContestBestResultResponseDataSchema,
+} from "@monkeytype/schemas/contest-results";
 import { IdSchema } from "@monkeytype/schemas/util";
 
 export const GetContestsResponseSchema = responseWithData(
@@ -27,6 +32,24 @@ export const UpdateContestParamsSchema = z.object({
   contestId: IdSchema,
 });
 export type UpdateContestParams = z.infer<typeof UpdateContestParamsSchema>;
+
+export type AddContestResultRequest = z.infer<
+  typeof AddContestResultRequestSchema
+>;
+
+export const AddContestResultResponseSchema = responseWithData(
+  AddContestResultResponseDataSchema,
+);
+export type AddContestResultResponse = z.infer<
+  typeof AddContestResultResponseSchema
+>;
+
+export const GetContestBestResultResponseSchema = responseWithData(
+  GetContestBestResultResponseDataSchema,
+);
+export type GetContestBestResultResponse = z.infer<
+  typeof GetContestBestResultResponseSchema
+>;
 
 const c = initContract();
 
@@ -89,6 +112,33 @@ export const contestsContract = c.router(
       metadata: meta({
         rateLimit: "contestsRemove",
         requirePermission: "admin",
+      }),
+    },
+    addTodayResult: {
+      summary: "submit today's contest result",
+      description:
+        "Save a contest run for today's active contest. Only the user's best score is kept.",
+      method: "POST",
+      path: "/today/result",
+      body: AddContestResultRequestSchema,
+      responses: {
+        200: AddContestResultResponseSchema,
+      },
+      metadata: meta({
+        rateLimit: "contestResultAdd",
+      }),
+    },
+    getTodayBestResult: {
+      summary: "get today's contest best result",
+      description:
+        "Get the authenticated user's best result for today's active contest.",
+      method: "GET",
+      path: "/today/result",
+      responses: {
+        200: GetContestBestResultResponseSchema,
+      },
+      metadata: meta({
+        rateLimit: "contestResultGet",
       }),
     },
   },

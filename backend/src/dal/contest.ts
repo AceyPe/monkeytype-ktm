@@ -58,6 +58,19 @@ export function isContestDateToday(contestDate: number): boolean {
   return contestDate === getUtcTodayStart();
 }
 
+export async function getTodaysContest(): Promise<DBContest | null> {
+  const todayStart = getUtcTodayStart();
+  return await getContestsCollection().findOne({ date: todayStart });
+}
+
+export async function requireTodaysContest(): Promise<DBContest> {
+  const contest = await getTodaysContest();
+  if (contest === null) {
+    throw new MonkeyError(404, "No contest is active today");
+  }
+  return contest;
+}
+
 export async function deleteContest(contestId: string): Promise<void> {
   const contest = await getContestsCollection().findOne({
     _id: new ObjectId(contestId),

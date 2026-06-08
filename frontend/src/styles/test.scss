@@ -80,6 +80,43 @@
   #mobileTestConfigButton {
     display: none !important;
   }
+
+  &:has(#result:not(.hidden)) {
+    #testTopSection {
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
+
+  .contestBestScore {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+    display: grid;
+    justify-items: end;
+    gap: 0.15rem;
+    padding: 0.5rem 0.75rem;
+    text-align: right;
+    pointer-events: none;
+
+    &.hidden {
+      display: none;
+    }
+
+    .contestBestScoreLabel {
+      font-size: 0.75rem;
+      color: var(--sub-color);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .contestBestScoreValue {
+      font-size: 1.1rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--main-color);
+    }
+  }
 }
 
 .pageTest {
@@ -1467,8 +1504,10 @@
 
   #result:not(.hidden) {
     grid-row: 1 / -1;
-    align-self: start;
+    align-self: center;
+    justify-self: center;
     overflow-y: auto;
+    max-height: 100%;
   }
 }
 
