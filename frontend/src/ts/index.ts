@@ -24,6 +24,7 @@ import { enable } from "./states/glarses-mode";
 import "./test/caps-warning";
 import "./modals/simple-modals";
 import "./modals/contest-more-info";
+import "./modals/contest-leaderboard";
 import * as CookiesModal from "./modals/cookies";
 import "./input/listeners";
 import "./ready";

@@ -4,6 +4,9 @@ import {
   AddContestResultRequest,
   AddContestResultResponse,
   GetContestBestResultResponse,
+  GetContestLeaderboardParams,
+  GetContestLeaderboardQuery,
+  GetContestLeaderboardResponse,
 } from "@monkeytype/contracts/contests";
 import { CompletedEvent, KeyStats } from "@monkeytype/schemas/results";
 import { isSafeNumber, roundTo2, stdDev } from "@monkeytype/util/numbers";
@@ -17,6 +20,10 @@ import {
 import MonkeyStatusCodes from "../../constants/monkey-status-codes";
 import * as ContestDAL from "../../dal/contest";
 import * as ContestResultDAL from "../../dal/contest-result";
+import {
+  resolveRankFilterTarget,
+  resolveRankSortOptions,
+} from "../../utils/geocode-rank-scope";
 import { addLog } from "../../dal/logs";
 import * as UserDAL from "../../dal/user";
 import { isDevEnvironment, omit } from "../../utils/misc";
@@ -237,4 +244,46 @@ export async function getTodayContestBestResult(
     "Contest best result retrieved",
     toContestResultSummary(best),
   );
+}
+
+export async function getContestLeaderboard(
+  req: MonkeyRequest<
+    GetContestLeaderboardQuery,
+    undefined,
+    GetContestLeaderboardParams
+  >,
+): Promise<GetContestLeaderboardResponse> {
+  const { contestId } = req.params;
+  const {
+    page,
+    pageSize,
+    rankScope,
+    regionFilter,
+    sectionFilter,
+    rankSortBy,
+    rankSortDirection,
+  } = req.query;
+
+  await ContestDAL.requireContest(contestId);
+
+  const rankFilter = resolveRankFilterTarget({
+    rankScope,
+    regionFilter,
+    sectionFilter,
+  });
+  const rankSort = resolveRankSortOptions({ rankSortBy, rankSortDirection });
+
+  const leaderboard = await ContestResultDAL.getContestLeaderboard(
+    contestId,
+    page,
+    pageSize,
+    rankFilter,
+    rankSort,
+  );
+
+  return new MonkeyResponse("Contest leaderboard retrieved", {
+    count: leaderboard.count,
+    entries: leaderboard.entries,
+    pageSize,
+  });
 }

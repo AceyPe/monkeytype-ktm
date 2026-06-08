@@ -17,6 +17,22 @@ export async function getContests(): Promise<DBContest[]> {
   return await getContestsCollection().find().sort({ date: -1 }).toArray();
 }
 
+export async function getContestById(
+  contestId: string,
+): Promise<DBContest | null> {
+  return await getContestsCollection().findOne({
+    _id: new ObjectId(contestId),
+  });
+}
+
+export async function requireContest(contestId: string): Promise<DBContest> {
+  const contest = await getContestById(contestId);
+  if (contest === null) {
+    throw new MonkeyError(404, "Contest not found");
+  }
+  return contest;
+}
+
 type ContestCreationResult = {
   contestId: string;
 };

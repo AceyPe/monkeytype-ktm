@@ -1882,3 +1882,75 @@ body.darkMode {
     color: var(--sub-color);
   }
 }
+
+#contestLeaderboardModal {
+  .contestLeaderboardModal.pageLeaderboards {
+    width: min(95vw, 72rem);
+    max-width: min(95vw, 72rem);
+    max-height: 90vh;
+    padding: 1.25rem 1.5rem 1.5rem;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    .content {
+      display: block;
+      height: auto;
+      gap: 0;
+      grid-template-columns: unset;
+      grid-template-areas: unset;
+    }
+
+    .contestLeaderboardHeader {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+
+      .bigtitle {
+        margin-bottom: 0;
+      }
+    }
+
+    .tableAndUser {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .tableWrapper {
+      overflow: auto;
+      max-height: min(60vh, 36rem);
+      width: 100%;
+    }
+
+    .titleAndButtons {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .tableToolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    table {
+      td:first-child {
+        display: table-cell;
+      }
+    }
+
+    .loading,
+    .error {
+      padding: 2rem 0;
+      text-align: center;
+      color: var(--sub-color);
+    }
+
+    .error {
+      color: var(--error-color, #e74c3c);
+    }
+  }
+}

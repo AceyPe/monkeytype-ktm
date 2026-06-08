@@ -150,6 +150,11 @@ export const limits = {
     max: 120,
   },
 
+  contestsLeaderboardGet: {
+    window: "minute",
+    max: 120,
+  },
+
   // get public speed stats
   publicStatsGet: {
     window: "minute",

@@ -26,4 +26,8 @@ export default s.router(contestsContract, {
     handler: async (r) =>
       callController(ContestResultController.getTodayContestBestResult)(r),
   },
+  getLeaderboard: {
+    handler: async (r) =>
+      callController(ContestResultController.getContestLeaderboard)(r),
+  },
 });

@@ -1415,6 +1415,134 @@
   </form>
 </dialog>
 
+<dialog id="contestLeaderboardModal" class="modalWrapper hidden">
+  <div class="modal contestLeaderboardModal pageLeaderboards">
+    <div class="content">
+      <div class="tableAndUser">
+        <div class="contestLeaderboardHeader">
+          <div class="bigtitle">
+            <div class="text contestLeaderboardTitle">Contest leaderboard</div>
+            <div class="subtext">
+              <div class="text contestLeaderboardDate"></div>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="textButton contestLeaderboardCloseButton"
+            aria-label="Close"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="divider"></div>
+        <div class="titleAndButtons">
+          <div class="title contestLeaderboardCount">-</div>
+          <div class="jumpButtons">
+            <div class="updating hidden">
+              <i class="fas fa-circle-notch fa-spin"></i>
+            </div>
+            <button type="button" data-action="firstPage">
+              <i class="fas fa-crown"></i>
+            </button>
+            <button type="button" data-action="previousPage">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <button type="button" data-action="nextPage">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+        <div class="tableToolbar">
+          <div class="lbFilterGroup">
+            <label for="contestLbRegionFilter">Region</label>
+            <select id="contestLbRegionFilter" class="contestLbRegionFilter">
+              <option value="">All regions</option>
+            </select>
+          </div>
+          <div class="lbFilterGroup">
+            <label for="contestLbSectionFilter">Section</label>
+            <select id="contestLbSectionFilter" class="contestLbSectionFilter">
+              <option value="">All sections</option>
+            </select>
+          </div>
+        </div>
+        <div class="loading hidden">
+          <i class="fas fa-circle-notch fa-spin"></i>
+        </div>
+        <div class="error hidden">
+          <i class="fas fa-times"></i>
+          <p>Something went wrong</p>
+        </div>
+        <div class="tableWrapper">
+          <table class="rankScopeGlobal mobileStatsInModal">
+            <thead class="allTimeAndDaily">
+              <tr>
+                <td class="rankCol rankColGlobal">
+                  <button
+                    type="button"
+                    class="rankSortButton globalRank sortAsc"
+                    data-sort-by="global"
+                    aria-label="Sort by global rank"
+                  >
+                    <span class="rankColLabelFull">global rank</span>
+                    <span class="rankColLabelShort">glb</span>
+                    <span class="rankSortChevrons" aria-hidden="true">
+                      <i class="fas fa-chevron-up"></i>
+                      <i class="fas fa-chevron-down"></i>
+                    </span>
+                  </button>
+                </td>
+                <td class="rankCol rankColRegion">
+                  <button
+                    type="button"
+                    class="rankSortButton"
+                    data-sort-by="region"
+                    aria-label="Sort by region rank"
+                  >
+                    <span class="rankColLabelFull">region rank</span>
+                    <span class="rankColLabelShort">reg</span>
+                    <span class="rankSortChevrons" aria-hidden="true">
+                      <i class="fas fa-chevron-up"></i>
+                      <i class="fas fa-chevron-down"></i>
+                    </span>
+                  </button>
+                </td>
+                <td class="rankCol rankColSection">
+                  <button
+                    type="button"
+                    class="rankSortButton"
+                    data-sort-by="section"
+                    aria-label="Sort by section rank"
+                  >
+                    <span class="rankColLabelFull">section rank</span>
+                    <span class="rankColLabelShort">sec</span>
+                    <span class="rankSortChevrons" aria-hidden="true">
+                      <i class="fas fa-chevron-up"></i>
+                      <i class="fas fa-chevron-down"></i>
+                    </span>
+                  </button>
+                </td>
+                <td class="nameCol">name</td>
+                <td class="stat narrow speedUnit">
+                  <span>wpm</span>
+                  <div class="sub">accuracy</div>
+                </td>
+                <td class="stat wide speedUnit">wpm</td>
+                <td class="stat wide">accuracy</td>
+                <td class="stat wide">consistency</td>
+                <td class="stat wide">date</td>
+                <td class="stat">region</td>
+                <td class="stat">section</td>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="contestMoreInfoModal" class="modalWrapper hidden">
   <div class="modal contestMoreInfoModal">
     <div class="title">Contest information</div>

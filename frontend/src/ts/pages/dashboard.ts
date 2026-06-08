@@ -23,6 +23,7 @@ import { SimpleModal } from "../utils/simple-modal";
 import { format } from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
 import { z } from "zod";
+import * as ContestLeaderboardModal from "../modals/contest-leaderboard";
 
 type DashboardSection = "contests" | "users";
 type ContestFormMode = "create" | "edit";
@@ -921,6 +922,14 @@ pageElement.on("click", ".deleteContestButton", function () {
   const contestId = $(this).attr("data-contest-id");
   if (contestId === undefined) return;
   openDeleteContestModal(contestId);
+});
+
+pageElement.on("click", ".leaderboardContestButton", function () {
+  const contestId = $(this).attr("data-contest-id");
+  if (contestId === undefined) return;
+  const contest = state.contests.find((entry) => entry._id === contestId);
+  if (contest === undefined) return;
+  void ContestLeaderboardModal.show(contest);
 });
 
 export const page = new PageWithUrlParams({

@@ -17,6 +17,13 @@ import {
   GetContestBestResultResponseDataSchema,
 } from "@monkeytype/schemas/contest-results";
 import { IdSchema } from "@monkeytype/schemas/util";
+import { LeaderboardEntrySchema } from "@monkeytype/schemas/leaderboards";
+import {
+  PaginationQuerySchema,
+  RankFilterQuerySchema,
+  RankScopeQuerySchema,
+  RankSortQuerySchema,
+} from "./leaderboards";
 
 export const GetContestsResponseSchema = responseWithData(
   z.array(ContestSchema),
@@ -49,6 +56,33 @@ export const GetContestBestResultResponseSchema = responseWithData(
 );
 export type GetContestBestResultResponse = z.infer<
   typeof GetContestBestResultResponseSchema
+>;
+
+export const GetContestLeaderboardParamsSchema = z.object({
+  contestId: IdSchema,
+});
+export type GetContestLeaderboardParams = z.infer<
+  typeof GetContestLeaderboardParamsSchema
+>;
+
+export const GetContestLeaderboardQuerySchema = PaginationQuerySchema.merge(
+  RankScopeQuerySchema,
+)
+  .merge(RankFilterQuerySchema)
+  .merge(RankSortQuerySchema);
+export type GetContestLeaderboardQuery = z.infer<
+  typeof GetContestLeaderboardQuerySchema
+>;
+
+export const GetContestLeaderboardResponseSchema = responseWithData(
+  z.object({
+    count: z.number().int().nonnegative(),
+    pageSize: z.number().int().positive(),
+    entries: z.array(LeaderboardEntrySchema),
+  }),
+);
+export type GetContestLeaderboardResponse = z.infer<
+  typeof GetContestLeaderboardResponseSchema
 >;
 
 const c = initContract();
@@ -139,6 +173,22 @@ export const contestsContract = c.router(
       },
       metadata: meta({
         rateLimit: "contestResultGet",
+      }),
+    },
+    getLeaderboard: {
+      summary: "get contest leaderboard",
+      description:
+        "Get the leaderboard for a specific contest from contest-results.",
+      method: "GET",
+      path: "/:contestId/leaderboard",
+      pathParams: GetContestLeaderboardParamsSchema,
+      query: GetContestLeaderboardQuerySchema,
+      responses: {
+        200: GetContestLeaderboardResponseSchema,
+      },
+      metadata: meta({
+        rateLimit: "contestsLeaderboardGet",
+        requirePermission: "admin",
       }),
     },
   },
