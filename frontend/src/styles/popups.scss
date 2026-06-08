@@ -1830,3 +1830,55 @@ body.darkMode {
     }
   }
 }
+
+#contestMoreInfoModal {
+  .modal.contestMoreInfoModal {
+    max-width: min(42rem, 100%);
+  }
+
+  .contestMoreInfoBody {
+    display: grid;
+    gap: 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+
+    section {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: normal;
+      color: var(--main-color);
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-color);
+    }
+  }
+
+  .contestMoreInfoGreeting {
+    color: var(--main-color);
+    font-size: 1rem;
+  }
+
+  .contestPrizeList {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .contestPrizePosition {
+    color: var(--main-color);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .contestPrizeEmpty {
+    margin: 0;
+    color: var(--sub-color);
+  }
+}

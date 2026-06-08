@@ -13,7 +13,7 @@ import * as Notifications from "../elements/notifications";
 import * as Misc from "../utils/misc";
 import * as ContestMode from "../contest/contest-mode";
 import * as ContestClient from "../contest/contest-client";
-import * as TestModeHeader from "../elements/test-mode-header";
+import * as ContestMarathonHeader from "../elements/contest-marathon-header";
 
 export const page = new Page({
   id: "contest",
@@ -26,6 +26,7 @@ export const page = new Page({
   afterHide: async (): Promise<void> => {
     await ContestClient.disconnect();
     $(".page.pageTest").removeClass("contest-mode");
+    ContestMarathonHeader.hide();
     ContestMode.restore();
     ManualRestart.set();
     TestLogic.restart({
@@ -49,7 +50,7 @@ export const page = new Page({
       );
     }
     TestConfig.hide();
-    TestModeHeader.hideTestModeHeader();
+    await ContestMarathonHeader.show();
     updateFooterAndVerticalAds(false);
     TestStats.resetIncomplete();
     ManualRestart.set();

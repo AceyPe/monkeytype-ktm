@@ -80,6 +80,12 @@ const routes: Route[] = [
     },
   },
   {
+    path: "/contests",
+    load: async (_params, options) => {
+      await PageController.change("contest", options);
+    },
+  },
+  {
     path: "/leaderboards",
     load: async (_params, options) => {
       await PageController.change("leaderboards", options);
