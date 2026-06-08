@@ -594,23 +594,30 @@ async function init(): Promise<boolean> {
   let generatedSectionIndexes: number[] = [];
   try {
     if (ActivePage.isContestPage()) {
-      let contestWords = ContestClient.getSessionWords();
-      if (contestWords === null) {
-        try {
-          if (!ContestClient.isConnected()) {
-            await ContestClient.startSession();
+      let contestWords: string[] | null = null;
+      try {
+        if (TestState.isRepeated) {
+          contestWords = ContestClient.getSessionWords();
+          if (contestWords === null) {
+            contestWords = await ContestClient.startNewRun();
           }
+        } else if (
+          !ContestClient.isConnected() ||
+          ContestClient.getSessionWords() !== null
+        ) {
+          contestWords = await ContestClient.startNewRun();
+        } else {
           contestWords = await ContestClient.loadSessionWords();
-        } catch (e) {
-          Notifications.add(
-            Misc.createErrorMessage(
-              e,
-              "Contest server unavailable — using offline words",
-            ),
-            -1,
-            { important: true },
-          );
         }
+      } catch (e) {
+        Notifications.add(
+          Misc.createErrorMessage(
+            e,
+            "Contest server unavailable — using offline words",
+          ),
+          -1,
+          { important: true },
+        );
       }
       if (contestWords !== null) {
         generatedWords = contestWords;

@@ -102,8 +102,10 @@ async function fetchAllChunks(): Promise<string[]> {
 }
 
 /** Words for the active contest trace (loaded in chunks; not in session JSON). */
-export async function loadSessionWords(): Promise<string[]> {
-  if (loadedWords !== null) return loadedWords;
+export async function loadSessionWords(
+  options: { forceReload?: boolean } = {},
+): Promise<string[]> {
+  if (!options.forceReload && loadedWords !== null) return loadedWords;
   if (wordsLoadPromise !== null) return wordsLoadPromise;
 
   wordsLoadPromise = fetchAllChunks()
@@ -116,6 +118,13 @@ export async function loadSessionWords(): Promise<string[]> {
     });
 
   return wordsLoadPromise;
+}
+
+/** Start a new server trace and load its words (for a new contest run). */
+export async function startNewRun(): Promise<string[]> {
+  await startSession();
+  loadedWords = null;
+  return loadSessionWords({ forceReload: true });
 }
 
 export function getSessionWords(): string[] | null {
