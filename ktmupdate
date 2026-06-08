@@ -9,6 +9,7 @@ SERVER=""
 REMOTE_DIR="/home/ubuntu/webapp"
 NODE_VERSION="24.11.0"
 PM2_APP="my-app"
+CONFIG="deploy.config"
 
 # -------------------------
 # 1. Parse arguments
