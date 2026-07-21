@@ -166,6 +166,12 @@ function handleFilterChange(values: LeaderboardFilterValues): void {
   updateTitle();
   updateContent();
   updateGetParameters();
+  updateClearFiltersButton();
+}
+
+function updateClearFiltersButton(): void {
+  const hasFilter = state.regionFilter !== "" || state.sectionFilter !== "";
+  $(".page.pageLeaderboards .lbClearFilters").toggleClass("hidden", !hasFilter);
 }
 
 function getSortRank(
@@ -1852,6 +1858,11 @@ $(".page.pageLeaderboards .jumpButtons button").on("click", function () {
   }
 });
 
+$(".page.pageLeaderboards .tableToolbar").on("click", ".lbClearFilters", () => {
+  setLeaderboardFilterValues({ regionFilter: "", sectionFilter: "" });
+  handleFilterChange({ regionFilter: "", sectionFilter: "" });
+});
+
 $(".page.pageLeaderboards .bigtitle button").on("click", function () {
   const action = $(this).data("action") as string;
   handleYesterdayLastWeekButton(action);
@@ -1977,6 +1988,7 @@ export const page = new PageWithUrlParams({
       regionFilter: state.regionFilter,
       sectionFilter: state.sectionFilter,
     });
+    updateClearFiltersButton();
     updateRankSortHeaders();
     startTimer();
     updateTitle();

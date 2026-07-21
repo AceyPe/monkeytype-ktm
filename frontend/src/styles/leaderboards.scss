@@ -98,6 +98,19 @@
             width: 100%;
           }
         }
+
+        .lbClearFilters {
+          flex: 0 0 auto;
+          min-height: 2.25em;
+          align-items: center;
+          justify-content: center;
+          color: var(--error-color);
+
+          &:hover {
+            color: var(--error-color);
+            opacity: 0.8;
+          }
+        }
       }
 
       & > .title {
@@ -205,10 +218,6 @@
         .globalRank {
           .friendsOnlyIcon {
             display: none;
-          }
-          .rankColLabelFull,
-          .rankColLabelShort {
-            display: inline;
           }
         }
         &.friendsOnly {

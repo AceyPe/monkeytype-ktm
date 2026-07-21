@@ -59,7 +59,7 @@ export function initLeaderboardFilterDropdowns(
   regionSelect = new SlimSelect({
     select: regionElement,
     data: [
-      { text: "All regions", value: "", placeholder: true },
+      { text: "All regions", value: "" },
       ...REGIONS.map((region) => ({
         text: region.name,
         value: region.code,
@@ -96,7 +96,7 @@ export function initLeaderboardFilterDropdowns(
   sectionSelect = new SlimSelect({
     select: sectionElement,
     data: [
-      { text: "All sections", value: "", placeholder: true },
+      { text: "All sections", value: "" },
       ...SECTIONS.map((section) => ({
         text: section.name,
         value: section.geocode,
