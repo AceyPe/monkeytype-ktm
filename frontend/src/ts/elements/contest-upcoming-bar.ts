@@ -5,6 +5,8 @@ import * as ContestMoreInfoModal from "../modals/contest-more-info";
 import { getContestDisplayName } from "./contest-marathon-header";
 import { refreshBannerLayout } from "./notifications";
 
+const COUNTDOWN_PARTS = ["days", "hours", "minutes", "seconds"] as const;
+
 const barElement = document.getElementById("contestUpcomingBar");
 const countdownElement = barElement?.querySelector(".contestUpcomingCountdown");
 
@@ -29,7 +31,15 @@ function updateCountdownDisplay(): void {
   }
 
   const remainingMs = Math.max(0, activeContest.date - Date.now());
-  countdownElement.textContent = formatContestStartCountdown(remainingMs);
+  const parts = formatContestStartCountdown(remainingMs).split(":");
+  for (const [index, part] of COUNTDOWN_PARTS.entries()) {
+    const valueElement = countdownElement.querySelector(
+      `[data-part="${part}"]`,
+    );
+    if (valueElement !== null) {
+      valueElement.textContent = parts[index] ?? "";
+    }
+  }
   if (remainingMs <= 0) {
     hide();
   }

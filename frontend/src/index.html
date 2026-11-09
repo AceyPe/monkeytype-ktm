@@ -8,9 +8,30 @@
     <div id="fpsCounter" class="hidden"></div>
     <div class="customBackground"></div>
     <div id="backgroundLoader" style="display: none"></div>
-    <!-- prettier-ignore -->
     <div id="contestUpcomingBar" class="contestUpcomingBar hidden">
-      <span>Contest starts in <span class="contestUpcomingCountdown">000:00:00:00</span>! <a href="#" class="contestUpcomingDetails">Check details</a>.</span>
+      <span class="contestUpcomingLead">Contest starts in</span>
+      <span class="contestUpcomingCountdown">
+        <span class="contestUpcomingUnit">
+          <span class="contestUpcomingValue" data-part="days">000</span>
+          <span class="contestUpcomingLabel">days</span>
+        </span>
+        <span class="contestUpcomingSep" aria-hidden="true">:</span>
+        <span class="contestUpcomingUnit">
+          <span class="contestUpcomingValue" data-part="hours">00</span>
+          <span class="contestUpcomingLabel">hrs</span>
+        </span>
+        <span class="contestUpcomingSep" aria-hidden="true">:</span>
+        <span class="contestUpcomingUnit">
+          <span class="contestUpcomingValue" data-part="minutes">00</span>
+          <span class="contestUpcomingLabel">mins</span>
+        </span>
+        <span class="contestUpcomingSep" aria-hidden="true">:</span>
+        <span class="contestUpcomingUnit">
+          <span class="contestUpcomingValue" data-part="seconds">00</span>
+          <span class="contestUpcomingLabel">secs</span>
+        </span>
+      </span>
+      <a href="#" class="contestUpcomingDetails">Check details</a>
     </div>
     <div id="bannerCenter" class="focus"></div>
     <div id="notificationCenter">
