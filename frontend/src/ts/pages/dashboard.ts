@@ -24,22 +24,62 @@ import { format } from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
 import { z } from "zod";
 import * as ContestLeaderboardModal from "../modals/contest-leaderboard";
+import {
+  AnalyticsRangeSchema,
+  type AnalyticsDashboardData,
+  type AnalyticsRange,
+} from "@monkeytype/contracts/analytics";
+import * as DB from "../db";
+import * as DashboardAnalytics from "../elements/dashboard-analytics";
 
-type DashboardSection = "contests" | "users";
+type DashboardSection = "contests" | "users" | "analytics";
 type ContestFormMode = "create" | "edit";
+type AnalyticsLimits = DashboardAnalytics.AnalyticsLimits;
 
 const DashboardUrlParamsSchema = z.object({
-  tab: z.enum(["contests", "users"]).optional(),
+  tab: z.enum(["contests", "users", "analytics"]).optional(),
+  range: AnalyticsRangeSchema.optional(),
+  limitCountries: z.string().regex(/^\d+$/).optional(),
+  limitPages: z.string().regex(/^\d+$/).optional(),
+  limitLandings: z.string().regex(/^\d+$/).optional(),
+  limitReferrers: z.string().regex(/^\d+$/).optional(),
 });
 
 function resolveSection(
   tab: z.infer<typeof DashboardUrlParamsSchema>["tab"],
 ): DashboardSection {
-  return tab === "users" ? "users" : "contests";
+  if (tab === "users" || tab === "analytics") return tab;
+  return "contests";
+}
+
+function parseAnalyticsLimit(value: string | undefined): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 50) return 10;
+  return parsed;
 }
 
 function updateDashboardUrlParams(): void {
-  page.setUrlParams({ tab: state.section });
+  const params: z.infer<typeof DashboardUrlParamsSchema> = {
+    tab: state.section,
+  };
+  if (state.section === "analytics") {
+    if (state.analytics.range !== "28daysAgo") {
+      params.range = state.analytics.range;
+    }
+    if (state.analytics.limits.countries !== 10) {
+      params.limitCountries = String(state.analytics.limits.countries);
+    }
+    if (state.analytics.limits.pages !== 10) {
+      params.limitPages = String(state.analytics.limits.pages);
+    }
+    if (state.analytics.limits.landings !== 10) {
+      params.limitLandings = String(state.analytics.limits.landings);
+    }
+    if (state.analytics.limits.referrers !== 10) {
+      params.limitReferrers = String(state.analytics.limits.referrers);
+    }
+  }
+  page.setUrlParams(params);
 }
 
 const state = {
@@ -55,7 +95,23 @@ const state = {
     regionFilter: "" as RegionCode | "",
     sectionFilter: "",
   },
+  analytics: {
+    range: "28daysAgo" as AnalyticsRange,
+    limits: {
+      countries: 10,
+      pages: 10,
+      landings: 10,
+      referrers: 10,
+    } as AnalyticsLimits,
+    device: "desktop" as DashboardAnalytics.AnalyticsDevice,
+    loading: false,
+    error: undefined as string | undefined,
+    data: undefined as AnalyticsDashboardData | undefined,
+  },
 };
+
+let analyticsRequestId = 0;
+let analyticsPollTimer: number | undefined;
 
 let usersFiltersInitialized = false;
 let usersActionsMenuListenerAttached = false;
@@ -445,6 +501,76 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+function applyAnalyticsUrlParams(
+  params: z.infer<typeof DashboardUrlParamsSchema> | undefined,
+): void {
+  if (params === undefined) return;
+  if (params.range !== undefined) state.analytics.range = params.range;
+  state.analytics.limits = {
+    countries: parseAnalyticsLimit(params.limitCountries),
+    pages: parseAnalyticsLimit(params.limitPages),
+    landings: parseAnalyticsLimit(params.limitLandings),
+    referrers: parseAnalyticsLimit(params.limitReferrers),
+  };
+}
+
+function stopAnalyticsPolling(): void {
+  if (analyticsPollTimer === undefined) return;
+  window.clearInterval(analyticsPollTimer);
+  analyticsPollTimer = undefined;
+}
+
+function startAnalyticsPolling(): void {
+  stopAnalyticsPolling();
+  analyticsPollTimer = window.setInterval(() => {
+    void refreshRealtimeUsers();
+  }, 60_000);
+}
+
+async function refreshRealtimeUsers(): Promise<void> {
+  if (state.section !== "analytics" || state.analytics.data === undefined) {
+    return;
+  }
+  const response = await Ape.analytics.realtime();
+  if (response.status !== 200 || state.analytics.data === undefined) return;
+  state.analytics.data.realtimeUsers = response.body.data.users;
+  DashboardAnalytics.setRealtimeUsers(response.body.data.users);
+}
+
+async function fetchAnalytics(): Promise<void> {
+  const requestId = ++analyticsRequestId;
+  state.analytics.loading = true;
+  state.analytics.error = undefined;
+  state.analytics.device = "desktop";
+  updateContent();
+
+  const response = await Ape.analytics.get({
+    query: {
+      range: state.analytics.range,
+      limitCountries: state.analytics.limits.countries,
+      limitPages: state.analytics.limits.pages,
+      limitLandings: state.analytics.limits.landings,
+      limitReferrers: state.analytics.limits.referrers,
+    },
+  });
+
+  if (requestId !== analyticsRequestId) return;
+
+  state.analytics.loading = false;
+  if (response.status === 200) {
+    state.analytics.data = response.body.data;
+    state.analytics.error = undefined;
+    startAnalyticsPolling();
+  } else {
+    state.analytics.data = undefined;
+    state.analytics.error = response.body.message ?? "Failed to load analytics";
+    stopAnalyticsPolling();
+    Notifications.add(state.analytics.error, -1);
+  }
+
+  updateContent();
+}
+
 function updateContent(): void {
   pageElement
     .find(".contestsPanel")
@@ -452,6 +578,35 @@ function updateContent(): void {
   pageElement
     .find(".usersPanel")
     .toggleClass("hidden", state.section !== "users");
+  pageElement
+    .find(".analyticsPanel")
+    .toggleClass("hidden", state.section !== "analytics");
+
+  if (state.section === "analytics") {
+    const analytics = state.analytics;
+    pageElement
+      .find(".analyticsLoading")
+      .toggleClass("hidden", !analytics.loading);
+    pageElement
+      .find(".analyticsError")
+      .toggleClass("hidden", analytics.error === undefined);
+    pageElement.find(".analyticsError p").text(analytics.error ?? "");
+    const ready =
+      !analytics.loading &&
+      analytics.error === undefined &&
+      analytics.data !== undefined;
+    pageElement.find(".analyticsBody").toggleClass("hidden", !ready);
+    if (ready && analytics.data !== undefined) {
+      void DashboardAnalytics.renderAnalytics({
+        welcome: DashboardAnalytics.formatWelcome(DB.getSnapshot()?.name),
+        range: analytics.range,
+        device: analytics.device,
+        limits: analytics.limits,
+        data: analytics.data,
+      });
+    }
+    return;
+  }
 
   if (state.section === "contests") {
     pageElement
@@ -888,6 +1043,48 @@ pageElement.on("click", ".sectionButtons button", function () {
       void fetchUsers();
     }
   }
+  if (section === "analytics") {
+    void fetchAnalytics();
+  } else {
+    stopAnalyticsPolling();
+  }
+});
+
+pageElement.on("change", ".analyticsRange", function () {
+  const value = $(this).val();
+  const parsed = AnalyticsRangeSchema.safeParse(value);
+  if (!parsed.success || parsed.data === state.analytics.range) return;
+  state.analytics.range = parsed.data;
+  updateDashboardUrlParams();
+  void fetchAnalytics();
+});
+
+pageElement.on("click", ".deviceToggle", function () {
+  const device = $(this).attr("data-device");
+  if (device !== "desktop" && device !== "mobile") return;
+  if (state.analytics.device === device || state.analytics.data === undefined) {
+    return;
+  }
+  state.analytics.device = device;
+  updateContent();
+});
+
+pageElement.on("click", ".analyticsShowMore", function () {
+  const table = $(this).attr("data-table");
+  const limits = state.analytics.limits;
+  if (table === "countries") {
+    limits.countries = limits.countries === 10 ? 50 : 10;
+  } else if (table === "pages") {
+    limits.pages = limits.pages === 10 ? 50 : 10;
+  } else if (table === "landings") {
+    limits.landings = limits.landings === 10 ? 50 : 10;
+  } else if (table === "referrers") {
+    limits.referrers = limits.referrers === 10 ? 50 : 10;
+  } else {
+    return;
+  }
+  updateDashboardUrlParams();
+  void fetchAnalytics();
 });
 
 pageElement.on("click", ".usersTableToolbar .allUsers", () => {
@@ -1007,12 +1204,16 @@ export const page = new PageWithUrlParams({
   path: "/dashboard",
   urlParamsSchema: DashboardUrlParamsSchema,
   afterHide: async (): Promise<void> => {
+    analyticsRequestId += 1;
+    stopAnalyticsPolling();
+    DashboardAnalytics.destroyAnalyticsCharts();
     destroyDashboardUsersFilters();
     usersFiltersInitialized = false;
     Skeleton.remove("pageDashboard");
   },
   beforeShow: async (options): Promise<void> => {
     Skeleton.append("pageDashboard", "main");
+    applyAnalyticsUrlParams(options.urlParams);
     state.section = resolveSection(options.urlParams?.tab);
     updateSectionButtons();
     updateDashboardUrlParams();
@@ -1020,6 +1221,11 @@ export const page = new PageWithUrlParams({
 
     if (state.section === "contests") {
       await fetchContests();
+      return;
+    }
+
+    if (state.section === "analytics") {
+      await fetchAnalytics();
       return;
     }
 

@@ -14,6 +14,7 @@ import queues from "./queues";
 import workers from "./workers";
 import Logger from "./utils/logger";
 import * as EmailClient from "./init/email-client";
+import * as FirebaseAdmin from "./init/firebase-admin";
 import { createIndicies as leaderboardDbSetup } from "./dal/leaderboards";
 import { createIndicies as blocklistDbSetup } from "./dal/blocklist";
 import { createIndicies as connectionsDbSetup } from "./dal/connections";
@@ -23,6 +24,7 @@ async function bootServer(port: number): Promise<Server> {
   try {
     Logger.info(`Starting server version ${version}`);
     Logger.info(`Starting server in ${process.env["MODE"]} mode`);
+    FirebaseAdmin.init();
     Logger.info(`Connecting to database ${process.env["DB_NAME"]}...`);
     await db.connect();
     Logger.success("Connected to database");

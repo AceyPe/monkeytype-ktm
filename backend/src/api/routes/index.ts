@@ -18,6 +18,7 @@ import leaderboards from "./leaderboards";
 import connections from "./connections";
 import contact from "./contact";
 import contests from "./contests";
+import analytics from "./analytics";
 import testContent from "./test-content";
 import addSwaggerMiddlewares from "./swagger";
 import { MonkeyResponse } from "../../utils/monkey-response";
@@ -70,6 +71,7 @@ const router = s.router(contract, {
   connections,
   contact,
   contests,
+  analytics,
 });
 
 export function addApiRoutes(app: Application): void {

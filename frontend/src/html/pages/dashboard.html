@@ -10,6 +10,10 @@
           <i class="fas fa-users"></i>
           users
         </button>
+        <button data-section="analytics">
+          <i class="fas fa-chart-line"></i>
+          analytics
+        </button>
       </div>
     </div>
     <div class="mainContent">
@@ -71,6 +75,91 @@
         </div>
         <div class="usersTableCount hidden"></div>
         <div class="usersList"></div>
+      </div>
+      <div class="sectionPanel analyticsPanel hidden">
+        <div class="analyticsLoading hidden">
+          <i class="fas fa-circle-notch fa-spin"></i>
+        </div>
+        <div class="analyticsError hidden">
+          <i class="fas fa-times"></i>
+          <p>Something went wrong</p>
+        </div>
+        <div class="analyticsBody hidden">
+          <div class="analyticsTop">
+            <div class="bigtitle">
+              <div class="text analyticsWelcome"></div>
+            </div>
+            <select class="analyticsRange" aria-label="Date range">
+              <option value="7daysAgo">Last 7 Days</option>
+              <option value="28daysAgo" selected>Last 28 Days</option>
+              <option value="90daysAgo">Last 90 Days</option>
+            </select>
+          </div>
+          <div class="analyticsRealtime">
+            <span class="liveDot" aria-hidden="true"><span></span></span>
+            <span class="liveCount">0</span>
+            <span class="liveLabel">active users</span>
+          </div>
+          <div class="kpiGrid">
+            <article class="kpiCard">
+              <h2>Total Users</h2>
+              <p data-kpi="users">0</p>
+            </article>
+            <article class="kpiCard">
+              <h2>Total Page Views</h2>
+              <p data-kpi="pageviews">0</p>
+            </article>
+            <article class="kpiCard">
+              <h2>Engagement Rate</h2>
+              <p data-kpi="engagement">0.0%</p>
+            </article>
+            <article class="kpiCard">
+              <h2>Avg. Session</h2>
+              <p data-kpi="duration">0:00</p>
+            </article>
+          </div>
+          <section class="analyticsCard visitorsCard">
+            <div class="visitorsHeader">
+              <div class="visitorsTitle">Total Visitors</div>
+              <div class="deviceToggles">
+                <button
+                  type="button"
+                  class="deviceToggle active"
+                  data-device="desktop"
+                >
+                  <span>Desktop</span>
+                </button>
+                <button type="button" class="deviceToggle" data-device="mobile">
+                  <span>Mobile</span>
+                </button>
+              </div>
+            </div>
+            <div class="visitorsChartWrap">
+              <canvas class="visitorsChart"></canvas>
+            </div>
+          </section>
+          <div class="landingsHost"></div>
+          <div class="referrersHost"></div>
+          <div class="analyticsSplit">
+            <section class="analyticsCard pieCard">
+              <h2>Traffic Sources</h2>
+              <p class="emptyNote trafficEmpty hidden">No data available.</p>
+              <div class="chartWrap trafficChartWrap">
+                <canvas class="trafficChart"></canvas>
+              </div>
+              <p class="pieNote trafficNote">Showing top traffic channels</p>
+            </section>
+            <section class="analyticsCard pieCard">
+              <h2>New vs. Returning Users</h2>
+              <p class="emptyNote returningEmpty hidden">No data available.</p>
+              <div class="chartWrap returningChartWrap">
+                <canvas class="returningChart"></canvas>
+              </div>
+            </section>
+          </div>
+          <div class="pagesHost"></div>
+          <div class="countriesHost"></div>
+        </div>
       </div>
     </div>
   </div>

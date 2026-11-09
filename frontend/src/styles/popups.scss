@@ -1455,6 +1455,15 @@ body.darkMode {
     .input {
       width: 100%;
     }
+
+    .inputAndIndicator .ss-content {
+      position: absolute;
+      height: auto;
+      top: calc(100% - 1px);
+      left: 0;
+      width: 100%;
+      margin: 0;
+    }
   }
 
   .modal {

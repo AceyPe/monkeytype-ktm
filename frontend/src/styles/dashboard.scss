@@ -280,11 +280,324 @@
     }
 
     .usersLoading,
-    .usersError {
+    .usersError,
+    .analyticsLoading,
+    .analyticsError {
       color: var(--sub-color);
       display: flex;
       align-items: center;
       gap: 0.75em;
+    }
+
+    .analyticsPanel {
+      .analyticsBody {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .analyticsTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .analyticsRange {
+        background: var(--sub-alt-color);
+        color: var(--text-color);
+        border: none;
+        border-radius: var(--roundness);
+        padding: 0.5em 0.75em;
+        font-family: inherit;
+        font-size: 1em;
+      }
+
+      .analyticsRealtime {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--main-color);
+
+        .liveCount {
+          font-weight: 700;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .liveLabel {
+          color: var(--sub-color);
+          font-size: 0.875rem;
+        }
+
+        .liveDot {
+          position: relative;
+          display: inline-flex;
+          width: 0.75rem;
+          height: 0.75rem;
+
+          &::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 999px;
+            background: var(--main-color);
+            opacity: 0.75;
+            animation: analyticsPing 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+          }
+
+          span {
+            position: relative;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 999px;
+            background: var(--main-color);
+          }
+        }
+      }
+
+      .kpiGrid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .kpiCard,
+      .analyticsCard {
+        background: var(--sub-alt-color);
+        border-radius: var(--roundness);
+        min-width: 0;
+      }
+
+      .kpiCard {
+        padding: 1rem;
+        display: grid;
+        gap: 0.35rem;
+
+        h2,
+        p {
+          margin: 0;
+          color: var(--text-color);
+        }
+
+        h2 {
+          font-size: 1.125rem;
+          font-weight: 600;
+        }
+
+        p {
+          font-size: 1.875rem;
+          font-weight: 700;
+          font-variant-numeric: tabular-nums;
+        }
+      }
+
+      .visitorsHeader {
+        display: flex;
+        align-items: stretch;
+        border-bottom: 1px solid
+          color-mix(in srgb, var(--sub-color) 35%, transparent);
+      }
+
+      .visitorsTitle {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        color: var(--text-color);
+      }
+
+      .deviceToggles {
+        display: flex;
+
+        .deviceToggle {
+          min-width: 8rem;
+          border-radius: 0;
+          background: transparent;
+          color: var(--sub-color);
+          border-left: 1px solid
+            color-mix(in srgb, var(--sub-color) 35%, transparent);
+          padding: 1rem 1.5rem;
+          justify-content: center;
+
+          span {
+            font-size: 0.75rem;
+          }
+
+          &:hover,
+          &.active {
+            background: color-mix(in srgb, var(--text-color) 8%, transparent);
+            color: var(--text-color);
+          }
+        }
+      }
+
+      .visitorsChartWrap,
+      .chartWrap {
+        position: relative;
+        height: 250px;
+        padding: 0.5rem 0.5rem 1rem;
+      }
+
+      .chartWrap {
+        height: 350px;
+      }
+
+      .pieCard {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-bottom: 1rem;
+
+        h2 {
+          margin: 1rem 0 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: var(--text-color);
+        }
+      }
+
+      .pieNote,
+      .emptyNote {
+        color: var(--sub-color);
+        margin: 0;
+      }
+
+      .emptyNote {
+        padding: 1.5rem 1rem;
+      }
+
+      .pieNote {
+        font-size: 0.875rem;
+        padding-bottom: 0.5rem;
+      }
+
+      .analyticsSplit {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .analyticsCardHeader {
+        display: grid;
+        gap: 0.25rem;
+        padding: 1.25rem 1rem 0.5rem;
+
+        h2,
+        p {
+          margin: 0;
+        }
+
+        h2 {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: var(--text-color);
+        }
+
+        p {
+          color: var(--sub-color);
+          font-size: 0.875rem;
+        }
+      }
+
+      .analyticsTable {
+        width: 100%;
+        border-collapse: collapse;
+
+        th,
+        td {
+          padding: 0.75rem 1rem;
+          text-align: left;
+          vertical-align: middle;
+        }
+
+        th {
+          color: var(--sub-color);
+          font-size: 0.85rem;
+          font-weight: normal;
+        }
+
+        .numeric {
+          text-align: right;
+          font-variant-numeric: tabular-nums;
+        }
+
+        tbody tr:nth-child(even) {
+          background: var(--bg-color);
+        }
+
+        a,
+        .mutedLink {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          max-width: 100%;
+          color: var(--sub-color);
+          text-decoration: none;
+        }
+
+        a:hover {
+          color: var(--main-color);
+        }
+
+        .truncate {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: min(32rem, 55vw);
+        }
+
+        .countryName {
+          color: var(--text-color);
+          font-weight: 500;
+        }
+      }
+
+      .analyticsCardFooter {
+        padding: 0.75rem 1rem 1rem;
+      }
+
+      button.analyticsShowMore {
+        color: var(--main-color);
+        background: none;
+        padding: 0;
+        font-size: 0.875rem;
+
+        &:hover,
+        &:active,
+        &:focus-visible {
+          color: var(--main-color);
+          background: none;
+          text-decoration: underline;
+        }
+      }
+
+      @media (max-width: 1100px) {
+        .kpiGrid,
+        .analyticsSplit {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .kpiGrid,
+        .analyticsSplit,
+        .visitorsHeader {
+          grid-template-columns: 1fr;
+          flex-direction: column;
+        }
+
+        .deviceToggles {
+          width: 100%;
+
+          .deviceToggle {
+            flex: 1;
+            border-left: none;
+            border-top: 1px solid
+              color-mix(in srgb, var(--sub-color) 35%, transparent);
+          }
+        }
+      }
     }
 
     .usersTableCount {

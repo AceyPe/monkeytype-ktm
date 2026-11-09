@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@date-fns/utc": "1.2.0",
+    "@google-analytics/data": "7.3.0",
     "@monkeytype/contracts": "workspace:*",
     "@monkeytype/funbox": "workspace:*",
     "@monkeytype/schemas": "workspace:*",

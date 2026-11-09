@@ -442,6 +442,12 @@ export const limits = {
     window: "hour",
     max: 5,
   },
+
+  // Google Analytics admin dashboard
+  analyticsGet: {
+    window: "minute",
+    max: 60,
+  },
 } satisfies Record<string, RateLimitOptions>;
 
 export type RateLimiterId = keyof typeof limits;
