@@ -231,6 +231,29 @@ function renderContestsList(): void {
             </button>
           </div>
         </div>
+        <div class="leaderboardPublicRow">
+          <span class="leaderboardPublicLabel">Make Leaderboard Public?</span>
+          <div class="ynToggle" role="group" aria-label="Make Leaderboard Public?">
+            <button
+              type="button"
+              class="leaderboardPublicOption${contest.leaderboardPublic ? " active" : ""}"
+              data-contest-id="${contest._id}"
+              data-value="yes"
+              aria-pressed="${contest.leaderboardPublic ? "true" : "false"}"
+            >
+              Y
+            </button>
+            <button
+              type="button"
+              class="leaderboardPublicOption${!contest.leaderboardPublic ? " active" : ""}"
+              data-contest-id="${contest._id}"
+              data-value="no"
+              aria-pressed="${contest.leaderboardPublic ? "false" : "true"}"
+            >
+              N
+            </button>
+          </div>
+        </div>
         <table class="prizeTable">
           <thead>
             <tr>
@@ -923,6 +946,52 @@ pageElement.on("click", ".deleteContestButton", function () {
   if (contestId === undefined) return;
   openDeleteContestModal(contestId);
 });
+
+pageElement.on("click", ".leaderboardPublicOption", function () {
+  const contestId = $(this).attr("data-contest-id");
+  const value = $(this).attr("data-value");
+  if (contestId === undefined || (value !== "yes" && value !== "no")) return;
+  const leaderboardPublic = value === "yes";
+  const contest = state.contests.find((entry) => entry._id === contestId);
+  if (
+    contest === undefined ||
+    contest.leaderboardPublic === leaderboardPublic
+  ) {
+    return;
+  }
+  void setContestLeaderboardPublic(contestId, leaderboardPublic);
+});
+
+async function setContestLeaderboardPublic(
+  contestId: string,
+  leaderboardPublic: boolean,
+): Promise<void> {
+  const buttons = pageElement.find(
+    `.leaderboardPublicOption[data-contest-id='${contestId}']`,
+  );
+  buttons.prop("disabled", true);
+
+  const response = await Ape.contests.setLeaderboardPublic({
+    params: { contestId },
+    body: { leaderboardPublic },
+  });
+
+  buttons.prop("disabled", false);
+
+  if (response.status !== 200) {
+    Notifications.add(
+      response.body.message ?? "Failed to update leaderboard visibility",
+      -1,
+    );
+    return;
+  }
+
+  const contest = state.contests.find((entry) => entry._id === contestId);
+  if (contest !== undefined) {
+    contest.leaderboardPublic = leaderboardPublic;
+  }
+  renderContestsList();
+}
 
 pageElement.on("click", ".leaderboardContestButton", function () {
   const contestId = $(this).attr("data-contest-id");

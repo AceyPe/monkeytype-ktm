@@ -29,6 +29,7 @@ export const ContestSchema = z
     date: z.number().int().nonnegative(),
     prizes: z.array(ContestPrizeSchema).min(1),
     createdAt: z.number().int().nonnegative(),
+    leaderboardPublic: z.boolean(),
   })
   .strict();
 export type Contest = z.infer<typeof ContestSchema>;
@@ -36,6 +37,7 @@ export type Contest = z.infer<typeof ContestSchema>;
 export const CreateContestRequestSchema = ContestSchema.omit({
   _id: true,
   createdAt: true,
+  leaderboardPublic: true,
 }).strict();
 export type CreateContestRequest = z.infer<typeof CreateContestRequestSchema>;
 

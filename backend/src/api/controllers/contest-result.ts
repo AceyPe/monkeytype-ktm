@@ -18,6 +18,7 @@ import {
   validateResult,
 } from "../../anticheat/index";
 import MonkeyStatusCodes from "../../constants/monkey-status-codes";
+import { isAdmin } from "../../dal/admin-uids";
 import * as ContestDAL from "../../dal/contest";
 import * as ContestResultDAL from "../../dal/contest-result";
 import {
@@ -264,7 +265,14 @@ export async function getContestLeaderboard(
     rankSortDirection,
   } = req.query;
 
-  await ContestDAL.requireContest(contestId);
+  const contest = await ContestDAL.requireContest(contestId);
+  if (!contest.leaderboardPublic) {
+    const uid = req.ctx.decodedToken.uid;
+    const requesterIsAdmin = uid !== "" && (await isAdmin(uid));
+    if (!requesterIsAdmin) {
+      throw new MonkeyError(403, "Contest leaderboard is not public");
+    }
+  }
 
   const rankFilter = resolveRankFilterTarget({
     rankScope,

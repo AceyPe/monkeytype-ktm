@@ -1,5 +1,16 @@
 <div class="page pageLeaderboards hidden" id="pageLeaderboards">
   <div class="content">
+    <div
+      class="leaderboardSourceToggle"
+      role="tablist"
+      aria-label="Leaderboard"
+    >
+      <button type="button" data-board="practice" class="active" role="tab">
+        Practice
+      </button>
+      <span class="toggleSeparator" aria-hidden="true">|</span>
+      <button type="button" data-board="contest" role="tab">Contest</button>
+    </div>
     <div class="tableAndUser">
       <div class="bigtitle">
         <div class="text">-</div>
@@ -53,6 +64,7 @@
           </select>
         </div>
       </div>
+      <div class="contestEmpty hidden">No public contest leaderboards</div>
       <div class="loading hidden">
         <i class="fas fa-circle-notch fa-spin"></i>
       </div>
@@ -276,6 +288,8 @@
       </div>
     </div>
     <div class="sideButtons">
+      <div class="buttonGroup yearButtons hidden"></div>
+      <div class="buttonGroup contestButtons hidden"></div>
       <div class="buttonGroup typeButtons">
         <button data-type="allTime">
           <i class="fas fa-globe-americas"></i>

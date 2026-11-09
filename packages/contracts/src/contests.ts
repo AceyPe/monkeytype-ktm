@@ -41,6 +41,15 @@ export const UpdateContestParamsSchema = z.object({
 });
 export type UpdateContestParams = z.infer<typeof UpdateContestParamsSchema>;
 
+export const SetContestLeaderboardPublicRequestSchema = z
+  .object({
+    leaderboardPublic: z.boolean(),
+  })
+  .strict();
+export type SetContestLeaderboardPublicRequest = z.infer<
+  typeof SetContestLeaderboardPublicRequestSchema
+>;
+
 export type AddContestResultRequest = z.infer<
   typeof AddContestResultRequestSchema
 >;
@@ -149,6 +158,21 @@ export const contestsContract = c.router(
         requirePermission: "admin",
       }),
     },
+    setLeaderboardPublic: {
+      summary: "set contest leaderboard visibility",
+      description: "Make a contest leaderboard public or private.",
+      method: "PATCH",
+      path: "/:contestId/leaderboard-public",
+      pathParams: UpdateContestParamsSchema,
+      body: SetContestLeaderboardPublicRequestSchema,
+      responses: {
+        200: MonkeyResponseSchema,
+      },
+      metadata: meta({
+        rateLimit: "contestsEdit",
+        requirePermission: "admin",
+      }),
+    },
     addTodayResult: {
       summary: "submit today's contest result",
       description:
@@ -190,7 +214,9 @@ export const contestsContract = c.router(
       },
       metadata: meta({
         rateLimit: "contestsLeaderboardGet",
-        requirePermission: "admin",
+        authenticationOptions: {
+          isPublic: true,
+        },
       }),
     },
   },

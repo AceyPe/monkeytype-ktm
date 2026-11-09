@@ -42,6 +42,7 @@ export async function createContest(
 ): Promise<ContestCreationResult> {
   const result = await getContestsCollection().insertOne({
     ...contest,
+    leaderboardPublic: false,
     _id: new ObjectId(),
     createdAt: Date.now(),
   });
@@ -49,6 +50,20 @@ export async function createContest(
   return {
     contestId: result.insertedId.toHexString(),
   };
+}
+
+export async function setContestLeaderboardPublic(
+  contestId: string,
+  leaderboardPublic: boolean,
+): Promise<void> {
+  const result = await getContestsCollection().updateOne(
+    { _id: new ObjectId(contestId) },
+    { $set: { leaderboardPublic } },
+  );
+
+  if (result.matchedCount === 0) {
+    throw new MonkeyError(404, "Contest not found");
+  }
 }
 
 export async function updateContest(

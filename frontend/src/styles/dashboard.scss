@@ -125,6 +125,29 @@
           font-size: 0.9rem;
         }
 
+        .leaderboardPublicRow {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          flex-wrap: wrap;
+
+          .leaderboardPublicLabel {
+            color: var(--sub-color);
+          }
+
+          .ynToggle {
+            display: flex;
+            gap: 0.35rem;
+
+            button {
+              min-width: 2.75rem;
+              justify-content: center;
+              padding: 0.35em 0.75em;
+            }
+          }
+        }
+
         .prizeTable {
           width: 100%;
           border-collapse: collapse;

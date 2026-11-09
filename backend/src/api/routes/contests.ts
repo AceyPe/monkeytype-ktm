@@ -18,6 +18,10 @@ export default s.router(contestsContract, {
   delete: {
     handler: async (r) => callController(ContestController.deleteContest)(r),
   },
+  setLeaderboardPublic: {
+    handler: async (r) =>
+      callController(ContestController.setContestLeaderboardPublic)(r),
+  },
   addTodayResult: {
     handler: async (r) =>
       callController(ContestResultController.addTodayContestResult)(r),

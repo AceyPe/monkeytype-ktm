@@ -1,6 +1,7 @@
 import { PageWithUrlParams } from "./page";
 import * as Skeleton from "../utils/skeleton";
 import Config from "../config";
+import type { Contest } from "@monkeytype/schemas/contests";
 import {
   LeaderboardEntry,
   XpLeaderboardEntry,
@@ -363,8 +364,13 @@ type DailyState = {
   userData: LeaderboardEntry | null;
 };
 
+type LeaderboardBoard = "practice" | "contest";
+
 type State = {
   type: LeaderboardType;
+  board: LeaderboardBoard;
+  contestYear: number | null;
+  contestId: string | null;
   loading: boolean;
   updating: boolean;
   page: number;
@@ -384,6 +390,9 @@ type State = {
 const state = {
   loading: true,
   updating: false,
+  board: "practice",
+  contestYear: null,
+  contestId: null,
   type: "allTime",
   mode: "time",
   mode2: "15",
@@ -418,6 +427,9 @@ const SelectorSchema = z.object({
 const UrlParameterSchema = SelectorSchema.extend({
   page: z.number(),
   goToUserPage: z.boolean(),
+  board: z.enum(["practice", "contest"]),
+  year: z.number().int(),
+  contestId: z.string(),
 }).partial();
 type UrlParameter = z.infer<typeof UrlParameterSchema>;
 
@@ -446,7 +458,259 @@ const validLeaderboards: ValidLeaderboards = {
   daily: {},
 };
 
+let publicContests: Contest[] = [];
+let publicContestsLoaded = false;
+let leaderboardRequestId = 0;
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function contestYearOf(contest: Contest): number {
+  return new UTCDateMini(contest.date).getUTCFullYear();
+}
+
+function sortedContestYears(): number[] {
+  return [...new Set(publicContests.map(contestYearOf))].sort((a, b) => b - a);
+}
+
+function contestsInYear(year: number): Contest[] {
+  return publicContests
+    .filter((contest) => contestYearOf(contest) === year)
+    .sort((a, b) => b.date - a.date);
+}
+
+function applyContestSelection(): void {
+  const years = sortedContestYears();
+  if (years.length === 0) {
+    state.contestYear = null;
+    state.contestId = null;
+    return;
+  }
+
+  if (state.contestYear === null || !years.includes(state.contestYear)) {
+    state.contestYear = years[0] ?? null;
+  }
+
+  if (state.contestYear === null) {
+    state.contestId = null;
+    return;
+  }
+
+  const contests = contestsInYear(state.contestYear);
+  const selected = contests.find((contest) => contest._id === state.contestId);
+  state.contestId = selected?._id ?? contests[0]?._id ?? null;
+}
+
+function updateSourceToggle(): void {
+  const root = $(".page.pageLeaderboards .leaderboardSourceToggle");
+  root.find("button").removeClass("active");
+  root.find(`button[data-board='${state.board}']`).addClass("active");
+  root.find("button").attr("aria-selected", "false");
+  root
+    .find(`button[data-board='${state.board}']`)
+    .attr("aria-selected", "true");
+}
+
+function updateYearButtons(): void {
+  const yearGroup = $(".page.pageLeaderboards .buttonGroup.yearButtons");
+  const contestGroup = $(".page.pageLeaderboards .buttonGroup.contestButtons");
+
+  if (state.board !== "contest") {
+    yearGroup.addClass("hidden").empty();
+    contestGroup.addClass("hidden").empty();
+    return;
+  }
+
+  const years = sortedContestYears();
+  yearGroup.removeClass("hidden");
+
+  if (years.length === 0) {
+    yearGroup.html(`<div class="emptyYears">No public contests</div>`);
+    contestGroup.addClass("hidden").empty();
+    return;
+  }
+
+  yearGroup.html(
+    years
+      .map(
+        (year) => `
+          <button type="button" data-year="${year}" class="${
+            year === state.contestYear ? "active" : ""
+          }">
+            <i class="fas fa-calendar-alt"></i>
+            ${year}
+          </button>
+        `,
+      )
+      .join(""),
+  );
+
+  if (state.contestYear === null) {
+    contestGroup.addClass("hidden").empty();
+    return;
+  }
+
+  const contests = contestsInYear(state.contestYear);
+  if (contests.length <= 1) {
+    contestGroup.addClass("hidden").empty();
+    return;
+  }
+
+  contestGroup.removeClass("hidden");
+  contestGroup.html(
+    `<div class="divider"></div>` +
+      contests
+        .map(
+          (contest) => `
+            <button type="button" data-contest-id="${escapeHtml(contest._id)}" class="${
+              contest._id === state.contestId ? "active" : ""
+            }">
+              <i class="fas fa-trophy"></i>
+              ${escapeHtml(contest.title)}
+            </button>
+          `,
+        )
+        .join(""),
+  );
+}
+
+async function ensurePublicContests(): Promise<boolean> {
+  if (publicContestsLoaded) return true;
+
+  const response = await Ape.contests.get();
+  if (response.status !== 200) {
+    publicContests = [];
+    state.error = response.body.message ?? "Failed to load contests";
+    Notifications.add(state.error, -1);
+    return false;
+  }
+
+  publicContests = response.body.data.filter(
+    (contest) => contest.leaderboardPublic,
+  );
+  publicContestsLoaded = true;
+  return true;
+}
+
+async function requestContestData(
+  update: boolean,
+  requestId: number,
+): Promise<void> {
+  if (update) {
+    state.updating = true;
+    state.error = undefined;
+  } else {
+    state.loading = true;
+    state.error = undefined;
+    state.data = null;
+    state.userData = null;
+  }
+  updateContent();
+
+  const loaded = await ensurePublicContests();
+  if (requestId !== leaderboardRequestId || state.board !== "contest") return;
+  if (!loaded) {
+    state.loading = false;
+    state.updating = false;
+    updateContent();
+    return;
+  }
+
+  applyContestSelection();
+  updateSideButtons();
+  updateTitle();
+  updateGetParameters();
+
+  if (state.contestId === null) {
+    state.data = [] as LeaderboardEntry[];
+    state.count = 0;
+    state.loading = false;
+    state.updating = false;
+    updateContent();
+    return;
+  }
+
+  const contestId = state.contestId;
+  const response = await Ape.contests.getLeaderboard({
+    params: { contestId },
+    query: {
+      page: state.page,
+      pageSize: state.pageSize,
+      rankScope: state.rankScope === "global" ? undefined : state.rankScope,
+      regionFilter: state.regionFilter || undefined,
+      sectionFilter: state.sectionFilter || undefined,
+      rankSortBy:
+        state.rankSortBy === "global" && state.rankSortDirection === "asc"
+          ? undefined
+          : state.rankSortBy,
+      rankSortDirection:
+        state.rankSortBy === "global" && state.rankSortDirection === "asc"
+          ? undefined
+          : state.rankSortDirection,
+    },
+  });
+
+  if (
+    requestId !== leaderboardRequestId ||
+    state.board !== "contest" ||
+    state.contestId !== contestId
+  ) {
+    return;
+  }
+
+  state.loading = false;
+  state.updating = false;
+
+  if (response.status === 200) {
+    state.data = response.body.data.entries as LeaderboardEntry[];
+    state.count = response.body.data.count;
+    state.pageSize = response.body.data.pageSize;
+    state.error = undefined;
+  } else {
+    state.data = null;
+    state.count = 0;
+    state.error =
+      response.status === 404
+        ? "Contest not found"
+        : response.status === 403
+          ? "Contest leaderboard is not public"
+          : (response.body.message ?? "Something went wrong");
+    Notifications.add(state.error, -1);
+  }
+
+  updateContent();
+}
+
 function updateTitle(): void {
+  if (state.board === "contest") {
+    const contest = publicContests.find(
+      (entry) => entry._id === state.contestId,
+    );
+    $(".page.pageLeaderboards .bigtitle button").addClass("hidden");
+    $(".page.pageLeaderboards .bigtitle .subtext .divider").addClass("hidden");
+
+    if (contest === undefined) {
+      state.title = "Contest Leaderboard";
+      $(".page.pageLeaderboards .bigtitle > .text").text(state.title);
+      $(".page.pageLeaderboards .bigtitle .subtext").addClass("hidden");
+      return;
+    }
+
+    state.title = contest.title;
+    $(".page.pageLeaderboards .bigtitle > .text").text(state.title);
+    $(".page.pageLeaderboards .bigtitle .subtext").removeClass("hidden");
+    const text = $(".page.pageLeaderboards .bigtitle .subtext > .text");
+    text.text(`${format(new UTCDateMini(contest.date), utcDateFormat)} UTC`);
+    text.removeAttr("aria-label");
+    return;
+  }
+
   const type =
     state.type === "allTime"
       ? "All-time"
@@ -550,6 +814,12 @@ function updateTitle(): void {
 }
 
 async function requestData(update = false): Promise<void> {
+  const requestId = ++leaderboardRequestId;
+  if (state.board === "contest") {
+    await requestContestData(update, requestId);
+    return;
+  }
+
   if (update) {
     state.updating = true;
     state.error = undefined;
@@ -664,6 +934,8 @@ async function requestData(update = false): Promise<void> {
     requests.data(),
     requests.rank?.(),
   ]);
+
+  if (requestId !== leaderboardRequestId) return;
 
   if (dataResponse.status === 200) {
     state.data = dataResponse.body.data.entries;
@@ -926,7 +1198,7 @@ function fillTable(): void {
   const tableElement = $(".page.pageLeaderboards table");
   table.empty();
 
-  if (state.friendsOnly) {
+  if (state.board !== "contest" && state.friendsOnly) {
     table.parent().addClass("friendsOnly");
   } else {
     table.parent().removeClass("friendsOnly");
@@ -937,7 +1209,11 @@ function fillTable(): void {
   updateRankSortHeaders();
 
   $(".page.pageLeaderboards table thead").addClass("hidden");
-  if (state.type === "allTime" || state.type === "daily") {
+  if (
+    state.board === "contest" ||
+    state.type === "allTime" ||
+    state.type === "daily"
+  ) {
     tableElement.addClass("mobileStatsInModal");
     tableElement.removeClass("weeklyMobileStatsInModal");
     $(".page.pageLeaderboards table thead.allTimeAndDaily").removeClass(
@@ -949,12 +1225,21 @@ function fillTable(): void {
   }
 
   if (state.data === null || state.data.length === 0) {
-    table.append(`<tr><td colspan="99" class="empty">No data</td></tr>`);
+    const message =
+      state.board === "contest" && publicContests.length === 0
+        ? "No public contest leaderboards"
+        : "No data";
+    table.append(`<tr><td colspan="99" class="empty">${message}</td></tr>`);
     $(".page.pageLeaderboards table").removeClass("hidden");
     return;
   }
 
-  if (state.type === "allTime" || state.type === "daily") {
+  if (state.board === "contest") {
+    for (const entry of state.data as LeaderboardEntry[]) {
+      const me = getAuthenticatedUser()?.uid === entry.uid;
+      table.append(buildTableRow(entry, me));
+    }
+  } else if (state.type === "allTime" || state.type === "daily") {
     for (const entry of state.data) {
       const me = getAuthenticatedUser()?.uid === entry.uid;
       table.append(buildTableRow(entry, me));
@@ -1262,6 +1547,7 @@ function fillUser(): void {
 }
 
 function updateContent(): void {
+  $(".page.pageLeaderboards .contestEmpty").addClass("hidden");
   $(".page.pageLeaderboards .loading").addClass("hidden");
   $(".page.pageLeaderboards .updating").addClass("invisible");
   $(".page.pageLeaderboards .error").addClass("hidden");
@@ -1270,6 +1556,9 @@ function updateContent(): void {
     $(".page.pageLeaderboards .error").removeClass("hidden");
     $(".page.pageLeaderboards .error p").text(state.error);
     $(".page.pageLeaderboards .tableToolbar").addClass("hidden");
+    if (state.board === "contest") {
+      $(".page.pageLeaderboards .bigUser").addClass("hidden");
+    }
     enableButtons();
     return;
   }
@@ -1297,15 +1586,32 @@ function updateContent(): void {
   }
 
   if (state.data === null) {
-    Notifications.add("Data is null");
     return;
   }
 
   $(".page.pageLeaderboards .titleAndButtons").removeClass("hidden");
   $(".page.pageLeaderboards .tableToolbar").removeClass("hidden");
+  if (state.board === "contest") {
+    $(".page.pageLeaderboards .bigUser").addClass("hidden");
+    $(".page.pageLeaderboards .tableAndUser > .divider").removeClass("hidden");
+  }
   updateJumpButtons();
   updateTimerVisibility();
   fillTable();
+
+  const noPublicContests =
+    state.board === "contest" &&
+    publicContestsLoaded &&
+    publicContests.length === 0;
+  $(".page.pageLeaderboards .contestEmpty").toggleClass(
+    "hidden",
+    !noPublicContests,
+  );
+  if (noPublicContests) {
+    $(".page.pageLeaderboards table").addClass("hidden");
+    $(".page.pageLeaderboards .tableToolbar").addClass("hidden");
+    $(".page.pageLeaderboards .titleAndButtons").addClass("hidden");
+  }
 
   for (const element of document.querySelectorAll(
     ".page.pageLeaderboards .wide.speedUnit, .page.pageLeaderboards .narrow.speedUnit span",
@@ -1322,10 +1628,25 @@ function updateContent(): void {
 }
 
 function updateSideButtons(): void {
+  const contestBoard = state.board === "contest";
+  $(".page.pageLeaderboards .buttonGroup.typeButtons").toggleClass(
+    "hidden",
+    contestBoard,
+  );
+  if (contestBoard) {
+    $(".page.pageLeaderboards .buttonGroup.friendsOnlyButtons").addClass(
+      "hidden",
+    );
+    $(".page.pageLeaderboards .buttonGroup.modeButtons").addClass("hidden");
+    $(".page.pageLeaderboards .buttonGroup.languageButtons").addClass("hidden");
+  } else {
+    updateFriendsButtons();
+    updateModeButtons();
+    updateLanguageButtons();
+  }
   updateTypeButtons();
-  updateFriendsButtons();
-  updateModeButtons();
-  updateLanguageButtons();
+  updateYearButtons();
+  updateSourceToggle();
 }
 
 function updateTypeButtons(): void {
@@ -1450,6 +1771,11 @@ function updateTimerElement(): void {
 }
 
 function updateTimerVisibility(): void {
+  if (state.board === "contest") {
+    $(".page.pageLeaderboards .titleAndButtons .timer").addClass("invisible");
+    return;
+  }
+
   let visible = true;
 
   if (
@@ -1720,6 +2046,16 @@ function updateGetParameters(): void {
 
   params.page = state.page + 1;
 
+  if (state.board === "contest") {
+    params.board = "contest";
+    if (state.contestYear !== null) {
+      params.year = state.contestYear;
+    }
+    if (state.contestId !== null) {
+      params.contestId = state.contestId;
+    }
+  }
+
   if (state.friendsOnly) {
     params.friendsOnly = true;
   }
@@ -1759,11 +2095,16 @@ function updateGetParameters(): void {
 function readGetParameters(params?: UrlParameter): void {
   if (params === undefined) {
     Object.assign(state, selectorLS.get());
+    state.board = "practice";
     state.rankSortBy = state.rankSortBy ?? "global";
     state.rankSortDirection = state.rankSortDirection ?? "asc";
     syncRankScopeFromFilters();
     return;
   }
+
+  state.board = params.board === "contest" ? "contest" : "practice";
+  state.contestYear = params.year ?? null;
+  state.contestId = params.contestId ?? null;
 
   if (params.type !== undefined) {
     state.type = params.type;
@@ -1856,6 +2197,68 @@ $(".page.pageLeaderboards .bigtitle button").on("click", function () {
   const action = $(this).data("action") as string;
   handleYesterdayLastWeekButton(action);
 });
+
+$(".page.pageLeaderboards .leaderboardSourceToggle").on(
+  "click",
+  "button",
+  function () {
+    const board = $(this).attr("data-board");
+    if (board !== "practice" && board !== "contest") return;
+    if (state.board === board) return;
+
+    state.board = board;
+    state.page = 0;
+    state.data = null;
+    state.userData = null;
+    state.error = undefined;
+    state.loading = true;
+    if (board === "practice") {
+      checkIfLeaderboardIsValid();
+    }
+    updateTitle();
+    updateSideButtons();
+    updateGetParameters();
+    void requestData();
+  },
+);
+
+$(".page.pageLeaderboards .buttonGroup.yearButtons").on(
+  "click",
+  "button",
+  function () {
+    if (state.board !== "contest") return;
+    const year = Number($(this).attr("data-year"));
+    if (!Number.isInteger(year) || state.contestYear === year) return;
+    state.contestYear = year;
+    state.contestId = null;
+    state.page = 0;
+    state.data = null;
+    state.loading = true;
+    applyContestSelection();
+    updateTitle();
+    updateSideButtons();
+    updateGetParameters();
+    void requestData();
+  },
+);
+
+$(".page.pageLeaderboards .buttonGroup.contestButtons").on(
+  "click",
+  "button",
+  function () {
+    if (state.board !== "contest") return;
+    const contestId = $(this).attr("data-contest-id");
+    if (contestId === undefined || state.contestId === contestId) return;
+    state.contestId = contestId;
+    state.page = 0;
+    state.data = null;
+    state.loading = true;
+    updateTitle();
+    updateSideButtons();
+    updateGetParameters();
+    void requestData();
+  },
+);
 
 $(".page.pageLeaderboards .buttonGroup.typeButtons").on(
   "click",
@@ -1964,6 +2367,8 @@ export const page = new PageWithUrlParams({
     Skeleton.remove("pageLeaderboards");
     destroyLeaderboardFilterDropdowns();
     stopTimer();
+    publicContests = [];
+    publicContestsLoaded = false;
   },
   beforeShow: async (options): Promise<void> => {
     await ServerConfiguration.configurationPromise;

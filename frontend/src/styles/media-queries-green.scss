@@ -268,7 +268,7 @@
     .content {
       align-content: start;
       grid-template-columns: 1fr;
-      grid-template-areas: "buttons" "table";
+      grid-template-areas: "toggle" "buttons" "table";
       .buttons {
         // grid-template-columns: 1fr 1fr;
         font-size: 0.9em;

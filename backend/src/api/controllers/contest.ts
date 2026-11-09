@@ -1,6 +1,7 @@
 import {
   CreateContestResponse,
   GetContestsResponse,
+  SetContestLeaderboardPublicRequest,
   UpdateContestParams,
 } from "@monkeytype/contracts/contests";
 import {
@@ -15,9 +16,10 @@ import { MonkeyRequest } from "../types";
 export async function getContests(
   _req: MonkeyRequest,
 ): Promise<GetContestsResponse> {
-  const data = (await ContestDAL.getContests()).map((contest) =>
-    replaceObjectId(contest),
-  );
+  const data = (await ContestDAL.getContests()).map((contest) => ({
+    ...replaceObjectId(contest),
+    leaderboardPublic: contest.leaderboardPublic ?? false,
+  }));
 
   return new MonkeyResponse("Contests retrieved", data);
 }
@@ -36,6 +38,21 @@ export async function updateContest(
   await ContestDAL.updateContest(req.params.contestId, req.body);
 
   return new MonkeyResponse("Contest updated", null);
+}
+
+export async function setContestLeaderboardPublic(
+  req: MonkeyRequest<
+    undefined,
+    SetContestLeaderboardPublicRequest,
+    UpdateContestParams
+  >,
+): Promise<MonkeyResponse> {
+  await ContestDAL.setContestLeaderboardPublic(
+    req.params.contestId,
+    req.body.leaderboardPublic,
+  );
+
+  return new MonkeyResponse("Contest leaderboard visibility updated", null);
 }
 
 export async function deleteContest(

@@ -2,11 +2,45 @@
   .content {
     display: grid;
     gap: 2rem;
-    grid-template-areas: "buttons table";
+    grid-template-areas:
+      "toggle toggle"
+      "buttons table";
     grid-template-columns: 20rem 1fr;
+
+    .leaderboardSourceToggle {
+      grid-area: toggle;
+      justify-self: center;
+      align-self: start;
+      width: max-content;
+      height: max-content;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--sub-alt-color);
+      border-radius: var(--roundness);
+      padding: 0.35rem;
+
+      button {
+        justify-content: center;
+        min-width: 7.5rem;
+        padding: 0.45em 1.25em;
+        background: transparent;
+
+        &.active {
+          background: var(--main-color);
+          color: var(--bg-color);
+        }
+      }
+
+      .toggleSeparator {
+        color: var(--sub-color);
+        user-select: none;
+      }
+    }
 
     // grid-template-areas: "table buttons";
     // grid-template-columns: 1fr 15rem;
+    align-content: start;
     height: 100%;
 
     .bigtitle {
@@ -103,6 +137,14 @@
       & > .title {
         font-size: 1.25rem;
         color: var(--sub-color);
+      }
+
+      .contestEmpty {
+        color: var(--sub-color);
+        text-align: center;
+        padding: 3rem 1rem;
+        background: var(--sub-alt-color);
+        border-radius: var(--roundness);
       }
 
       .narrow {
@@ -286,6 +328,14 @@
         }
         td:first-child {
           display: none;
+        }
+        td.empty {
+          display: table-cell;
+          width: auto;
+          max-width: none;
+          text-align: center;
+          color: var(--sub-color);
+          padding: 2rem 1rem;
         }
         td:first-child,
         td:nth-child(2),
@@ -507,6 +557,10 @@
         display: grid;
         gap: 1em;
       }
+      .yearButtons .emptyYears {
+        color: var(--sub-color);
+        padding: 0.25rem 0.5rem;
+      }
     }
   }
 }
@@ -526,6 +580,12 @@
       max-width: 2.25rem;
       padding-left: 0.25rem;
       padding-right: 0.25rem;
+    }
+
+    td.empty {
+      width: auto;
+      max-width: none;
+      padding: 2rem 1rem;
     }
 
     td.nameCol {
