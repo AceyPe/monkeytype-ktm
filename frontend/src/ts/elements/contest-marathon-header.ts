@@ -42,7 +42,7 @@ function startCountdown(): void {
   countdownIntervalId = window.setInterval(updateCountdownDisplay, 1000);
 }
 
-function getContestDisplayName(): string {
+export function getContestDisplayName(): string {
   const authenticatedUser = getAuthenticatedUser();
   const snapshot = getSnapshot();
   const claims = getAccountClaimsFromStoredToken();

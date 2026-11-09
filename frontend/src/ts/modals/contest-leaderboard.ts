@@ -264,8 +264,8 @@ function initFilters(): void {
   });
 
   withSuppressedFilterChanges(() => {
-    regionSelect.setSelected(state.regionFilter);
-    sectionSelect.setSelected(state.sectionFilter);
+    regionSelect?.setSelected(state.regionFilter);
+    sectionSelect?.setSelected(state.sectionFilter);
   });
 }
 

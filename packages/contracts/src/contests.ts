@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   CommonResponses,
   meta,
+  MonkeyClientError,
   MonkeyResponseSchema,
   responseWithData,
 } from "./util/api";
@@ -185,6 +186,7 @@ export const contestsContract = c.router(
       query: GetContestLeaderboardQuerySchema,
       responses: {
         200: GetContestLeaderboardResponseSchema,
+        404: MonkeyClientError.describe("Contest not found"),
       },
       metadata: meta({
         rateLimit: "contestsLeaderboardGet",

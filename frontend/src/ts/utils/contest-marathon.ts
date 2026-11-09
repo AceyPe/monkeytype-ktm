@@ -25,6 +25,16 @@ export function formatMarathonCountdown(remainingMs: number): string {
   return `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
 }
 
+/** Countdown until a contest day starts, as `ddd:hh:mm:ss`. */
+export function formatContestStartCountdown(remainingMs: number): string {
+  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(days).padStart(3, "0")}:${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
+}
+
 export function formatMarathonCountdownVerbose(remainingMs: number): string {
   if (remainingMs <= 0) {
     return "0 hours, 0 minutes, and 0 seconds";

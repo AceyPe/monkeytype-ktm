@@ -11,25 +11,42 @@ function isContestDateToday(contestDate: number): boolean {
   return contestDate === getUtcTodayStart();
 }
 
-let todaysContestPromise: Promise<Contest | null> | null = null;
+let contestsPromise: Promise<Contest[] | null> | null = null;
+
+async function getContests(): Promise<Contest[] | null> {
+  contestsPromise ??= fetchContests();
+  return contestsPromise;
+}
+
+async function fetchContests(): Promise<Contest[] | null> {
+  const response = await Ape.contests.get();
+  if (response.status !== 200) {
+    return null;
+  }
+
+  return response.body.data;
+}
 
 export async function getTodaysContest(): Promise<Contest | null> {
-  todaysContestPromise ??= fetchTodaysContest();
-  return todaysContestPromise;
+  const contests = await getContests();
+  if (contests === null) return null;
+
+  return contests.find((contest) => isContestDateToday(contest.date)) ?? null;
 }
 
 export async function hasContestToday(): Promise<boolean> {
   return (await getTodaysContest()) !== null;
 }
 
-async function fetchTodaysContest(): Promise<Contest | null> {
-  const response = await Ape.contests.get();
-  if (response.status !== 200) {
-    return null;
-  }
+/** Soonest contest whose start (UTC midnight of the contest day) is still ahead. */
+export async function getUpcomingContest(): Promise<Contest | null> {
+  const contests = await getContests();
+  if (contests === null) return null;
 
+  const now = Date.now();
   return (
-    response.body.data.find((contest) => isContestDateToday(contest.date)) ??
-    null
+    contests
+      .filter((contest) => contest.date > now)
+      .sort((a, b) => a.date - b.date)[0] ?? null
   );
 }
