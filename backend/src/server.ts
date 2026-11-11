@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 import * as db from "./init/db";
 import jobs from "./jobs";
 import {
@@ -14,6 +14,7 @@ import queues from "./queues";
 import workers from "./workers";
 import Logger from "./utils/logger";
 import * as EmailClient from "./init/email-client";
+import { startContestBackend } from "./init/contest-backend";
 import * as FirebaseAdmin from "./init/firebase-admin";
 import { createIndicies as leaderboardDbSetup } from "./dal/leaderboards";
 import { createIndicies as blocklistDbSetup } from "./dal/blocklist";
@@ -86,6 +87,8 @@ async function bootServer(port: number): Promise<Server> {
     console.error(error);
     return process.exit(1);
   }
+
+  startContestBackend();
 
   return app.listen(PORT, () => {
     Logger.success(`API server listening on port ${port}`);

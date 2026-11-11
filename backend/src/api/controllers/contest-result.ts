@@ -27,7 +27,8 @@ import {
 } from "../../utils/geocode-rank-scope";
 import { addLog } from "../../dal/logs";
 import * as UserDAL from "../../dal/user";
-import { isDevEnvironment, omit } from "../../utils/misc";
+import Logger from "../../utils/logger";
+import { omit } from "../../utils/misc";
 import MonkeyError from "../../utils/error";
 import { MonkeyResponse } from "../../utils/monkey-response";
 import { buildDbResult } from "../../utils/result";
@@ -130,8 +131,10 @@ async function validateContestResultSubmission(
       const status = MonkeyStatusCodes.RESULT_DATA_INVALID;
       throw new MonkeyError(status.code, "Result data doesn't make sense");
     }
-  } else if (!isDevEnvironment()) {
-    throw new Error("No anticheat module found");
+  } else {
+    Logger.warning(
+      "No anticheat module found. Contest results will not be validated.",
+    );
   }
 
   const contest = await ContestDAL.requireTodaysContest();

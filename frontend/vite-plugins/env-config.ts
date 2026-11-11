@@ -22,7 +22,7 @@ const productionConfig: Omit<EnvConfig, "clientVersion"> = {
   backendUrl: fallbackEnv("BACKEND_URL", "https://api.ieeektm.org"),
   contestBackendUrl: fallbackEnv(
     "CONTEST_BACKEND_URL",
-    "http://localhost:5050",
+    "https://contest.ieeektm.org",
   ),
   recaptchaSiteKey: process.env["RECAPTCHA_SITE_KEY"] ?? "",
   quickLoginEmail: undefined,

@@ -6,9 +6,9 @@
     "eslint": "eslint \"./src/**/*.ts\"",
     "oxlint": "oxlint .",
     "lint": "npm run oxlint && npm run eslint",
-    "build": "tsc --build",
+    "build": "tsup && node ./scripts/copy-static.mjs",
     "ts-check": "tsc --noEmit",
-    "start": "node ./dist/server.js",
+    "start": "node ./dist/server.cjs",
     "dev": "tsx watch --clear-screen=false ./src/server.ts"
   },
   "dependencies": {
@@ -32,6 +32,7 @@
     "@types/express": "5.0.3",
     "@types/node": "24.9.1",
     "@types/ws": "8.5.13",
+    "tsup": "8.4.0",
     "tsx": "4.16.2",
     "typescript": "5.9.3"
   }

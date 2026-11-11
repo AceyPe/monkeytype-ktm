@@ -29,10 +29,14 @@ const QuoteDataSchema = z.object({
 });
 
 const PATH_TO_REPO = "../../../../monkeytype-new-quotes";
+const quotesRepo = path.join(__dirname, PATH_TO_REPO);
 
-const { data: git, error } = tryCatchSync(() =>
-  simpleGit(path.join(__dirname, PATH_TO_REPO)),
-);
+const { data: git, error } = tryCatchSync(() => {
+  if (!existsSync(quotesRepo)) {
+    throw new Error(`quotes repo not found at ${quotesRepo}`);
+  }
+  return simpleGit(quotesRepo);
+});
 
 if (error) {
   console.error(`Failed to initialize git: ${error}`);

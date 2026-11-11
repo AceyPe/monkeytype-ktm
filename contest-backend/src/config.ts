@@ -5,9 +5,25 @@ function envInt(name: string, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function corsOrigins(): string[] {
+  const origins = new Set([
+    "http://localhost:3000",
+    "https://ieeektm.org",
+    "https://www.ieeektm.org",
+  ]);
+  const configured = process.env["CONTEST_CORS_ORIGIN"];
+  if (configured !== undefined && configured !== "") {
+    for (const origin of configured.split(",")) {
+      const trimmed = origin.trim();
+      if (trimmed.length > 0) origins.add(trimmed);
+    }
+  }
+  return [...origins];
+}
+
 export const config = {
   port: envInt("CONTEST_PORT", 5050),
-  corsOrigin: process.env["CONTEST_CORS_ORIGIN"] ?? "http://localhost:3000",
+  corsOrigin: corsOrigins(),
   streamApiKey: process.env["STREAM_API_KEY"] ?? "",
   streamApiSecret: process.env["STREAM_API_SECRET"] ?? "",
   streamWebhookSecret: process.env["STREAM_WEBHOOK_SECRET"] ?? "",

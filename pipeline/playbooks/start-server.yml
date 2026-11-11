@@ -20,10 +20,18 @@
         if [ -f "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh"; fi
         PM2={{ pm2_executable | default('pm2') | quote }}
         SERVER_JS="{{ deploy_remote_base }}/webapp/backend/dist/server.js"
+        CONTEST_CJS="{{ deploy_remote_base }}/webapp/contest-backend/dist/server.cjs"
+        CONTEST_NAME="{{ pm2_contest_app_name | default(pm2_app_name ~ '-contest') }}"
+        export CONTEST_BACKEND_EXTERNAL=true
         if "$PM2" describe "{{ pm2_app_name }}" >/dev/null 2>&1; then
-          "$PM2" restart "{{ pm2_app_name }}"
+          "$PM2" restart "{{ pm2_app_name }}" --update-env
         else
           "$PM2" start "$SERVER_JS" --name "{{ pm2_app_name }}"
+        fi
+        if "$PM2" describe "$CONTEST_NAME" >/dev/null 2>&1; then
+          "$PM2" restart "$CONTEST_NAME" --update-env
+        else
+          "$PM2" start "$CONTEST_CJS" --name "$CONTEST_NAME"
         fi
       args:
         chdir: "{{ deploy_remote_base }}"

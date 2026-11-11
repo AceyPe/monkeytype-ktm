@@ -7,7 +7,7 @@
     "eslint": "eslint \"./src/**/*.ts\"",
     "oxlint": "oxlint .",
     "lint": "npm run oxlint && npm run eslint",
-    "build": "npm run gen-docs && tsc --build",
+    "build": "npm run gen-docs && tsc --build && npm run build --prefix ../contest-backend",
     "watch": "tsc --build --watch",
     "clean": "tsc --build --clean",
     "ts-check": "tsc --noEmit",
@@ -26,6 +26,7 @@
   "dependencies": {
     "@date-fns/utc": "1.2.0",
     "@google-analytics/data": "7.3.0",
+    "@monkeytype/contest-backend": "workspace:*",
     "@monkeytype/contracts": "workspace:*",
     "@monkeytype/funbox": "workspace:*",
     "@monkeytype/schemas": "workspace:*",

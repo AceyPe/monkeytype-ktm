@@ -1,0 +1,37 @@
+# Connects the host processes to Cloudflare.
+# api.ieeektm.org -> localhost:5005
+# contest.ieeektm.org -> localhost:5050
+#
+# Host network is required so localhost inside cloudflared is the machine
+# where PM2 is running the two Node processes. Run this on that server.
+#
+# One-time setup, on the server:
+#   cloudflared tunnel login
+#   cloudflared tunnel create ktm-api
+#   cloudflared tunnel create ktm-contest
+#   cloudflared tunnel route dns ktm-api api.ieeektm.org
+#   cloudflared tunnel route dns ktm-contest contest.ieeektm.org
+# Copy each tunnel's JSON into credentials/api.json and credentials/contest.json.
+# Put each tunnel UUID in api.yml and contest.yml.
+# Then: docker compose up -d
+
+services:
+  api-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: ktm-api-tunnel
+    network_mode: host
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./api.yml:/etc/cloudflared/config.yml:ro
+      - ./credentials/api.json:/etc/cloudflared/credentials.json:ro
+
+  contest-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: ktm-contest-tunnel
+    network_mode: host
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./contest.yml:/etc/cloudflared/config.yml:ro
+      - ./credentials/contest.json:/etc/cloudflared/credentials.json:ro

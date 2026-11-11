@@ -10,7 +10,7 @@ function mask(value: string): string {
 export function logContestBackendEnv(): void {
   console.log("[contest-backend] Environment (from contest-backend/.env):");
   console.log(`  CONTEST_PORT=${config.port}`);
-  console.log(`  CONTEST_CORS_ORIGIN=${config.corsOrigin}`);
+  console.log(`  CONTEST_CORS_ORIGIN=${config.corsOrigin.join(",")}`);
   console.log(`  CONTEST_SESSION_TTL_MS=${config.sessionTtlMs}`);
   console.log(`  CONTEST_WORD_COUNT=${config.wordCount}`);
   console.log(`  CONTEST_CHUNK_SIZE=${config.chunkSize}`);
@@ -21,8 +21,8 @@ export function logContestBackendEnv(): void {
     `  transport=${isStreamEnabled() ? "stream.io (+ HTTP validate)" : "websocket fallback (+ HTTP validate)"}`,
   );
   console.log(
-    "[contest-backend] Frontend should set CONTEST_BACKEND_URL=http://localhost:" +
+    "[contest-backend] Local dev URL is http://localhost:" +
       config.port +
-      " in the repo root .env (used by Vite env-config).",
+      ". Production frontend uses https://contest.ieeektm.org.",
   );
 }

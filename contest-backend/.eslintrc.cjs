@@ -4,13 +4,13 @@ module.exports = {
   extends: ["@monkeytype/eslint-config"],
   ignorePatterns: ["node_modules/", "dist/"],
   parserOptions: {
-    project: "./tsconfig.json",
+    project: "./tsconfig.eslint.json",
     tsconfigRootDir: __dirname,
   },
   settings: {
     "import/resolver": {
       typescript: {
-        project: "./tsconfig.json",
+        project: "./tsconfig.eslint.json",
       },
     },
   },

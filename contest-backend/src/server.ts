@@ -1,6 +1,4 @@
-import dotenv from "dotenv";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import "./load-env.js";
 import cors from "cors";
 import express from "express";
 import { createServer } from "node:http";
@@ -8,9 +6,6 @@ import { config } from "./config.js";
 import routes from "./routes.js";
 import { attachContestWebSocket } from "./websocket.js";
 import { logContestBackendEnv } from "./log-config.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: join(__dirname, "../.env") });
 
 const app = express();
 app.use(
