@@ -1,5 +1,6 @@
 import type { ContestResultSummary } from "@monkeytype/schemas/contest-results";
 import Ape from "../ape";
+import * as ActiveMiniContest from "../contest/active-mini-contest";
 import { getTodaysContest } from "../utils/contest-today";
 
 const element = $("#contestBestScore");
@@ -17,6 +18,15 @@ function render(summary: ContestResultSummary | null): void {
 }
 
 export async function refresh(): Promise<void> {
+  const miniContest = ActiveMiniContest.get();
+  if (miniContest !== null) {
+    const response = await Ape.miniContests.getBestResult({
+      params: { slug: miniContest.slug },
+    });
+    render(response.status === 200 ? response.body.data : null);
+    return;
+  }
+
   const contest = await getTodaysContest();
   if (contest === null) {
     render(null);

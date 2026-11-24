@@ -7,7 +7,7 @@ function getUtcTodayStart(): number {
   return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 }
 
-function isContestDateToday(contestDate: number): boolean {
+export function isContestDateToday(contestDate: number): boolean {
   return contestDate === getUtcTodayStart();
 }
 

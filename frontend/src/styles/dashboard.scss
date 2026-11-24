@@ -125,6 +125,25 @@
           font-size: 0.9rem;
         }
 
+        .contestLinkRow {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+
+          .contestLink {
+            color: var(--text-color);
+            overflow-wrap: anywhere;
+            min-width: 0;
+          }
+
+          button {
+            flex-shrink: 0;
+            gap: 0.35em;
+            padding: 0.35em 0.65em;
+          }
+        }
+
         .leaderboardPublicRow {
           display: flex;
           align-items: center;

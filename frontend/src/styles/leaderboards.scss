@@ -15,6 +15,7 @@
       height: max-content;
       display: inline-flex;
       align-items: center;
+      max-width: 100%;
       gap: 0.35rem;
       background: var(--sub-alt-color);
       border-radius: var(--roundness);
@@ -35,6 +36,13 @@
       .toggleSeparator {
         color: var(--sub-color);
         user-select: none;
+      }
+
+      @media only screen and (max-width: 480px) {
+        button {
+          min-width: 0;
+          padding: 0.45em 0.75em;
+        }
       }
     }
 

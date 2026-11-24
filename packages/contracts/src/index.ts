@@ -15,6 +15,7 @@ import { webhooksContract } from "./webhooks";
 import { connectionsContract } from "./connections";
 import { contactContract } from "./contact";
 import { contestsContract } from "./contests";
+import { miniContestsContract } from "./mini-contests";
 import { analyticsContract } from "./analytics";
 
 const c = initContract();
@@ -36,6 +37,7 @@ export const contract = c.router({
   connections: connectionsContract,
   contact: contactContract,
   contests: contestsContract,
+  miniContests: miniContestsContract,
   analytics: analyticsContract,
 });
 

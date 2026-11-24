@@ -12,9 +12,10 @@ export function set(active: PageName): void {
 
 export function isTypingTestPage(): boolean {
   const page = get();
-  return page === "test" || page === "contest";
+  return page === "test" || isContestPage();
 }
 
 export function isContestPage(): boolean {
-  return get() === "contest";
+  const page = get();
+  return page === "contest" || page === "miniContest";
 }

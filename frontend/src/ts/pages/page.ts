@@ -8,6 +8,7 @@ export type PageName =
   | "loading"
   | "test"
   | "contest"
+  | "miniContest"
   | "settings"
   | "about"
   | "team"
