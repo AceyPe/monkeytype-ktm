@@ -37,6 +37,8 @@ import * as QuoteRateModal from "../modals/quote-rate";
 import * as Result from "./result";
 import * as MonkeyPower from "../elements/monkey-power";
 import * as ActivePage from "../states/active-page";
+import * as ContestClient from "../contest/contest-client";
+import * as ContestBestScore from "../elements/contest-best-score";
 import * as TestInput from "./test-input";
 import * as TestWords from "./test-words";
 import * as WordsGenerator from "./words-generator";
@@ -223,7 +225,7 @@ export function restart(options = {} as RestartOptions): void {
     options.event?.preventDefault();
     return;
   }
-  if (ActivePage.get() === "test") {
+  if (ActivePage.isTypingTestPage()) {
     if (!ManualRestart.get()) {
       if (Config.mode !== "zen") options.event?.preventDefault();
       if (
@@ -378,10 +380,12 @@ export function restart(options = {} as RestartOptions): void {
       }
 
       Focus.set(false);
-      if (ActivePage.get() === "test") {
+      if (ActivePage.isTypingTestPage()) {
         AdController.updateFooterAndVerticalAds(false);
       }
-      TestConfig.show();
+      if (!ActivePage.isContestPage()) {
+        TestConfig.show();
+      }
       AdController.destroyResult();
 
       await Funbox.rememberSettings();
@@ -498,7 +502,7 @@ async function init(): Promise<boolean> {
     return await init();
   }
 
-  if (ActivePage.get() === "test") {
+  if (ActivePage.isTypingTestPage()) {
     await Funbox.activate();
   }
 
@@ -589,12 +593,53 @@ async function init(): Promise<boolean> {
   let generatedWords: string[] = [];
   let generatedSectionIndexes: number[] = [];
   try {
-    const gen = await WordsGenerator.generateWords(language);
-    generatedWords = gen.words;
-    generatedSectionIndexes = gen.sectionIndexes;
-    wordsHaveTab = gen.hasTab;
-    wordsHaveNewline = gen.hasNewline;
-    ({ allRightToLeft, allLigatures } = gen);
+    if (ActivePage.isContestPage()) {
+      let contestWords: string[] | null = null;
+      try {
+        if (TestState.isRepeated) {
+          contestWords = ContestClient.getSessionWords();
+          if (contestWords === null) {
+            contestWords = await ContestClient.startNewRun();
+          }
+        } else if (
+          !ContestClient.isConnected() ||
+          ContestClient.getSessionWords() !== null
+        ) {
+          contestWords = await ContestClient.startNewRun();
+        } else {
+          contestWords = await ContestClient.loadSessionWords();
+        }
+      } catch (e) {
+        Notifications.add(
+          Misc.createErrorMessage(
+            e,
+            "Contest server unavailable — using offline words",
+          ),
+          -1,
+          { important: true },
+        );
+      }
+      if (contestWords !== null) {
+        generatedWords = contestWords;
+        generatedSectionIndexes = contestWords.map(() => 0);
+        wordsHaveTab = false;
+        wordsHaveNewline = false;
+      } else {
+        const gen = await WordsGenerator.generateWords(language);
+        generatedWords = gen.words;
+        generatedSectionIndexes = gen.sectionIndexes;
+        wordsHaveTab = gen.hasTab;
+        wordsHaveNewline = gen.hasNewline;
+        ({ allRightToLeft, allLigatures } = gen);
+      }
+    } else {
+      const gen = await WordsGenerator.generateWords(language);
+      generatedWords = gen.words;
+      generatedSectionIndexes = gen.sectionIndexes;
+      wordsHaveTab = gen.hasTab;
+      wordsHaveNewline = gen.hasNewline;
+      ({ allRightToLeft, allLigatures } = gen);
+    }
   } catch (e) {
     Loader.hide();
     if (e instanceof WordGenError || e instanceof Error) {
@@ -824,6 +869,11 @@ export async function retrySavingResult(): Promise<void> {
 
   Notifications.add("Retrying to save...");
 
+  if (ActivePage.isContestPage()) {
+    await saveContestResult(completedEvent, true);
+    return;
+  }
+
   await saveResult(completedEvent, true);
 }
 
@@ -967,6 +1017,9 @@ function buildCompletedEvent(
 
 export async function finish(difficultyFailed = false): Promise<void> {
   if (!TestState.isActive) return;
+  if (ActivePage.isContestPage() && ContestClient.isConnected()) {
+    void ContestClient.finishSession();
+  }
   TestUI.setResultCalculating(true);
   const now = performance.now();
   TestStats.setEnd(now);
@@ -1326,7 +1379,70 @@ export async function finish(difficultyFailed = false): Promise<void> {
 
   completedEvent.hash = objectHash(completedEvent);
 
+  if (ActivePage.isContestPage()) {
+    await saveContestResult(completedEvent, false);
+    return;
+  }
+
   await saveResult(completedEvent, false);
+}
+
+async function saveContestResult(
+  completedEvent: CompletedEvent,
+  isRetrying: boolean,
+): Promise<void> {
+  if (!TestState.savingEnabled) {
+    Notifications.add("Result not saved: disabled by user", -1, {
+      duration: 3,
+      customTitle: "Notice",
+      important: true,
+    });
+    AccountButton.loading(false);
+    return;
+  }
+
+  if (!ConnectionState.get()) {
+    Notifications.add("Result not saved: offline", -1, {
+      duration: 2,
+      customTitle: "Notice",
+      important: true,
+    });
+    AccountButton.loading(false);
+    retrySaving.canRetry = true;
+    $("#retrySavingResultButton").removeClass("hidden");
+    if (!isRetrying) {
+      retrySaving.completedEvent = completedEvent;
+    }
+    return;
+  }
+
+  const response = await Ape.contests.addTodayResult({
+    body: { result: completedEvent },
+  });
+
+  AccountButton.loading(false);
+
+  if (response.status !== 200) {
+    if (![460, 461, 463, 464, 465, 466].includes(response.status)) {
+      retrySaving.canRetry = true;
+      $("#retrySavingResultButton").removeClass("hidden");
+      if (!isRetrying) {
+        retrySaving.completedEvent = completedEvent;
+      }
+    }
+    Notifications.add(
+      "Failed to save contest result: " + response.body.message,
+      -1,
+    );
+    return;
+  }
+
+  const data = response.body.data;
+  ContestBestScore.update(data.best);
+
+  $("#retrySavingResultButton").addClass("hidden");
+
+  void AnalyticsController.log("testCompleted");
 }
 
 async function saveResult(
@@ -1615,13 +1731,14 @@ $(".pageTest").on("click", "#testConfig .numbersMode.textButton", () => {
 });
 
 $("header").on("click", "nav #startTestButton, #logo", () => {
-  if (ActivePage.get() === "test") restart();
+  if (ActivePage.isTypingTestPage()) restart();
   // Result.showConfetti();
 });
 
 // ===============================
 
 ConfigEvent.subscribe((eventKey, eventValue, nosave) => {
+  if (ActivePage.isContestPage()) return;
   if (ActivePage.get() === "test") {
     if (eventKey === "language") {
       //automatically enable lazy mode for arabic

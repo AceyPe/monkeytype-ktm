@@ -46,7 +46,17 @@
     },
     "@monkeytype/backend#dev": {
       "dependsOn": ["^build"],
-      "env": ["DB_URI", "REDIS_URI", "PORT"],
+      "env": [
+        "DB_URI",
+        "REDIS_URI",
+        "PORT",
+        "CONTEST_SESSION_TTL_MS",
+        "CONTEST_WORD_COUNT",
+        "CONTEST_CHUNK_SIZE",
+        "STREAM_API_KEY",
+        "STREAM_API_SECRET",
+        "STREAM_WEBHOOK_SECRET"
+      ],
       "persistent": true
     }
   }

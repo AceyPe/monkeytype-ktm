@@ -207,7 +207,7 @@ function getUnits(): unknown {
 
 export async function reinstate(): boolean {
   if (!rampReady) return;
-  if (ActivePage.get() === "test" && !TestState.resultVisible) {
+  if (ActivePage.isTypingTestPage() && !TestState.resultVisible) {
     ramp.destroyUnits("all");
     return;
   }

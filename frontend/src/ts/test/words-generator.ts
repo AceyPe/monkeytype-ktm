@@ -26,6 +26,7 @@ import { WordGenError } from "../utils/word-gen-error";
 import * as Loader from "../elements/loader";
 import { PolyglotWordset } from "./funbox/funbox-functions";
 import { LanguageObject } from "@monkeytype/schemas/languages";
+import * as TestContentClient from "./test-content-client";
 
 //pin implementation
 const random = Math.random;
@@ -532,6 +533,7 @@ async function getQuoteWordList(
   }
 
   let rq: Quote;
+  let wordSplitFromServer: string[] | undefined;
   if (Config.quoteLength.includes(-2) && Config.quoteLength.length === 1) {
     const targetQuote = QuotesController.getQuoteById(
       TestState.selectedQuoteId,
@@ -553,12 +555,38 @@ async function getQuoteWordList(
     }
     rq = randomQuote;
   } else {
-    const randomQuote = QuotesController.getRandomQuote();
-    if (randomQuote === null) {
-      UpdateConfig.setQuoteLengthAll();
-      throw new WordGenError("No quotes found for selected quote length");
+    try {
+      Loader.show();
+      const trace = await TestContentClient.createQuoteTrace(
+        languageToGet,
+        Config.quoteLength,
+      );
+      Loader.hide();
+
+      if (trace.quote === undefined) {
+        throw new WordGenError("Server returned no quote metadata");
+      }
+
+      wordSplitFromServer = await TestContentClient.fetchAllTraceWords(
+        trace.traceId,
+      );
+      rq = {
+        id: trace.quote.id,
+        text: trace.quote.text,
+        source: trace.quote.source,
+        length: trace.quote.length,
+        group: 0,
+        language: Strings.removeLanguageSize(Config.language),
+      };
+    } catch {
+      Loader.hide();
+      const randomQuote = QuotesController.getRandomQuote();
+      if (randomQuote === null) {
+        UpdateConfig.setQuoteLengthAll();
+        throw new WordGenError("No quotes found for selected quote length");
+      }
+      rq = randomQuote;
     }
-    rq = randomQuote;
   }
 
   rq.language = Strings.removeLanguageSize(Config.language);
@@ -573,6 +601,8 @@ async function getQuoteWordList(
     Config.britishEnglish
   ) {
     rq.textSplit = rq.britishText.split(" ");
+  } else if (wordSplitFromServer !== undefined) {
+    rq.textSplit = wordSplitFromServer;
   } else {
     rq.textSplit = rq.text.split(" ");
   }

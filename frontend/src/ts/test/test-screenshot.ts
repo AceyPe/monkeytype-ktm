@@ -364,7 +364,7 @@ $(".pageTest").on("click", "#saveScreenshotButton", (event) => {
 });
 
 $(document).on("keydown", (event) => {
-  if (!(TestState.resultVisible && ActivePage.get() === "test")) return;
+  if (!(TestState.resultVisible && ActivePage.isTypingTestPage())) return;
   if (event.key !== "Shift") return;
   $("#result #saveScreenshotButton i")
     .removeClass("far fa-image")
@@ -372,7 +372,7 @@ $(document).on("keydown", (event) => {
 });
 
 $(document).on("keyup", (event) => {
-  if (!(TestState.resultVisible && ActivePage.get() === "test")) return;
+  if (!(TestState.resultVisible && ActivePage.isTypingTestPage())) return;
   if (event.key !== "Shift") return;
   $("#result #saveScreenshotButton i")
     .removeClass("fas fa-download")

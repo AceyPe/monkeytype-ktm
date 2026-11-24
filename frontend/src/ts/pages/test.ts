@@ -9,6 +9,8 @@ import * as Keymap from "../elements/keymap";
 import * as TestConfig from "../test/test-config";
 import * as ScrollToTop from "../elements/scroll-to-top";
 import { blurInputElement } from "../input/input-element";
+import * as TestModeHeader from "../elements/test-mode-header";
+import * as ContestUpcomingBar from "../elements/contest-upcoming-bar";
 
 export const page = new Page({
   id: "test",
@@ -16,6 +18,7 @@ export const page = new Page({
   path: "/",
   beforeHide: async (): Promise<void> => {
     blurInputElement();
+    ContestUpcomingBar.hide();
   },
   afterHide: async (): Promise<void> => {
     ManualRestart.set();
@@ -27,6 +30,10 @@ export const page = new Page({
     updateFooterAndVerticalAds(true);
   },
   beforeShow: async (): Promise<void> => {
+    $(".page.pageTest").removeClass("contest-mode");
+    TestConfig.show();
+    await ContestUpcomingBar.show();
+    void TestModeHeader.updateTestModeHeader();
     updateFooterAndVerticalAds(false);
     TestStats.resetIncomplete();
     ManualRestart.set();

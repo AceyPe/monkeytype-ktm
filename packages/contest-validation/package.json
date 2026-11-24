@@ -1,0 +1,33 @@
+{
+  "name": "@monkeytype/contest-validation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "eslint": "eslint \"./src/**/*.ts\" \"./__tests__/**/*.ts\"",
+    "oxlint": "oxlint .",
+    "lint": "npm run oxlint && npm run eslint",
+    "build": "tsup-node",
+    "dev": "tsup-node --watch",
+    "ts-check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "devDependencies": {
+    "@monkeytype/eslint-config": "workspace:*",
+    "@monkeytype/oxlint-config": "workspace:*",
+    "@monkeytype/tsup-config": "workspace:*",
+    "@monkeytype/typescript-config": "workspace:*",
+    "@types/node": "24.9.1",
+    "eslint": "8.57.1",
+    "oxlint": "1.29.0",
+    "tsup": "8.4.0",
+    "typescript": "5.9.3",
+    "vitest": "4.0.8"
+  }
+}

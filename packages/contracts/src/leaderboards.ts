@@ -20,7 +20,7 @@ const LanguageAndModeQuerySchema = z.object({
   mode2: Mode2Schema,
 });
 
-const PaginationQuerySchema = z.object({
+export const PaginationQuerySchema = z.object({
   page: z.number().int().safe().nonnegative().default(0),
   pageSize: z.number().int().safe().positive().min(10).max(200).default(50),
 });
@@ -40,7 +40,7 @@ export const RankScopeSchema = z
   .default("global");
 export type RankScope = z.infer<typeof RankScopeSchema>;
 
-const RankScopeQuerySchema = z.object({
+export const RankScopeQuerySchema = z.object({
   rankScope: RankScopeSchema.optional(),
 });
 export type RankScopeQuery = z.infer<typeof RankScopeQuerySchema>;
@@ -53,7 +53,7 @@ export type RegionFilter = z.infer<typeof RegionFilterSchema>;
 const SectionFilterSchema = z.string().min(1).optional();
 export type SectionFilter = z.infer<typeof SectionFilterSchema>;
 
-const RankFilterQuerySchema = z.object({
+export const RankFilterQuerySchema = z.object({
   regionFilter: RegionFilterSchema,
   sectionFilter: SectionFilterSchema,
 });
@@ -67,7 +67,7 @@ export type RankSortBy = z.infer<typeof RankSortBySchema>;
 export const RankSortDirectionSchema = z.enum(["asc", "desc"]).default("asc");
 export type RankSortDirection = z.infer<typeof RankSortDirectionSchema>;
 
-const RankSortQuerySchema = z.object({
+export const RankSortQuerySchema = z.object({
   rankSortBy: RankSortBySchema.optional(),
   rankSortDirection: RankSortDirectionSchema.optional(),
 });

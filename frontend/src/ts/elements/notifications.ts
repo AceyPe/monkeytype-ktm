@@ -5,10 +5,22 @@ import * as NotificationEvent from "../observables/notification-event";
 import { convertRemToPixels } from "../utils/numbers";
 import { animate } from "animejs";
 
+function getContestUpcomingBarOffset(): number {
+  const bar = document.getElementById("contestUpcomingBar");
+  if (bar === null || bar.classList.contains("hidden")) return 0;
+  return bar.offsetHeight;
+}
+
 function updateMargin(): void {
-  const height = $("#bannerCenter").height() as number;
+  const upcomingOffset = getContestUpcomingBarOffset();
+  const height = ($("#bannerCenter").height() as number) + upcomingOffset;
+  $("#bannerCenter").css("top", upcomingOffset);
   $("#app").css("padding-top", height + convertRemToPixels(2) + "px");
   $("#notificationCenter").css("margin-top", height + "px");
+}
+
+export function refreshBannerLayout(): void {
+  updateMargin();
 }
 
 let visibleStickyNotifications = 0;

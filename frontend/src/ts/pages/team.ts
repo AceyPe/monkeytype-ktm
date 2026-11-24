@@ -1,9 +1,41 @@
-import Page from "./page";
+import { PageWithUrlParams } from "./page";
 import * as Skeleton from "../utils/skeleton";
 import { teamData, type TeamMember, type TeamSection } from "./team-data";
 import { startTypewriter, type StopTypewriter } from "../utils/typewriter";
+import { z } from "zod";
+
+const TEAM_YEARS = ["2026", "2025", "2024", "2022"] as const;
+type TeamYear = (typeof TEAM_YEARS)[number];
+const DEFAULT_TEAM_YEAR: TeamYear = "2026";
+
+const TeamUrlParamsSchema = z.object({
+  year: z.enum(TEAM_YEARS).optional(),
+});
 
 let stopSloganTyping: StopTypewriter | null = null;
+let teamPageInitialized = false;
+
+function isTeamYear(value: string | undefined): value is TeamYear {
+  return value !== undefined && value in teamData;
+}
+
+function resolveTeamYear(
+  year: z.infer<typeof TeamUrlParamsSchema>["year"],
+): TeamYear {
+  if (year !== undefined && isTeamYear(year)) {
+    return year;
+  }
+  return DEFAULT_TEAM_YEAR;
+}
+
+function updateTeamUrlParams(year: TeamYear): void {
+  if (year === DEFAULT_TEAM_YEAR) {
+    page.setUrlParams({});
+    return;
+  }
+
+  page.setUrlParams({ year });
+}
 
 function formatRegionSection(member: TeamMember): string {
   const { region, section } = member;
@@ -21,22 +53,18 @@ function formatRegionSection(member: TeamMember): string {
   return "";
 }
 
-function renderTeamContent(year: string): void {
+function renderTeamContent(year: TeamYear): void {
   const frame = document.querySelector(".pageTeam .frame");
   if (!frame) return;
 
   const sections = teamData[year] || [];
 
-  // Add fade-out animation
   frame.classList.remove("fade-in");
   frame.classList.add("fade-out");
 
-  // Wait for fade-out animation, then update content and fade in
   setTimeout(() => {
-    // Clear existing content
     frame.innerHTML = "";
 
-    // Render each section
     sections.forEach((section: TeamSection) => {
       const frameSection = document.createElement("div");
       frameSection.className = "frameSection";
@@ -48,7 +76,6 @@ function renderTeamContent(year: string): void {
       const container = document.createElement("div");
       container.className = "frameSectionContainer";
 
-      // Render cards for each team member
       section.items.forEach((member) => {
         const hasLinkedin = member.linkedin.trim().length > 0;
         const card: HTMLAnchorElement | HTMLDivElement = hasLinkedin
@@ -113,19 +140,14 @@ function renderTeamContent(year: string): void {
       frame.appendChild(frameSection);
     });
 
-    // Trigger fade-in animation
     requestAnimationFrame(() => {
       frame.classList.remove("fade-out");
       frame.classList.add("fade-in");
     });
-  }, 300); // Match the transition duration
+  }, 300);
 }
 
-function setActiveYear(year: string): void {
-  // let currentYear: string = "2026";
-  // currentYear = year;
-
-  // Update button states
+function setActiveYear(year: TeamYear): void {
   const buttons = document.querySelectorAll(".pageTeam .bigtitle button");
   buttons.forEach((button) => {
     if (button.textContent?.trim() === year) {
@@ -135,15 +157,14 @@ function setActiveYear(year: string): void {
     }
   });
 
-  // Render content for selected year
   renderTeamContent(year);
 }
 
-function initTeamPage(): void {
-  const page = document.querySelector(".pageTeam");
-  if (!page) return;
+function initTeamPage(initialYear: TeamYear): void {
+  const pageEl = document.querySelector(".pageTeam");
+  if (!pageEl) return;
 
-  const slogan = page.querySelector(".hero-section .slogan");
+  const slogan = pageEl.querySelector(".hero-section .slogan");
   if (slogan instanceof HTMLElement) {
     stopSloganTyping?.();
     stopSloganTyping = startTypewriter(slogan, {
@@ -156,38 +177,40 @@ function initTeamPage(): void {
     });
   }
 
-  // Set up button click handlers
-  const buttons = page.querySelectorAll(".bigtitle button");
-  buttons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const year = button.textContent?.trim();
-      if (year && teamData[year]) {
+  if (!teamPageInitialized) {
+    const buttons = pageEl.querySelectorAll(".bigtitle button");
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const year = button.textContent?.trim();
+        if (!isTeamYear(year)) return;
         setActiveYear(year);
-      }
+        updateTeamUrlParams(year);
+      });
     });
-  });
+    teamPageInitialized = true;
+  }
 
-  // Initialize with default year
-  const frame = page.querySelector(".frame");
+  const frame = pageEl.querySelector(".frame");
   if (frame) {
     frame.classList.add("fade-in");
   }
-  setActiveYear("2026");
+
+  setActiveYear(initialYear);
 }
 
-export const page = new Page({
+export const page = new PageWithUrlParams({
   id: "team",
   element: $(".page.pageTeam"),
   path: "/team",
+  urlParamsSchema: TeamUrlParamsSchema,
   afterHide: async (): Promise<void> => {
-    // reset();
     stopSloganTyping?.();
     stopSloganTyping = null;
     Skeleton.remove("pageTeam");
   },
-  beforeShow: async (): Promise<void> => {
+  beforeShow: async (options): Promise<void> => {
     Skeleton.append("pageTeam", "main");
-    initTeamPage();
+    initTeamPage(resolveTeamYear(options.urlParams?.year));
   },
 });
 

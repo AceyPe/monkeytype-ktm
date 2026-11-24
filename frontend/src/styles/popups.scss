@@ -1455,6 +1455,15 @@ body.darkMode {
     .input {
       width: 100%;
     }
+
+    .inputAndIndicator .ss-content {
+      position: absolute;
+      height: auto;
+      top: calc(100% - 1px);
+      left: 0;
+      width: 100%;
+      margin: 0;
+    }
   }
 
   .modal {
@@ -1827,6 +1836,130 @@ body.darkMode {
           margin-top: 0.35rem;
         }
       }
+    }
+  }
+}
+
+#contestMoreInfoModal {
+  .modal.contestMoreInfoModal {
+    max-width: min(42rem, 100%);
+  }
+
+  .contestMoreInfoBody {
+    display: grid;
+    gap: 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+
+    section {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: normal;
+      color: var(--main-color);
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-color);
+    }
+  }
+
+  .contestMoreInfoGreeting {
+    color: var(--main-color);
+    font-size: 1rem;
+  }
+
+  .contestPrizeList {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .contestPrizePosition {
+    color: var(--main-color);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .contestPrizeEmpty {
+    margin: 0;
+    color: var(--sub-color);
+  }
+}
+
+#contestLeaderboardModal {
+  .contestLeaderboardModal.pageLeaderboards {
+    width: min(95vw, 72rem);
+    max-width: min(95vw, 72rem);
+    max-height: 90vh;
+    padding: 1.25rem 1.5rem 1.5rem;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    .content {
+      display: block;
+      height: auto;
+      gap: 0;
+      grid-template-columns: unset;
+      grid-template-areas: unset;
+    }
+
+    .contestLeaderboardHeader {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+
+      .bigtitle {
+        margin-bottom: 0;
+      }
+    }
+
+    .tableAndUser {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .tableWrapper {
+      overflow: auto;
+      max-height: min(60vh, 36rem);
+      width: 100%;
+    }
+
+    .titleAndButtons {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .tableToolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    table {
+      td:first-child {
+        display: table-cell;
+      }
+    }
+
+    .loading,
+    .error {
+      padding: 2rem 0;
+      text-align: center;
+      color: var(--sub-color);
+    }
+
+    .error {
+      color: var(--error-color, #e74c3c);
     }
   }
 }

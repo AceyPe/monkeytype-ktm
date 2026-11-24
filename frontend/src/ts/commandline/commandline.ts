@@ -84,6 +84,10 @@ export function show(
   settings?: ShowSettings,
   modalShowSettings?: ShowOptions,
 ): void {
+  if (ActivePage.isContestPage()) {
+    Notifications.add("Command line is disabled in contest mode.", 0);
+    return;
+  }
   void modal.show({
     ...modalShowSettings,
     focusFirstInput: true,
@@ -186,7 +190,7 @@ function hide(clearModalChain = false): void {
     afterAnimation: async () => {
       hideWarning();
       addCommandlineBackground();
-      if (ActivePage.get() !== "test") {
+      if (!ActivePage.isTypingTestPage()) {
         (document.activeElement as HTMLElement | undefined)?.blur();
       }
       isAnimating = false;

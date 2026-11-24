@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 import * as db from "./init/db";
 import jobs from "./jobs";
 import {
@@ -14,6 +14,8 @@ import queues from "./queues";
 import workers from "./workers";
 import Logger from "./utils/logger";
 import * as EmailClient from "./init/email-client";
+import { attachContestWebSocket } from "./contest/websocket";
+import * as FirebaseAdmin from "./init/firebase-admin";
 import { createIndicies as leaderboardDbSetup } from "./dal/leaderboards";
 import { createIndicies as blocklistDbSetup } from "./dal/blocklist";
 import { createIndicies as connectionsDbSetup } from "./dal/connections";
@@ -23,6 +25,7 @@ async function bootServer(port: number): Promise<Server> {
   try {
     Logger.info(`Starting server version ${version}`);
     Logger.info(`Starting server in ${process.env["MODE"]} mode`);
+    FirebaseAdmin.init();
     Logger.info(`Connecting to database ${process.env["DB_NAME"]}...`);
     await db.connect();
     Logger.success("Connected to database");
@@ -85,9 +88,11 @@ async function bootServer(port: number): Promise<Server> {
     return process.exit(1);
   }
 
-  return app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     Logger.success(`API server listening on port ${port}`);
   });
+  attachContestWebSocket(server);
+  return server;
 }
 
 const PORT = parseInt(process.env["PORT"] ?? "5005", 10);

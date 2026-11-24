@@ -6,6 +6,7 @@ WORKDIR /app
 COPY ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "turbo.json", "./"]
 COPY packages packages
 COPY backend backend
+COPY frontend/static/languages/english_10k.json frontend/static/languages/english_10k.json
 
 #gimme pnpm + build
 RUN npm i -g pnpm && \

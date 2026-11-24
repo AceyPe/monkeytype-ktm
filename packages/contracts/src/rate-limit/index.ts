@@ -120,6 +120,41 @@ export const limits = {
     max: 60,
   },
 
+  contestsGet: {
+    window: "hour",
+    max: 60,
+  },
+
+  contestsAdd: {
+    window: "hour",
+    max: 60,
+  },
+
+  contestsEdit: {
+    window: "hour",
+    max: 60,
+  },
+
+  contestsRemove: {
+    window: "hour",
+    max: 60,
+  },
+
+  contestResultAdd: {
+    window: "hour",
+    max: 120,
+  },
+
+  contestResultGet: {
+    window: "minute",
+    max: 120,
+  },
+
+  contestsLeaderboardGet: {
+    window: "minute",
+    max: 120,
+  },
+
   // get public speed stats
   publicStatsGet: {
     window: "minute",
@@ -406,6 +441,12 @@ export const limits = {
   contactSend: {
     window: "hour",
     max: 5,
+  },
+
+  // Google Analytics admin dashboard
+  analyticsGet: {
+    window: "minute",
+    max: 60,
   },
 } satisfies Record<string, RateLimitOptions>;
 

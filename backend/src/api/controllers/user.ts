@@ -28,6 +28,7 @@ import * as Dates from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
 import * as BlocklistDal from "../../dal/blocklist";
 import crypto from "crypto";
+import { isStoredUserEmail } from "../../utils/user-email";
 import {
   AllTimeLbs,
   ResultFilters,
@@ -71,6 +72,9 @@ import {
   GetTestActivityResponse,
   GetUserInboxResponse,
   GetUserResponse,
+  GetAdminStatusResponse,
+  ListUsersResponse,
+  RemoveUserAdminRequest,
   LinkDiscordRequest,
   LinkDiscordResponse,
   RemoveFavoriteQuoteRequest,
@@ -80,6 +84,7 @@ import {
   SamlLogoutResponse,
   SessionResponse,
   SetStreakHourOffsetRequest,
+  SetUserAdminRequest,
   TagIdPathParams,
   UpdateEmailRequest,
   UpdateLeaderboardMemoryRequest,
@@ -96,6 +101,7 @@ import * as ConnectionsDal from "../../dal/connections";
 import { PersonalBest } from "@monkeytype/schemas/shared";
 import * as SamlUtils from "../../utils/saml";
 import Logger from "../../utils/logger";
+import * as AdminUidsDal from "../../dal/admin-uids";
 
 async function verifyCaptcha(captcha: string): Promise<void> {
   const { data: verified, error } = await tryCatch(verify(captcha));
@@ -167,6 +173,17 @@ function generateUidFromEmail(email: string): string {
   return crypto.createHash("sha256").update(email.toLowerCase()).digest("hex");
 }
 
+function collectProfileStrings(value: unknown): string[] {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed === "" ? [] : [trimmed];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap(collectProfileStrings);
+  }
+  return [];
+}
+
 function getProfileString(
   profile: SamlUtils.SamlProfile,
   keys: string[],
@@ -175,12 +192,69 @@ function getProfileString(
     typeof profile["attributes"] === "object" && profile["attributes"] !== null
       ? (profile["attributes"] as Record<string, unknown>)
       : undefined;
+
   for (const key of keys) {
-    const value = profile[key] ?? attributes?.[key];
-    if (typeof value === "string" && value.trim() !== "") {
-      return value;
+    const raw = profile[key] ?? attributes?.[key];
+    if (typeof raw === "string" && raw.trim() !== "") {
+      return raw.trim();
+    }
+    if (Array.isArray(raw)) {
+      for (const entry of raw) {
+        if (typeof entry === "string" && entry.trim() !== "") {
+          return entry.trim();
+        }
+      }
     }
   }
+
+  return undefined;
+}
+
+function resolveSamlEmail(profile: SamlUtils.SamlProfile): string | undefined {
+  const preferredKeys = [
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+    "urn:oid:0.9.2342.19200300.100.1.3",
+    "Email",
+    "email",
+    "mail",
+    "Mail",
+    "E-mail",
+    "emailAddress",
+    "EmailAddress",
+    "userPrincipalName",
+  ];
+
+  for (const key of preferredKeys) {
+    const value = getProfileString(profile, [key]);
+    if (value !== undefined && isStoredUserEmail(value)) {
+      return value.toLowerCase();
+    }
+  }
+
+  if (typeof profile.email === "string" && isStoredUserEmail(profile.email)) {
+    return profile.email.trim().toLowerCase();
+  }
+
+  const attributes =
+    typeof profile["attributes"] === "object" && profile["attributes"] !== null
+      ? (profile["attributes"] as Record<string, unknown>)
+      : undefined;
+
+  const buckets: Record<string, unknown>[] = [profile];
+  if (attributes !== undefined) {
+    buckets.push(attributes);
+  }
+
+  for (const bucket of buckets) {
+    for (const value of Object.values(bucket)) {
+      for (const candidate of collectProfileStrings(value)) {
+        if (isStoredUserEmail(candidate)) {
+          return candidate.toLowerCase();
+        }
+      }
+    }
+  }
+
   return undefined;
 }
 
@@ -226,8 +300,12 @@ async function findOrCreateUser(
   } catch (error: unknown) {
     if (error instanceof MonkeyError && error.status === 404) {
       // User doesn't exist, create new user
-      const username = await generateAvailableUsername(emailRaw, uid);
-      await UserDAL.addUser(username, normalizedEmail, uid);
+      const usernameSource = isStoredUserEmail(emailRaw) ? emailRaw : uid;
+      const username = await generateAvailableUsername(usernameSource, uid);
+      const storedEmail = isStoredUserEmail(normalizedEmail)
+        ? normalizedEmail
+        : "";
+      await UserDAL.addUser(username, storedEmail, uid);
       void addImportantLog("user_created_saml", `${username} ${emailRaw}`, uid);
       return uid;
     }
@@ -259,15 +337,7 @@ export async function acs(
   }
 
   // Extract user information from SAML profile
-  const emailRaw =
-    profile.email ??
-    profile.nameID ??
-    getProfileString(profile, [
-      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
-      "Email",
-      "email",
-      "mail",
-    ]);
+  const emailRaw = resolveSamlEmail(profile);
 
   const firstName = getProfileString(profile, [
     "FirstName",
@@ -307,23 +377,37 @@ export async function acs(
     "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/picture",
   ]);
 
-  if (emailRaw === undefined || emailRaw === null || emailRaw === "") {
-    throw new MonkeyError(400, "Email not found in SAML response");
+  const uidFromSaml = (
+    ssoid ??
+    getProfileString(profile, ["nameID"]) ??
+    ""
+  ).trim();
+  const normalizedEmail = emailRaw?.toLowerCase();
+
+  if (
+    uidFromSaml === "" &&
+    (normalizedEmail === undefined || !isStoredUserEmail(normalizedEmail))
+  ) {
+    throw new MonkeyError(400, "User identifier not found in SAML response");
   }
 
-  // Normalize email
-  const normalizedEmail = emailRaw.toLowerCase();
-
   // Prefer IEEE/SAML identifier as uid; fall back to deterministic email hash.
-  const uidFromSaml = (ssoid ?? "").trim();
   const resolvedUid =
-    uidFromSaml === "" ? generateUidFromEmail(normalizedEmail) : uidFromSaml;
+    uidFromSaml !== ""
+      ? uidFromSaml
+      : generateUidFromEmail(normalizedEmail as string);
 
   // Find or create user
-  const uid = await findOrCreateUser(resolvedUid, normalizedEmail, emailRaw);
+  const uid = await findOrCreateUser(
+    resolvedUid,
+    normalizedEmail ?? "",
+    emailRaw ?? resolvedUid,
+  );
 
   await UserDAL.updateSamlUserFields(uid, {
-    email: normalizedEmail,
+    ...(normalizedEmail !== undefined && isStoredUserEmail(normalizedEmail)
+      ? { email: normalizedEmail }
+      : {}),
     geocode,
     status,
     ssoid,
@@ -334,7 +418,12 @@ export async function acs(
 
   // Get user email for JWT token
   const user = await UserDAL.getPartialUser(uid, "saml acs", ["email"]);
-  const userEmail = user.email ?? normalizedEmail;
+  const userEmail =
+    user.email !== undefined && isStoredUserEmail(user.email)
+      ? user.email
+      : normalizedEmail !== undefined && isStoredUserEmail(normalizedEmail)
+        ? normalizedEmail
+        : "";
 
   // Generate JWT token with security standards
   const token = AuthUtil.generateJwtToken(uid, userEmail, "1d", {
@@ -777,6 +866,55 @@ export async function getUser(req: MonkeyRequest): Promise<GetUserResponse> {
     ...userData,
     inboxUnreadSize: inboxUnreadSize,
   });
+}
+
+export async function getAdminStatus(
+  req: MonkeyRequest,
+): Promise<GetAdminStatusResponse> {
+  const { uid } = req.ctx.decodedToken;
+  const admin = await AdminUidsDal.isAdmin(uid);
+
+  return new MonkeyResponse("Admin status retrieved", { isAdmin: admin });
+}
+
+export async function listUsers(
+  _req: MonkeyRequest,
+): Promise<ListUsersResponse> {
+  const legacyAdminUids = new Set(await AdminUidsDal.getAllLegacyAdminUids());
+  const users = await UserDAL.getAllUsersForAdmin(legacyAdminUids);
+
+  return new MonkeyResponse("Users retrieved", users);
+}
+
+export async function setUserAdmin(
+  req: MonkeyRequest<undefined, SetUserAdminRequest>,
+): Promise<MonkeyResponse> {
+  const { uid } = req.body;
+  const updated = await UserDAL.setAdminRoleByUid(uid);
+
+  if (!updated) {
+    throw new MonkeyError(404, "User not found");
+  }
+
+  void addImportantLog("admin_role_granted", {}, uid);
+
+  return new MonkeyResponse("User granted admin role", null);
+}
+
+export async function removeUserAdmin(
+  req: MonkeyRequest<undefined, RemoveUserAdminRequest>,
+): Promise<MonkeyResponse> {
+  const { uid } = req.body;
+  const updated = await UserDAL.removeAdminRoleByUid(uid);
+
+  if (!updated) {
+    throw new MonkeyError(404, "User not found");
+  }
+
+  await AdminUidsDal.removeLegacyAdmin(uid);
+  void addImportantLog("admin_role_removed", {}, uid);
+
+  return new MonkeyResponse("Admin role removed", null);
 }
 
 export async function getOauthLink(

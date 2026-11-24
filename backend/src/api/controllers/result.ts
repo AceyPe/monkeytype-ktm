@@ -64,6 +64,8 @@ import { MonkeyRequest } from "../types";
 import { getFunbox, checkCompatibility } from "@monkeytype/funbox";
 import { tryCatch } from "@monkeytype/util/trycatch";
 import { getCachedConfiguration } from "../../init/configuration";
+import * as ContestDAL from "../../dal/contest";
+import { isContestShapedResult } from "./contest-result";
 
 function getLeaderboardDisplayName(
   user: Pick<UserDAL.DBUser, "uid" | "name" | "firstName" | "lastName">,
@@ -74,20 +76,10 @@ function getLeaderboardDisplayName(
   return user.uid;
 }
 
-try {
-  if (!anticheatImplemented()) throw new Error("undefined");
+if (anticheatImplemented()) {
   Logger.success("Anticheat module loaded");
-} catch (e) {
-  if (isDevEnvironment()) {
-    Logger.warning(
-      "No anticheat module found. Continuing in dev mode, results will not be validated.",
-    );
-  } else {
-    Logger.error(
-      "No anticheat module found. To continue in dev mode, add MODE=dev to your .env file in the backend directory",
-    );
-    process.exit(1);
-  }
+} else {
+  Logger.warning("No anticheat module found. Results will not be validated.");
 }
 
 export async function getResults(
@@ -222,6 +214,16 @@ export async function addResult(
   const completedEvent = req.body.result;
   completedEvent.uid = uid;
 
+  if (isContestShapedResult(completedEvent)) {
+    const todaysContest = await ContestDAL.getTodaysContest();
+    if (todaysContest !== null) {
+      throw new MonkeyError(
+        400,
+        "Contest results must be submitted from the contest page",
+      );
+    }
+  }
+
   if (isTestTooShort(completedEvent)) {
     const status = MonkeyStatusCodes.TEST_TOO_SHORT;
     throw new MonkeyError(status.code, status.message);
@@ -317,12 +319,7 @@ export async function addResult(
       Logger.success("Result data validated");
     }
   } else {
-    if (!isDevEnvironment()) {
-      throw new Error("No anticheat module found");
-    }
-    Logger.warning(
-      "No anticheat module found. Continuing in dev mode, results will not be validated.",
-    );
+    Logger.warning("No anticheat module found. Results will not be validated.");
   }
 
   //dont use - result timestamp is unreliable, can be changed by system time and stuff
@@ -413,11 +410,8 @@ export async function addResult(
         throw new MonkeyError(status.code, "Possible bot detected");
       }
     } else {
-      if (!isDevEnvironment()) {
-        throw new Error("No anticheat module found");
-      }
       Logger.warning(
-        "No anticheat module found. Continuing in dev mode, results will not be validated.",
+        "No anticheat module found. Key data will not be validated.",
       );
     }
   }

@@ -13,6 +13,7 @@ import * as Notifications from "../elements/notifications";
 import { LoadingOptions } from "../pages/page";
 import * as NavigationEvent from "../observables/navigation-event";
 import { checkIfGetParameterExists } from "../utils/misc";
+import Ape from "../ape";
 
 //source: https://www.youtube.com/watch?v=OstALBk-jTc
 // https://www.youtube.com/watch?v=OstALBk-jTc
@@ -70,6 +71,34 @@ const routes: Route[] = [
     path: "/verify",
     load: async (_params, options) => {
       await PageController.change("test", options);
+    },
+  },
+  {
+    path: "/contest",
+    load: async (_params, options) => {
+      if (!isAuthAvailable()) {
+        await navigate("/", options);
+        return;
+      }
+      if (!isAuthenticated()) {
+        await navigate("/login", options);
+        return;
+      }
+      await PageController.change("contest", options);
+    },
+  },
+  {
+    path: "/contests",
+    load: async (_params, options) => {
+      if (!isAuthAvailable()) {
+        await navigate("/", options);
+        return;
+      }
+      if (!isAuthenticated()) {
+        await navigate("/login", options);
+        return;
+      }
+      await PageController.change("contest", options);
     },
   },
   {
@@ -196,6 +225,31 @@ const routes: Route[] = [
       await PageController.change("friends", options);
     },
   },
+  {
+    path: "/dashboard",
+    load: async (_params, options) => {
+      if (!isAuthAvailable()) {
+        await navigate("/", options);
+        return;
+      }
+      if (!isAuthenticated()) {
+        await navigate("/login", options);
+        return;
+      }
+
+      const adminStatus = await Ape.users.getAdminStatus();
+      if (
+        adminStatus.status !== 200 ||
+        adminStatus.body.data.isAdmin !== true
+      ) {
+        Notifications.add("Admin access required", -1);
+        await navigate("/", options);
+        return;
+      }
+
+      await PageController.change("dashboard", options);
+    },
+  },
 ];
 
 export async function navigate(
@@ -287,6 +341,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-NavigationEvent.subscribe((it) => {
-  void navigate(it.url, { data: it.data });
+NavigationEvent.subscribe(async (it) => {
+  await navigate(it.url, { data: it.data, force: it.force });
 });

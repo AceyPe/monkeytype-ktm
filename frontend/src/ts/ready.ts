@@ -1,6 +1,7 @@
 import * as Misc from "./utils/misc";
 import * as MonkeyPower from "./elements/monkey-power";
 import * as MerchBanner from "./elements/merch-banner";
+import * as ContestBanner from "./elements/contest-banner";
 import * as ConnectionState from "./states/connection";
 // import * as AccountButton from "./elements/account-button";
 //@ts-expect-error no types for this package
@@ -18,6 +19,7 @@ $(async (): Promise<void> => {
   //to make sure the initial theme application doesnt animate the background color
   $("body").css("transition", "background .25s, transform .05s");
   MerchBanner.showIfNotClosedBefore();
+  void ContestBanner.showIfContestToday();
 
   for (const fb of getActiveFunboxesWithFunction("applyGlobalCSS")) {
     fb.functions.applyGlobalCSS();

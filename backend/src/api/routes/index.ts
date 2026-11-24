@@ -17,6 +17,10 @@ import { version } from "../../version";
 import leaderboards from "./leaderboards";
 import connections from "./connections";
 import contact from "./contact";
+import contests from "./contests";
+import analytics from "./analytics";
+import testContent from "./test-content";
+import contestLive from "../../contest/routes";
 import addSwaggerMiddlewares from "./swagger";
 import { MonkeyResponse } from "../../utils/monkey-response";
 import {
@@ -46,6 +50,7 @@ const APP_START_TIME = Date.now();
 
 const API_ROUTE_MAP = {
   "/docs": docs,
+  "/test-content": testContent,
 };
 
 const s = initServer();
@@ -66,6 +71,8 @@ const router = s.router(contract, {
   webhooks,
   connections,
   contact,
+  contests,
+  analytics,
 });
 
 export function addApiRoutes(app: Application): void {
@@ -183,6 +190,8 @@ function applyApiRoutes(app: Application): void {
       next();
     },
   );
+
+  app.use("/api/contest", contestLive);
 
   app.get("/", (_req, res) => {
     res.status(200).json(

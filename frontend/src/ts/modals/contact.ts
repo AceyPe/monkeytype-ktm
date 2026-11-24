@@ -227,10 +227,15 @@ export function show(): void {
         },
       });
 
+      // Keep the menu on the field. SlimSelect otherwise adds window.scrollY,
+      // which throws the menu down the page when this fixed dialog is opened
+      // from a scrolled page such as the leaderboard.
+      const contactTypeField = contactTypeSelect.closest(
+        ".inputAndIndicator",
+      ) as HTMLElement;
+
       select = new SlimSelect({
-        select: modalEl.querySelector(
-          "select[name='contactType']",
-        ) as HTMLElement,
+        select: contactTypeSelect,
         data: [
           { text: "Question", value: "Question" },
           { text: "Feedback", value: "Feedback" },
@@ -239,7 +244,9 @@ export function show(): void {
           { text: "Other", value: "Other" },
         ],
         settings: {
-          contentLocation: modalEl,
+          contentLocation: contactTypeField,
+          contentPosition: "relative",
+          openPosition: "down",
         },
         events: {
           afterChange: (newVal) => {

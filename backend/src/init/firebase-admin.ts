@@ -10,6 +10,10 @@ const SERVICE_ACCOUNT_PATH = path.join(
   "../../src/credentials/serviceAccountKey.json",
 );
 
+export function getServiceAccountPath(): string | undefined {
+  return existsSync(SERVICE_ACCOUNT_PATH) ? SERVICE_ACCOUNT_PATH : undefined;
+}
+
 export function init(): void {
   if (!existsSync(SERVICE_ACCOUNT_PATH)) {
     if (isDevEnvironment()) {
@@ -34,6 +38,9 @@ export function init(): void {
 }
 
 function get(): typeof admin {
+  if (admin.apps.length === 0) {
+    init();
+  }
   if (admin.apps.length === 0) {
     throw new MonkeyError(
       500,

@@ -17,7 +17,7 @@ document.addEventListener("keydown", (e) => {
   if (PageTransition.get()) return;
   if (e.key === undefined) return;
 
-  const pageTestActive: boolean = ActivePage.get() === "test";
+  const pageTestActive: boolean = ActivePage.isTypingTestPage();
   if (pageTestActive && !TestState.resultVisible && !isInputElementFocused()) {
     const popupVisible: boolean = Misc.isAnyPopupVisible();
     // this is nested because isAnyPopupVisible is a bit expensive
@@ -74,7 +74,7 @@ document.addEventListener("keydown", (e) => {
         !isInteractiveElement)
     ) {
       e.preventDefault();
-      if (ActivePage.get() === "test") {
+      if (ActivePage.isTypingTestPage()) {
         if (e.shiftKey) {
           ManualRestart.set();
         }

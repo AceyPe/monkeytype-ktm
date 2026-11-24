@@ -1,0 +1,20 @@
+# Connects the API process to Cloudflare.
+# api.ieeektm.org -> localhost:5005
+# Live contests use the same host: /api/contest and /ws.
+#
+# Host network is required so localhost inside cloudflared is the machine
+# where PM2 is running the API. Run this on that server.
+#
+# Tunnel b11ef278-376c-453a-9c87-cd947a25618b
+# The token lives in .env as CLOUDFLARE_TUNNEL_TOKEN (not committed).
+#   docker compose up -d
+
+services:
+  api-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: ktm-api-tunnel
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel run

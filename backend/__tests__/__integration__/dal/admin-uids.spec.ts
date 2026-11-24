@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { ObjectId } from "mongodb";
 import * as AdminUidsDal from "../../../src/dal/admin-uids";
+import * as UserDal from "../../../src/dal/user";
 
 describe("AdminUidsDal", () => {
   describe("isAdmin", () => {
@@ -25,6 +26,27 @@ describe("AdminUidsDal", () => {
 
       //WHEN / THEN
       expect(await AdminUidsDal.isAdmin("regularUser")).toBe(false);
+    });
+
+    it("should return true for user with admin role", async () => {
+      const uid = new ObjectId().toHexString();
+      await UserDal.getUsersCollection().insertOne({
+        _id: new ObjectId(),
+        uid,
+        name: "adminuser",
+        email: "admin@example.com",
+        addedAt: Date.now(),
+        personalBests: {
+          time: {},
+          words: {},
+          quote: {},
+          zen: {},
+          custom: {},
+        },
+        role: 1,
+      } as never);
+
+      expect(await AdminUidsDal.isAdmin(uid)).toBe(true);
     });
   });
 });
