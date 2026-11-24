@@ -8,7 +8,7 @@ import {
   getWordChunk,
   type ContentTrace,
 } from "@monkeytype/test-content";
-import { config } from "./config.js";
+import { config } from "./config";
 
 export type ContestSession = {
   traceId: string;
@@ -63,11 +63,6 @@ export function createSession(userId: string): ContestSession {
 export function getSession(traceId: string): ContestSession | undefined {
   pruneExpired();
   return sessions.get(traceId);
-}
-
-export function getTrace(traceId: string): ContentTrace | undefined {
-  pruneExpired();
-  return traces.get(traceId);
 }
 
 export function getWordChunkForSession(

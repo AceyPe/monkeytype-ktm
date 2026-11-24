@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 let cachedRoot: string | null = null;
 
-/** Resolves frontend/static from monorepo layout (package, contest-backend, backend). */
+/** Resolves frontend/static from the monorepo, or backend/dist/static in production. */
 export function getStaticRoot(): string {
   if (cachedRoot !== null) return cachedRoot;
 

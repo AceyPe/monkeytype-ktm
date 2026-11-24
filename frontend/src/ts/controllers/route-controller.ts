@@ -341,6 +341,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-NavigationEvent.subscribe((it) => {
-  void navigate(it.url, { data: it.data });
+NavigationEvent.subscribe(async (it) => {
+  await navigate(it.url, { data: it.data, force: it.force });
 });

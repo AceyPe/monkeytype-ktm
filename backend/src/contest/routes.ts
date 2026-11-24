@@ -1,17 +1,14 @@
 import { Router } from "express";
 import { z } from "zod";
-import { config, isStreamEnabled } from "./config.js";
-import { handleKeystroke } from "./keystroke-handler.js";
+import { config, isStreamEnabled } from "./config";
+import { handleKeystroke } from "./keystroke-handler";
 import {
   createSession,
   finishSession,
   getSession,
   getWordChunkForSession,
-} from "./session-store.js";
-import {
-  ensureContestChannel,
-  getStreamServerClient,
-} from "./stream-client.js";
+} from "./session-store";
+import { ensureContestChannel, getStreamServerClient } from "./stream-client";
 
 const router = Router();
 
@@ -82,8 +79,8 @@ router.get("/trace/:traceId/chunk/:chunkIndex", (req, res) => {
   });
 
   const parsed = schema.safeParse({
-    traceId: req.params.traceId,
-    chunkIndex: req.params.chunkIndex,
+    traceId: req.params["traceId"],
+    chunkIndex: req.params["chunkIndex"],
     userId: req.query["userId"],
   });
 
@@ -136,7 +133,7 @@ router.post("/keystroke", (req, res) => {
 });
 
 router.post("/trace/:traceId/finish", (req, res) => {
-  const traceIdResult = z.string().uuid().safeParse(req.params.traceId);
+  const traceIdResult = z.string().uuid().safeParse(req.params["traceId"]);
   if (!traceIdResult.success) {
     res.status(400).json({ error: "Invalid trace id" });
     return;

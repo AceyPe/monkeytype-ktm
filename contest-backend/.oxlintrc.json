@@ -1,3 +1,0 @@
-{
-  "extends": ["../packages/oxlint-config/index.jsonc"]
-}

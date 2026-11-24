@@ -14,7 +14,7 @@ import queues from "./queues";
 import workers from "./workers";
 import Logger from "./utils/logger";
 import * as EmailClient from "./init/email-client";
-import { startContestBackend } from "./init/contest-backend";
+import { attachContestWebSocket } from "./contest/websocket";
 import * as FirebaseAdmin from "./init/firebase-admin";
 import { createIndicies as leaderboardDbSetup } from "./dal/leaderboards";
 import { createIndicies as blocklistDbSetup } from "./dal/blocklist";
@@ -88,11 +88,11 @@ async function bootServer(port: number): Promise<Server> {
     return process.exit(1);
   }
 
-  startContestBackend();
-
-  return app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     Logger.success(`API server listening on port ${port}`);
   });
+  attachContestWebSocket(server);
+  return server;
 }
 
 const PORT = parseInt(process.env["PORT"] ?? "5005", 10);

@@ -57,7 +57,7 @@ let loadedWords: string[] | null = null;
 let wordsLoadPromise: Promise<string[]> | null = null;
 
 function getBackendUrl(): string {
-  return envConfig.contestBackendUrl.replace(/\/$/, "");
+  return envConfig.backendUrl.replace(/\/$/, "");
 }
 
 export function isConnected(): boolean {

@@ -1,5 +1,5 @@
-import { processKeystroke } from "./session-store.js";
-import { sendKeystrokeResult } from "./stream-client.js";
+import { processKeystroke } from "./session-store";
+import { sendKeystrokeResult } from "./stream-client";
 
 export type KeystrokePayload = {
   traceId: string;

@@ -20,6 +20,7 @@ import contact from "./contact";
 import contests from "./contests";
 import analytics from "./analytics";
 import testContent from "./test-content";
+import contestLive from "../../contest/routes";
 import addSwaggerMiddlewares from "./swagger";
 import { MonkeyResponse } from "../../utils/monkey-response";
 import {
@@ -189,6 +190,8 @@ function applyApiRoutes(app: Application): void {
       next();
     },
   );
+
+  app.use("/api/contest", contestLive);
 
   app.get("/", (_req, res) => {
     res.status(200).json(

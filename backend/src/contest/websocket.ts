@@ -1,8 +1,9 @@
 import type { Server } from "node:http";
 import { WebSocketServer } from "ws";
 import { z } from "zod";
-import { handleKeystroke } from "./keystroke-handler.js";
-import { isStreamEnabled } from "./config.js";
+import Logger from "../utils/logger";
+import { isStreamEnabled } from "./config";
+import { handleKeystroke } from "./keystroke-handler";
 
 const keystrokeSchema = z.object({
   type: z.literal("contest_keystroke"),
@@ -14,8 +15,8 @@ const keystrokeSchema = z.object({
 
 export function attachContestWebSocket(server: Server): void {
   if (isStreamEnabled()) {
-    console.log(
-      "[contest-backend] Stream.io configured; WebSocket fallback disabled.",
+    Logger.info(
+      "Stream.io configured; contest WebSocket fallback is disabled.",
     );
     return;
   }
@@ -57,5 +58,5 @@ export function attachContestWebSocket(server: Server): void {
     });
   });
 
-  console.log("[contest-backend] WebSocket listening at /ws");
+  Logger.success("Contest WebSocket listening at /ws");
 }

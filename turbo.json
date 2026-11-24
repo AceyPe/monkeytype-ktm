@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [".env", "contest-backend/.env"],
+  "globalDependencies": [".env"],
   "tasks": {
     "parallel": {
       "dependsOn": ["^parallel"]
@@ -36,45 +36,28 @@
     },
     "@monkeytype/frontend#build": {
       "dependsOn": ["^build"],
-      "env": [
-        "BACKEND_URL",
-        "CONTEST_BACKEND_URL",
-        "RECAPTCHA_SITE_KEY",
-        "SENTRY"
-      ],
+      "env": ["BACKEND_URL", "RECAPTCHA_SITE_KEY", "SENTRY"],
       "outputs": ["dist/**"]
     },
     "@monkeytype/frontend#dev": {
       "dependsOn": ["^build"],
-      "env": [
-        "BACKEND_URL",
-        "CONTEST_BACKEND_URL",
-        "RECAPTCHA_SITE_KEY",
-        "SERVER_OPEN"
-      ],
+      "env": ["BACKEND_URL", "RECAPTCHA_SITE_KEY", "SERVER_OPEN"],
       "persistent": true
     },
     "@monkeytype/backend#dev": {
       "dependsOn": ["^build"],
-      "env": ["DB_URI", "REDIS_URI", "PORT"],
-      "persistent": true
-    },
-    "@monkeytype/contest-backend#dev": {
-      "dependsOn": ["^build"],
       "env": [
-        "CONTEST_PORT",
-        "CONTEST_CORS_ORIGIN",
+        "DB_URI",
+        "REDIS_URI",
+        "PORT",
         "CONTEST_SESSION_TTL_MS",
         "CONTEST_WORD_COUNT",
+        "CONTEST_CHUNK_SIZE",
         "STREAM_API_KEY",
         "STREAM_API_SECRET",
         "STREAM_WEBHOOK_SECRET"
       ],
       "persistent": true
-    },
-    "@monkeytype/contest-backend#build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
     }
   }
 }

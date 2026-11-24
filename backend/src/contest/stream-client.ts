@@ -1,5 +1,5 @@
 import { StreamChat } from "stream-chat";
-import { config, isStreamEnabled } from "./config.js";
+import { config, isStreamEnabled } from "./config";
 
 let serverClient: StreamChat | null = null;
 

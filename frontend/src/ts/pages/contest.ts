@@ -16,7 +16,7 @@ import * as ContestClient from "../contest/contest-client";
 import * as ContestMarathonHeader from "../elements/contest-marathon-header";
 import * as ContestBestScore from "../elements/contest-best-score";
 import { getTodaysContest } from "../utils/contest-today";
-import { navigate } from "../controllers/route-controller";
+import * as NavigationEvent from "../observables/navigation-event";
 
 export const page = new Page({
   id: "contest",
@@ -45,7 +45,7 @@ export const page = new Page({
     const todaysContest = await getTodaysContest();
     if (todaysContest === null) {
       Notifications.add("No contest is active today", -1, { important: true });
-      await navigate("/", { force: true });
+      await NavigationEvent.dispatch({ url: "/", force: true });
       return;
     }
 

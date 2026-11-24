@@ -59,9 +59,9 @@ importers:
       '@google-analytics/data':
         specifier: 7.3.0
         version: 7.3.0
-      '@monkeytype/contest-backend':
+      '@monkeytype/contest-validation':
         specifier: workspace:*
-        version: link:../contest-backend
+        version: link:../packages/contest-validation
       '@monkeytype/contracts':
         specifier: workspace:*
         version: link:../packages/contracts
@@ -164,6 +164,9 @@ importers:
       simple-git:
         specifier: 3.16.0
         version: 3.16.0
+      stream-chat:
+        specifier: 8.59.0
+        version: 8.59.0
       string-similarity:
         specifier: 4.0.4
         version: 4.0.4
@@ -179,6 +182,9 @@ importers:
       winston:
         specifier: 3.6.0
         version: 3.6.0
+      ws:
+        specifier: 8.18.0
+        version: 8.18.0
       zod:
         specifier: 3.23.8
         version: 3.23.8
@@ -246,6 +252,9 @@ importers:
       '@types/uuid':
         specifier: 10.0.0
         version: 10.0.0
+      '@types/ws':
+        specifier: 8.5.13
+        version: 8.5.13
       '@vitest/coverage-v8':
         specifier: 4.0.8
         version: 4.0.8(vitest@4.0.8(@types/node@24.9.1)(happy-dom@20.0.10)(sass@1.70.0)(terser@5.44.1)(tsx@4.16.2)(yaml@2.8.1))
@@ -282,73 +291,6 @@ importers:
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.9.1)(happy-dom@20.0.10)(sass@1.70.0)(terser@5.44.1)(tsx@4.16.2)(yaml@2.8.1)
-
-  contest-backend:
-    dependencies:
-      '@monkeytype/contest-validation':
-        specifier: workspace:*
-        version: link:../packages/contest-validation
-      '@monkeytype/test-content':
-        specifier: workspace:*
-        version: link:../packages/test-content
-      cors:
-        specifier: 2.8.5
-        version: 2.8.5
-      dotenv:
-        specifier: 16.4.5
-        version: 16.4.5
-      express:
-        specifier: 5.2.0
-        version: 5.2.0
-      stream-chat:
-        specifier: 8.59.0
-        version: 8.59.0
-      uuid:
-        specifier: 10.0.0
-        version: 10.0.0
-      ws:
-        specifier: 8.18.0
-        version: 8.18.0
-      zod:
-        specifier: 3.23.8
-        version: 3.23.8
-    devDependencies:
-      '@monkeytype/eslint-config':
-        specifier: workspace:*
-        version: link:../packages/eslint-config
-      '@monkeytype/oxlint-config':
-        specifier: workspace:*
-        version: link:../packages/oxlint-config
-      '@monkeytype/typescript-config':
-        specifier: workspace:*
-        version: link:../packages/typescript-config
-      '@types/cors':
-        specifier: 2.8.12
-        version: 2.8.12
-      '@types/express':
-        specifier: 5.0.3
-        version: 5.0.3
-      '@types/node':
-        specifier: 24.9.1
-        version: 24.9.1
-      '@types/ws':
-        specifier: 8.5.13
-        version: 8.5.13
-      eslint:
-        specifier: 8.57.1
-        version: 8.57.1
-      oxlint:
-        specifier: 1.29.0
-        version: 1.29.0
-      tsup:
-        specifier: 8.4.0
-        version: 8.4.0(postcss@8.5.6)(tsx@4.16.2)(typescript@5.9.3)(yaml@2.8.1)
-      tsx:
-        specifier: 4.16.2
-        version: 4.16.2
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   frontend:
     dependencies:

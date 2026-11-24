@@ -1,6 +1,5 @@
 export type EnvConfig = {
   backendUrl: string;
-  contestBackendUrl: string;
   isDevelopment: boolean;
   clientVersion: string;
   recaptchaSiteKey: string;

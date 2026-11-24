@@ -7,10 +7,6 @@ const resolvedVirtualModuleId = "\0" + virtualModuleId;
 const developmentConfig: EnvConfig = {
   isDevelopment: true,
   backendUrl: fallbackEnv("BACKEND_URL", "http://localhost:5005"),
-  contestBackendUrl: fallbackEnv(
-    "CONTEST_BACKEND_URL",
-    "http://localhost:5050",
-  ),
   clientVersion: "DEVELOPMENT_CLIENT",
   recaptchaSiteKey: "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI",
   quickLoginEmail: process.env["QUICK_LOGIN_EMAIL"],
@@ -20,10 +16,6 @@ const productionConfig: Omit<EnvConfig, "clientVersion"> = {
   isDevelopment: false,
   // backendUrl: fallbackEnv("BACKEND_URL", "http://localhost:5005"),
   backendUrl: fallbackEnv("BACKEND_URL", "https://api.ieeektm.org"),
-  contestBackendUrl: fallbackEnv(
-    "CONTEST_BACKEND_URL",
-    "https://contest.ieeektm.org",
-  ),
   recaptchaSiteKey: process.env["RECAPTCHA_SITE_KEY"] ?? "",
   quickLoginEmail: undefined,
   quickLoginPassword: undefined,

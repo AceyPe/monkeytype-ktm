@@ -1,6 +1,5 @@
-# Replace tunnel with the UUID printed by: cloudflared tunnel create ktm-api
-# The credentials JSON for that tunnel must be mounted at credentials-file.
-tunnel: 00000000-0000-0000-0000-000000000000
+# Credentials JSON for this tunnel must be mounted at credentials-file.
+tunnel: b11ef278-376c-453a-9c87-cd947a25618b
 credentials-file: /etc/cloudflared/credentials.json
 
 ingress:
