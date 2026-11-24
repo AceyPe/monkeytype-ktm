@@ -5,7 +5,6 @@ import {
   getAuthenticatedUser,
 } from "../firebase";
 import { getSnapshot } from "../db";
-import { getTodaysContest } from "../utils/contest-today";
 import {
   formatMarathonCountdown,
   getContestRemainingMs,
@@ -66,22 +65,13 @@ function bindMoreInfoButton(): void {
     });
 }
 
-export async function show(): Promise<void> {
-  activeContest = await getTodaysContest();
+export function show(contest: Contest, countdownTitle: string): void {
+  activeContest = contest;
   topSectionElement.removeClass("hidden");
   practiceHeaderElement.addClass("hidden");
   contestHeaderElement.removeClass("hidden");
 
-  if (activeContest === null) {
-    contestHeaderElement.find(".contestMarathonTitle").text("Marathon");
-    contestHeaderElement.find(".contestMarathonSubtext").addClass("hidden");
-    countdownElement.text("—");
-    clearCountdownInterval();
-    bindMoreInfoButton();
-    return;
-  }
-
-  contestHeaderElement.find(".contestMarathonTitle").text("Marathon ends in");
+  contestHeaderElement.find(".contestMarathonTitle").text(countdownTitle);
   contestHeaderElement.find(".contestMarathonSubtext").removeClass("hidden");
   bindMoreInfoButton();
   startCountdown();

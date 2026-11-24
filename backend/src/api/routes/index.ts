@@ -18,6 +18,7 @@ import leaderboards from "./leaderboards";
 import connections from "./connections";
 import contact from "./contact";
 import contests from "./contests";
+import miniContests from "./mini-contests";
 import analytics from "./analytics";
 import testContent from "./test-content";
 import contestLive from "../../contest/routes";
@@ -72,6 +73,7 @@ const router = s.router(contract, {
   connections,
   contact,
   contests,
+  miniContests,
   analytics,
 });
 

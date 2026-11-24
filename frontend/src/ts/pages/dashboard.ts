@@ -7,6 +7,7 @@ import {
   Contest,
   ContestPrize,
   CreateContestRequest,
+  MiniContest,
 } from "@monkeytype/schemas/contests";
 import { AdminUserListItem } from "@monkeytype/schemas/users";
 import {
@@ -23,6 +24,8 @@ import { SimpleModal } from "../utils/simple-modal";
 import { format } from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
 import { z } from "zod";
+import { tryCatch } from "@monkeytype/util/trycatch";
+import { capitalizeFirstLetter } from "../utils/strings";
 import * as ContestLeaderboardModal from "../modals/contest-leaderboard";
 import {
   AnalyticsRangeSchema,
@@ -32,12 +35,19 @@ import {
 import * as DB from "../db";
 import * as DashboardAnalytics from "../elements/dashboard-analytics";
 
-type DashboardSection = "contests" | "users" | "analytics";
+const DashboardSectionSchema = z.enum([
+  "contests",
+  "mini-contests",
+  "users",
+  "analytics",
+]);
+type DashboardSection = z.infer<typeof DashboardSectionSchema>;
+type ContestKind = ContestLeaderboardModal.ContestKind;
 type ContestFormMode = "create" | "edit";
 type AnalyticsLimits = DashboardAnalytics.AnalyticsLimits;
 
 const DashboardUrlParamsSchema = z.object({
-  tab: z.enum(["contests", "users", "analytics"]).optional(),
+  tab: DashboardSectionSchema.optional(),
   range: AnalyticsRangeSchema.optional(),
   limitCountries: z.string().regex(/^\d+$/).optional(),
   limitPages: z.string().regex(/^\d+$/).optional(),
@@ -48,8 +58,7 @@ const DashboardUrlParamsSchema = z.object({
 function resolveSection(
   tab: z.infer<typeof DashboardUrlParamsSchema>["tab"],
 ): DashboardSection {
-  if (tab === "users" || tab === "analytics") return tab;
-  return "contests";
+  return tab ?? "contests";
 }
 
 function parseAnalyticsLimit(value: string | undefined): number {
@@ -84,9 +93,18 @@ function updateDashboardUrlParams(): void {
 
 const state = {
   section: "contests" as DashboardSection,
-  contestsLoading: false,
-  contestsError: undefined as string | undefined,
-  contests: [] as Contest[],
+  contests: {
+    contest: {
+      loading: false,
+      error: undefined as string | undefined,
+      data: [] as Contest[],
+    },
+    miniContest: {
+      loading: false,
+      error: undefined as string | undefined,
+      data: [] as MiniContest[],
+    },
+  },
   usersLoading: false,
   usersError: undefined as string | undefined,
   users: [] as AdminUserListItem[],
@@ -181,11 +199,13 @@ const removeUserAdminModal = new SimpleModal({
 });
 
 const contestFormState = {
+  kind: "contest" as ContestKind,
   mode: "create" as ContestFormMode,
   contestId: undefined as string | undefined,
 };
 
 const deleteContestState = {
+  kind: "contest" as ContestKind,
   contestId: undefined as string | undefined,
   expectedPhrase: "",
 };
@@ -214,8 +234,62 @@ function formatContestDate(timestamp: number): string {
   return `${format(new UTCDateMini(timestamp), "dd MMM yyyy")} UTC`;
 }
 
-function getDeleteContestConfirmPhrase(title: string): string {
-  return `I am sure I want to delete the ${title} contest`;
+function getKindLabel(kind: ContestKind): string {
+  return kind === "miniContest" ? "mini-contest" : "contest";
+}
+
+function getKindTitle(kind: ContestKind): string {
+  return capitalizeFirstLetter(getKindLabel(kind));
+}
+
+function getContestsPanel(kind: ContestKind): JQuery {
+  return pageElement.find(
+    kind === "miniContest" ? ".miniContestsPanel" : ".contestsPanel",
+  );
+}
+
+/** Both panels share the same markup, the surrounding panel tells them apart. */
+function getKindOfElement(element: HTMLElement): ContestKind {
+  return $(element).closest(".miniContestsPanel").length > 0
+    ? "miniContest"
+    : "contest";
+}
+
+function findContest(
+  kind: ContestKind,
+  contestId: string,
+): Contest | MiniContest | undefined {
+  return (state.contests[kind].data as Contest[]).find(
+    (entry) => entry._id === contestId,
+  );
+}
+
+function getMiniContestUrl(slug: string): string {
+  return `${location.origin}/mini-contest/${slug}`;
+}
+
+function getContestLinkRow(contest: Contest | MiniContest): string {
+  if (!("slug" in contest)) return "";
+  const url = getMiniContestUrl(contest.slug);
+  return `
+        <div class="contestLinkRow">
+          <a class="contestLink" href="${url}" target="_blank" rel="noopener">${url}</a>
+          <button
+            type="button"
+            class="textButton copyContestLinkButton"
+            data-contest-id="${contest._id}"
+          >
+            <i class="fas fa-copy"></i>
+            copy link
+          </button>
+        </div>`;
+}
+
+function getDeleteContestConfirmPhrase(
+  title: string,
+  kind: ContestKind,
+): string {
+  return `I am sure I want to delete the ${title} ${getKindLabel(kind)}`;
 }
 
 function formatPrizeRange(fromPosition: number, toPosition?: number): string {
@@ -232,16 +306,17 @@ function updateSectionButtons(): void {
     .addClass("active");
 }
 
-function renderContestsList(): void {
-  const list = pageElement.find(".contestsList");
+function renderContestsList(kind: ContestKind): void {
+  const list = getContestsPanel(kind).find(".contestsList");
+  const contests: (Contest | MiniContest)[] = state.contests[kind].data;
   list.empty();
 
-  if (state.contests.length === 0) {
-    list.append(`<div class="empty">No contests yet</div>`);
+  if (contests.length === 0) {
+    list.append(`<div class="empty">No ${getKindLabel(kind)}s yet</div>`);
     return;
   }
 
-  for (const contest of state.contests) {
+  for (const contest of contests) {
     const prizeRows = contest.prizes
       .map(
         (prize) => `
@@ -287,6 +362,7 @@ function renderContestsList(): void {
             </button>
           </div>
         </div>
+        ${getContestLinkRow(contest)}
         <div class="leaderboardPublicRow">
           <span class="leaderboardPublicLabel">Make Leaderboard Public?</span>
           <div class="ynToggle" role="group" aria-label="Make Leaderboard Public?">
@@ -571,10 +647,19 @@ async function fetchAnalytics(): Promise<void> {
   updateContent();
 }
 
+function getSectionKind(section: DashboardSection): ContestKind | null {
+  if (section === "contests") return "contest";
+  if (section === "mini-contests") return "miniContest";
+  return null;
+}
+
 function updateContent(): void {
   pageElement
     .find(".contestsPanel")
     .toggleClass("hidden", state.section !== "contests");
+  pageElement
+    .find(".miniContestsPanel")
+    .toggleClass("hidden", state.section !== "mini-contests");
   pageElement
     .find(".usersPanel")
     .toggleClass("hidden", state.section !== "users");
@@ -608,21 +693,20 @@ function updateContent(): void {
     return;
   }
 
-  if (state.section === "contests") {
-    pageElement
-      .find(".contestsPanel .loading")
-      .toggleClass("hidden", !state.contestsLoading);
-    pageElement
-      .find(".contestsPanel .error")
-      .toggleClass("hidden", state.contestsError === undefined);
-    pageElement.find(".contestsPanel .error p").text(state.contestsError ?? "");
+  const kind = getSectionKind(state.section);
+  if (kind !== null) {
+    const panel = getContestsPanel(kind);
+    const { loading, error } = state.contests[kind];
+    panel.find(".loading").toggleClass("hidden", !loading);
+    panel.find(".error").toggleClass("hidden", error === undefined);
+    panel.find(".error p").text(error ?? "");
 
-    if (state.contestsLoading || state.contestsError !== undefined) {
-      pageElement.find(".contestsList").empty();
+    if (loading || error !== undefined) {
+      panel.find(".contestsList").empty();
       return;
     }
 
-    renderContestsList();
+    renderContestsList(kind);
     return;
   }
 
@@ -650,22 +734,29 @@ function updateContent(): void {
   renderUsersList();
 }
 
-async function fetchContests(): Promise<void> {
-  state.contestsLoading = true;
-  state.contestsError = undefined;
+async function fetchContests(kind: ContestKind): Promise<void> {
+  const contestsState = state.contests[kind];
+  contestsState.loading = true;
+  contestsState.error = undefined;
   updateContent();
 
-  const response = await Ape.contests.get();
-
-  state.contestsLoading = false;
-
-  if (response.status === 200) {
-    state.contests = response.body.data;
-    state.contestsError = undefined;
+  let response;
+  if (kind === "miniContest") {
+    response = await Ape.miniContests.get();
+    state.contests.miniContest.data =
+      response.status === 200 ? response.body.data : [];
   } else {
-    state.contests = [];
-    state.contestsError = response.body.message ?? "Failed to load contests";
-    Notifications.add(state.contestsError, -1);
+    response = await Ape.contests.get();
+    state.contests.contest.data =
+      response.status === 200 ? response.body.data : [];
+  }
+
+  contestsState.loading = false;
+
+  if (response.status !== 200) {
+    contestsState.error =
+      response.body.message ?? `Failed to load ${getKindLabel(kind)}s`;
+    Notifications.add(contestsState.error, -1);
   }
 
   updateContent();
@@ -763,9 +854,10 @@ function populateContestForm(contest: Contest): void {
 function updateContestFormModalUi(): void {
   const modal = getContestFormModal();
   const isEdit = contestFormState.mode === "edit";
+  const label = getKindLabel(contestFormState.kind);
   modal
     .find(".contestFormTitle")
-    .text(isEdit ? "Edit contest" : "Create contest");
+    .text(isEdit ? `Edit ${label}` : `Create ${label}`);
   modal.find(".contestFormSubmitButton").text(isEdit ? "save" : "create");
 }
 
@@ -911,32 +1003,32 @@ async function submitContestForm(event: {
   modal.find(".contestFormSubmitButton").prop("disabled", true);
 
   const body = { title, date, prizes };
+  const { kind, mode, contestId } = contestFormState;
+  const api = Ape[kind === "miniContest" ? "miniContests" : "contests"];
   const response =
-    contestFormState.mode === "edit" && contestFormState.contestId !== undefined
-      ? await Ape.contests.update({
-          params: { contestId: contestFormState.contestId },
-          body,
-        })
-      : await Ape.contests.create({ body });
+    mode === "edit" && contestId !== undefined
+      ? await api.update({ params: { contestId }, body })
+      : await api.create({ body });
 
   modal.find(".contestFormSubmitButton").prop("disabled", false);
 
   if (response.status === 200) {
     Notifications.add(
-      contestFormState.mode === "edit" ? "Contest updated" : "Contest created",
+      `${getKindTitle(kind)} ${mode === "edit" ? "updated" : "created"}`,
       1,
     );
     void contestFormModal.hide();
-    await fetchContests();
+    await fetchContests(kind);
     return;
   }
 
   errorEl
     .removeClass("hidden")
-    .text(response.body.message ?? "Failed to save contest");
+    .text(response.body.message ?? `Failed to save ${getKindLabel(kind)}`);
 }
 
-function openCreateContestModal(): void {
+function openCreateContestModal(kind: ContestKind): void {
+  contestFormState.kind = kind;
   contestFormState.mode = "create";
   contestFormState.contestId = undefined;
   resetContestForm();
@@ -946,12 +1038,14 @@ function openCreateContestModal(): void {
   });
 }
 
-function openEditContestModal(contestId: string): void {
-  const contest = state.contests.find((entry) => entry._id === contestId);
+function openEditContestModal(kind: ContestKind, contestId: string): void {
+  const contest = findContest(kind, contestId);
   if (contest === undefined) {
-    Notifications.add("Contest not found", -1);
+    Notifications.add(`${getKindTitle(kind)} not found`, -1);
     return;
   }
+
+  contestFormState.kind = kind;
 
   contestFormState.mode = "edit";
   contestFormState.contestId = contestId;
@@ -962,10 +1056,10 @@ function openEditContestModal(contestId: string): void {
   });
 }
 
-function openDeleteContestModal(contestId: string): void {
-  const contest = state.contests.find((entry) => entry._id === contestId);
+function openDeleteContestModal(kind: ContestKind, contestId: string): void {
+  const contest = findContest(kind, contestId);
   if (contest === undefined) {
-    Notifications.add("Contest not found", -1);
+    Notifications.add(`${getKindTitle(kind)} not found`, -1);
     return;
   }
 
@@ -974,12 +1068,15 @@ function openDeleteContestModal(contestId: string): void {
   //   return;
   // }
 
+  deleteContestState.kind = kind;
   deleteContestState.contestId = contestId;
   deleteContestState.expectedPhrase = getDeleteContestConfirmPhrase(
     contest.title,
+    kind,
   );
 
   const modal = getDeleteContestModal();
+  modal.find(".deleteContestTitle").text(`Delete ${getKindLabel(kind)}`);
   modal.find(".confirmPhrase").text(deleteContestState.expectedPhrase);
   resetDeleteContestForm();
 
@@ -998,10 +1095,10 @@ async function submitDeleteContest(event: {
   const confirmText = (
     modal.find("input[name='confirmText']").val() as string
   ).trim();
-  const contestId = deleteContestState.contestId;
+  const { kind, contestId } = deleteContestState;
 
   if (contestId === undefined) {
-    errorEl.removeClass("hidden").text("Contest not found");
+    errorEl.removeClass("hidden").text(`${getKindTitle(kind)} not found`);
     return;
   }
 
@@ -1013,22 +1110,24 @@ async function submitDeleteContest(event: {
   errorEl.addClass("hidden").text("");
   modal.find(".deleteContestSubmitButton").prop("disabled", true);
 
-  const response = await Ape.contests.delete({
+  const response = await Ape[
+    kind === "miniContest" ? "miniContests" : "contests"
+  ].delete({
     params: { contestId },
   });
 
   modal.find(".deleteContestSubmitButton").prop("disabled", false);
 
   if (response.status === 200) {
-    Notifications.add("Contest deleted", 1);
+    Notifications.add(`${getKindTitle(kind)} deleted`, 1);
     void deleteContestModal.hide();
-    await fetchContests();
+    await fetchContests(kind);
     return;
   }
 
   errorEl
     .removeClass("hidden")
-    .text(response.body.message ?? "Failed to delete contest");
+    .text(response.body.message ?? `Failed to delete ${getKindLabel(kind)}`);
 }
 
 pageElement.on("click", ".sectionButtons button", function () {
@@ -1038,6 +1137,10 @@ pageElement.on("click", ".sectionButtons button", function () {
   updateSectionButtons();
   updateDashboardUrlParams();
   updateContent();
+  const kind = getSectionKind(section);
+  if (kind !== null && !state.contests[kind].loading) {
+    void fetchContests(kind);
+  }
   if (section === "users") {
     if (state.users.length === 0 && !state.usersLoading) {
       void fetchUsers();
@@ -1127,21 +1230,21 @@ pageElement.on("click", ".removeAdminAction", function () {
   removeUserAdminModal.show([uid], {});
 });
 
-pageElement.on("click", ".createContestButton", () => {
-  openCreateContestModal();
+pageElement.on("click", ".createContestButton", function () {
+  openCreateContestModal(getKindOfElement(this));
 });
 
 pageElement.on("click", ".editContestButton", function () {
   const contestId = $(this).attr("data-contest-id");
   if (contestId === undefined) return;
-  openEditContestModal(contestId);
+  openEditContestModal(getKindOfElement(this), contestId);
 });
 
 pageElement.on("click", ".deleteContestButton", function () {
   if ($(this).prop("disabled") === true) return;
   const contestId = $(this).attr("data-contest-id");
   if (contestId === undefined) return;
-  openDeleteContestModal(contestId);
+  openDeleteContestModal(getKindOfElement(this), contestId);
 });
 
 pageElement.on("click", ".leaderboardPublicOption", function () {
@@ -1149,17 +1252,19 @@ pageElement.on("click", ".leaderboardPublicOption", function () {
   const value = $(this).attr("data-value");
   if (contestId === undefined || (value !== "yes" && value !== "no")) return;
   const leaderboardPublic = value === "yes";
-  const contest = state.contests.find((entry) => entry._id === contestId);
+  const kind = getKindOfElement(this);
+  const contest = findContest(kind, contestId);
   if (
     contest === undefined ||
     contest.leaderboardPublic === leaderboardPublic
   ) {
     return;
   }
-  void setContestLeaderboardPublic(contestId, leaderboardPublic);
+  void setContestLeaderboardPublic(kind, contestId, leaderboardPublic);
 });
 
 async function setContestLeaderboardPublic(
+  kind: ContestKind,
   contestId: string,
   leaderboardPublic: boolean,
 ): Promise<void> {
@@ -1168,7 +1273,9 @@ async function setContestLeaderboardPublic(
   );
   buttons.prop("disabled", true);
 
-  const response = await Ape.contests.setLeaderboardPublic({
+  const response = await Ape[
+    kind === "miniContest" ? "miniContests" : "contests"
+  ].setLeaderboardPublic({
     params: { contestId },
     body: { leaderboardPublic },
   });
@@ -1183,20 +1290,40 @@ async function setContestLeaderboardPublic(
     return;
   }
 
-  const contest = state.contests.find((entry) => entry._id === contestId);
+  const contest = findContest(kind, contestId);
   if (contest !== undefined) {
     contest.leaderboardPublic = leaderboardPublic;
   }
-  renderContestsList();
+  renderContestsList(kind);
 }
 
 pageElement.on("click", ".leaderboardContestButton", function () {
   const contestId = $(this).attr("data-contest-id");
   if (contestId === undefined) return;
-  const contest = state.contests.find((entry) => entry._id === contestId);
+  const kind = getKindOfElement(this);
+  const contest = findContest(kind, contestId);
   if (contest === undefined) return;
-  void ContestLeaderboardModal.show(contest);
+  void ContestLeaderboardModal.show(contest, kind);
 });
+
+pageElement.on("click", ".copyContestLinkButton", function () {
+  const contestId = $(this).attr("data-contest-id");
+  if (contestId === undefined) return;
+  const contest = findContest("miniContest", contestId);
+  if (contest === undefined || !("slug" in contest)) return;
+  void copyMiniContestLink(contest.slug);
+});
+
+async function copyMiniContestLink(slug: string): Promise<void> {
+  const { error } = await tryCatch(
+    navigator.clipboard.writeText(getMiniContestUrl(slug)),
+  );
+  if (error !== null) {
+    Notifications.add("Failed to copy link", -1);
+    return;
+  }
+  Notifications.add("Link copied", 1);
+}
 
 export const page = new PageWithUrlParams({
   id: "dashboard",
@@ -1219,8 +1346,9 @@ export const page = new PageWithUrlParams({
     updateDashboardUrlParams();
     updateContent();
 
-    if (state.section === "contests") {
-      await fetchContests();
+    const kind = getSectionKind(state.section);
+    if (kind !== null) {
+      await fetchContests(kind);
       return;
     }
 

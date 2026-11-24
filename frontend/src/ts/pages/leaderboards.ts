@@ -370,7 +370,8 @@ type DailyState = {
   userData: LeaderboardEntry | null;
 };
 
-type LeaderboardBoard = "practice" | "contest";
+const LeaderboardBoardSchema = z.enum(["practice", "contest", "mini-contest"]);
+type LeaderboardBoard = z.infer<typeof LeaderboardBoardSchema>;
 
 type State = {
   type: LeaderboardType;
@@ -433,7 +434,7 @@ const SelectorSchema = z.object({
 const UrlParameterSchema = SelectorSchema.extend({
   page: z.number(),
   goToUserPage: z.boolean(),
-  board: z.enum(["practice", "contest"]),
+  board: LeaderboardBoardSchema,
   year: z.number().int(),
   contestId: z.string(),
 }).partial();
@@ -475,6 +476,19 @@ function escapeHtml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function isContestBoard(): boolean {
+  return state.board !== "practice";
+}
+
+function contestLabel(): string {
+  return state.board === "mini-contest" ? "mini-contest" : "contest";
+}
+
+function resetPublicContests(): void {
+  publicContests = [];
+  publicContestsLoaded = false;
 }
 
 function contestYearOf(contest: Contest): number {
@@ -527,7 +541,7 @@ function updateYearButtons(): void {
   const yearGroup = $(".page.pageLeaderboards .buttonGroup.yearButtons");
   const contestGroup = $(".page.pageLeaderboards .buttonGroup.contestButtons");
 
-  if (state.board !== "contest") {
+  if (!isContestBoard()) {
     yearGroup.addClass("hidden").empty();
     contestGroup.addClass("hidden").empty();
     return;
@@ -537,7 +551,9 @@ function updateYearButtons(): void {
   yearGroup.removeClass("hidden");
 
   if (years.length === 0) {
-    yearGroup.html(`<div class="emptyYears">No public contests</div>`);
+    yearGroup.html(
+      `<div class="emptyYears">No public ${contestLabel()}s</div>`,
+    );
     contestGroup.addClass("hidden").empty();
     return;
   }
@@ -586,13 +602,17 @@ function updateYearButtons(): void {
   );
 }
 
-async function ensurePublicContests(): Promise<boolean> {
+async function ensurePublicContests(requestId: number): Promise<boolean> {
   if (publicContestsLoaded) return true;
 
-  const response = await Ape.contests.get();
+  const response =
+    state.board === "mini-contest"
+      ? await Ape.miniContests.getPublic()
+      : await Ape.contests.get();
+  if (requestId !== leaderboardRequestId) return false;
   if (response.status !== 200) {
     publicContests = [];
-    state.error = response.body.message ?? "Failed to load contests";
+    state.error = response.body.message ?? `Failed to load ${contestLabel()}s`;
     Notifications.add(state.error, -1);
     return false;
   }
@@ -619,8 +639,8 @@ async function requestContestData(
   }
   updateContent();
 
-  const loaded = await ensurePublicContests();
-  if (requestId !== leaderboardRequestId || state.board !== "contest") return;
+  const loaded = await ensurePublicContests(requestId);
+  if (requestId !== leaderboardRequestId) return;
   if (!loaded) {
     state.loading = false;
     state.updating = false;
@@ -643,7 +663,9 @@ async function requestContestData(
   }
 
   const contestId = state.contestId;
-  const response = await Ape.contests.getLeaderboard({
+  const response = await Ape[
+    state.board === "mini-contest" ? "miniContests" : "contests"
+  ].getLeaderboard({
     params: { contestId },
     query: {
       page: state.page,
@@ -664,7 +686,7 @@ async function requestContestData(
 
   if (
     requestId !== leaderboardRequestId ||
-    state.board !== "contest" ||
+    !isContestBoard() ||
     state.contestId !== contestId
   ) {
     return;
@@ -683,9 +705,9 @@ async function requestContestData(
     state.count = 0;
     state.error =
       response.status === 404
-        ? "Contest not found"
+        ? `${capitalizeFirstLetter(contestLabel())} not found`
         : response.status === 403
-          ? "Contest leaderboard is not public"
+          ? `${capitalizeFirstLetter(contestLabel())} leaderboard is not public`
           : (response.body.message ?? "Something went wrong");
     Notifications.add(state.error, -1);
   }
@@ -694,7 +716,7 @@ async function requestContestData(
 }
 
 function updateTitle(): void {
-  if (state.board === "contest") {
+  if (isContestBoard()) {
     const contest = publicContests.find(
       (entry) => entry._id === state.contestId,
     );
@@ -702,7 +724,7 @@ function updateTitle(): void {
     $(".page.pageLeaderboards .bigtitle .subtext .divider").addClass("hidden");
 
     if (contest === undefined) {
-      state.title = "Contest Leaderboard";
+      state.title = `${capitalizeFirstLetter(contestLabel())} Leaderboard`;
       $(".page.pageLeaderboards .bigtitle > .text").text(state.title);
       $(".page.pageLeaderboards .bigtitle .subtext").addClass("hidden");
       return;
@@ -821,7 +843,7 @@ function updateTitle(): void {
 
 async function requestData(update = false): Promise<void> {
   const requestId = ++leaderboardRequestId;
-  if (state.board === "contest") {
+  if (isContestBoard()) {
     await requestContestData(update, requestId);
     return;
   }
@@ -1204,7 +1226,7 @@ function fillTable(): void {
   const tableElement = $(".page.pageLeaderboards table");
   table.empty();
 
-  if (state.board !== "contest" && state.friendsOnly) {
+  if (!isContestBoard() && state.friendsOnly) {
     table.parent().addClass("friendsOnly");
   } else {
     table.parent().removeClass("friendsOnly");
@@ -1215,11 +1237,7 @@ function fillTable(): void {
   updateRankSortHeaders();
 
   $(".page.pageLeaderboards table thead").addClass("hidden");
-  if (
-    state.board === "contest" ||
-    state.type === "allTime" ||
-    state.type === "daily"
-  ) {
+  if (isContestBoard() || state.type === "allTime" || state.type === "daily") {
     tableElement.addClass("mobileStatsInModal");
     tableElement.removeClass("weeklyMobileStatsInModal");
     $(".page.pageLeaderboards table thead.allTimeAndDaily").removeClass(
@@ -1232,15 +1250,15 @@ function fillTable(): void {
 
   if (state.data === null || state.data.length === 0) {
     const message =
-      state.board === "contest" && publicContests.length === 0
-        ? "No public contest leaderboards"
+      isContestBoard() && publicContests.length === 0
+        ? `No public ${contestLabel()} leaderboards`
         : "No data";
     table.append(`<tr><td colspan="99" class="empty">${message}</td></tr>`);
     $(".page.pageLeaderboards table").removeClass("hidden");
     return;
   }
 
-  if (state.board === "contest") {
+  if (isContestBoard()) {
     for (const entry of state.data as LeaderboardEntry[]) {
       const me = getAuthenticatedUser()?.uid === entry.uid;
       table.append(buildTableRow(entry, me));
@@ -1562,7 +1580,7 @@ function updateContent(): void {
     $(".page.pageLeaderboards .error").removeClass("hidden");
     $(".page.pageLeaderboards .error p").text(state.error);
     $(".page.pageLeaderboards .tableToolbar").addClass("hidden");
-    if (state.board === "contest") {
+    if (isContestBoard()) {
       $(".page.pageLeaderboards .bigUser").addClass("hidden");
     }
     enableButtons();
@@ -1597,7 +1615,7 @@ function updateContent(): void {
 
   $(".page.pageLeaderboards .titleAndButtons").removeClass("hidden");
   $(".page.pageLeaderboards .tableToolbar").removeClass("hidden");
-  if (state.board === "contest") {
+  if (isContestBoard()) {
     $(".page.pageLeaderboards .bigUser").addClass("hidden");
     $(".page.pageLeaderboards .tableAndUser > .divider").removeClass("hidden");
   }
@@ -1606,13 +1624,10 @@ function updateContent(): void {
   fillTable();
 
   const noPublicContests =
-    state.board === "contest" &&
-    publicContestsLoaded &&
-    publicContests.length === 0;
-  $(".page.pageLeaderboards .contestEmpty").toggleClass(
-    "hidden",
-    !noPublicContests,
-  );
+    isContestBoard() && publicContestsLoaded && publicContests.length === 0;
+  $(".page.pageLeaderboards .contestEmpty")
+    .text(`No public ${contestLabel()} leaderboards`)
+    .toggleClass("hidden", !noPublicContests);
   if (noPublicContests) {
     $(".page.pageLeaderboards table").addClass("hidden");
     $(".page.pageLeaderboards .tableToolbar").addClass("hidden");
@@ -1634,7 +1649,7 @@ function updateContent(): void {
 }
 
 function updateSideButtons(): void {
-  const contestBoard = state.board === "contest";
+  const contestBoard = isContestBoard();
   $(".page.pageLeaderboards .buttonGroup.typeButtons").toggleClass(
     "hidden",
     contestBoard,
@@ -1777,7 +1792,7 @@ function updateTimerElement(): void {
 }
 
 function updateTimerVisibility(): void {
-  if (state.board === "contest") {
+  if (isContestBoard()) {
     $(".page.pageLeaderboards .titleAndButtons .timer").addClass("invisible");
     return;
   }
@@ -2052,8 +2067,8 @@ function updateGetParameters(): void {
 
   params.page = state.page + 1;
 
-  if (state.board === "contest") {
-    params.board = "contest";
+  if (isContestBoard()) {
+    params.board = state.board;
     if (state.contestYear !== null) {
       params.year = state.contestYear;
     }
@@ -2108,7 +2123,7 @@ function readGetParameters(params?: UrlParameter): void {
     return;
   }
 
-  state.board = params.board === "contest" ? "contest" : "practice";
+  state.board = params.board ?? "practice";
   state.contestYear = params.year ?? null;
   state.contestId = params.contestId ?? null;
 
@@ -2213,11 +2228,14 @@ $(".page.pageLeaderboards .leaderboardSourceToggle").on(
   "click",
   "button",
   function () {
-    const board = $(this).attr("data-board");
-    if (board !== "practice" && board !== "contest") return;
-    if (state.board === board) return;
+    const parsed = LeaderboardBoardSchema.safeParse($(this).attr("data-board"));
+    if (!parsed.success || state.board === parsed.data) return;
+    const board = parsed.data;
 
     state.board = board;
+    state.contestYear = null;
+    state.contestId = null;
+    resetPublicContests();
     state.page = 0;
     state.data = null;
     state.userData = null;
@@ -2237,7 +2255,7 @@ $(".page.pageLeaderboards .buttonGroup.yearButtons").on(
   "click",
   "button",
   function () {
-    if (state.board !== "contest") return;
+    if (!isContestBoard()) return;
     const year = Number($(this).attr("data-year"));
     if (!Number.isInteger(year) || state.contestYear === year) return;
     state.contestYear = year;
@@ -2257,7 +2275,7 @@ $(".page.pageLeaderboards .buttonGroup.contestButtons").on(
   "click",
   "button",
   function () {
-    if (state.board !== "contest") return;
+    if (!isContestBoard()) return;
     const contestId = $(this).attr("data-contest-id");
     if (contestId === undefined || state.contestId === contestId) return;
     state.contestId = contestId;
@@ -2378,8 +2396,7 @@ export const page = new PageWithUrlParams({
     Skeleton.remove("pageLeaderboards");
     destroyLeaderboardFilterDropdowns();
     stopTimer();
-    publicContests = [];
-    publicContestsLoaded = false;
+    resetPublicContests();
   },
   beforeShow: async (options): Promise<void> => {
     await ServerConfiguration.configurationPromise;

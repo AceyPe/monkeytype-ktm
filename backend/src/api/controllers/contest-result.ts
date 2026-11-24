@@ -49,10 +49,11 @@ export function isContestShapedResult(completedEvent: CompletedEvent): boolean {
   );
 }
 
-async function validateContestResultSubmission(
-  req: MonkeyRequest<undefined, AddContestResultRequest>,
+async function validateContestResultSubmission<TParams>(
+  req: MonkeyRequest<undefined, AddContestResultRequest, TParams>,
   completedEvent: CompletedEvent,
   uid: string,
+  contestId: string,
 ): Promise<{
   keySpacingStats?: KeyStats;
   keyDurationStats?: KeyStats;
@@ -137,9 +138,6 @@ async function validateContestResultSubmission(
     );
   }
 
-  const contest = await ContestDAL.requireTodaysContest();
-  const contestId = contest._id.toHexString();
-
   const { data: lastResultTimestamp } = await tryCatch(
     ContestResultDAL.getLastContestResultTimestamp(uid, contestId),
   );
@@ -195,17 +193,16 @@ async function validateContestResultSubmission(
   return { keySpacingStats, keyDurationStats };
 }
 
-export async function addTodayContestResult(
-  req: MonkeyRequest<undefined, AddContestResultRequest>,
+export async function saveContestResult<TParams>(
+  req: MonkeyRequest<undefined, AddContestResultRequest, TParams>,
+  contestId: string,
 ): Promise<AddContestResultResponse> {
   const { uid } = req.ctx.decodedToken;
   const completedEvent = req.body.result;
   completedEvent.uid = uid;
 
-  await validateContestResultSubmission(req, completedEvent, uid);
+  await validateContestResultSubmission(req, completedEvent, uid, contestId);
 
-  const contest = await ContestDAL.requireTodaysContest();
-  const contestId = contest._id.toHexString();
   const user = await UserDAL.getUser(uid, "add contest result");
   const dbresult = buildDbResult(completedEvent, user.name, false);
 
@@ -232,13 +229,27 @@ export async function addTodayContestResult(
   });
 }
 
+export async function addTodayContestResult(
+  req: MonkeyRequest<undefined, AddContestResultRequest>,
+): Promise<AddContestResultResponse> {
+  const contest = await ContestDAL.requireTodaysContest();
+  return await saveContestResult(req, contest._id.toHexString());
+}
+
 export async function getTodayContestBestResult(
   req: MonkeyRequest,
 ): Promise<GetContestBestResultResponse> {
-  const { uid } = req.ctx.decodedToken;
   const contest = await ContestDAL.requireTodaysContest();
-  const contestId = contest._id.toHexString();
+  return await getBestResultForContest(
+    req.ctx.decodedToken.uid,
+    contest._id.toHexString(),
+  );
+}
 
+export async function getBestResultForContest(
+  uid: string,
+  contestId: string,
+): Promise<GetContestBestResultResponse> {
   const best = await ContestResultDAL.getBestContestResult(uid, contestId);
   if (best === null) {
     return new MonkeyResponse("No contest result yet", null);
@@ -257,6 +268,18 @@ export async function getContestLeaderboard(
     GetContestLeaderboardParams
   >,
 ): Promise<GetContestLeaderboardResponse> {
+  const contest = await ContestDAL.requireContest(req.params.contestId);
+  return await getLeaderboardForContest(req, contest);
+}
+
+export async function getLeaderboardForContest(
+  req: MonkeyRequest<
+    GetContestLeaderboardQuery,
+    undefined,
+    GetContestLeaderboardParams
+  >,
+  contest: { leaderboardPublic: boolean },
+): Promise<GetContestLeaderboardResponse> {
   const { contestId } = req.params;
   const {
     page,
@@ -268,7 +291,6 @@ export async function getContestLeaderboard(
     rankSortDirection,
   } = req.query;
 
-  const contest = await ContestDAL.requireContest(contestId);
   if (!contest.leaderboardPublic) {
     const uid = req.ctx.decodedToken.uid;
     const requesterIsAdmin = uid !== "" && (await isAdmin(uid));

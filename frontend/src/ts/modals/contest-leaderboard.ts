@@ -23,7 +23,10 @@ import { getPublicProfileDisplayName } from "../firebase";
 import { getAvatarElement } from "../utils/discord-avatar";
 import { capitalizeFirstLetter } from "../utils/strings";
 
+export type ContestKind = "contest" | "miniContest";
+
 type LeaderboardState = {
+  kind: ContestKind;
   contestId: string | undefined;
   contestTitle: string;
   contestDate: number | undefined;
@@ -42,6 +45,7 @@ type LeaderboardState = {
 };
 
 const state: LeaderboardState = {
+  kind: "contest",
   contestId: undefined,
   contestTitle: "",
   contestDate: undefined,
@@ -471,7 +475,9 @@ async function requestData(update = false): Promise<void> {
   }
   updateContent();
 
-  const response = await Ape.contests.getLeaderboard({
+  const response = await Ape[
+    state.kind === "miniContest" ? "miniContests" : "contests"
+  ].getLeaderboard({
     params: { contestId: state.contestId },
     query: {
       page: state.page,
@@ -510,7 +516,8 @@ async function requestData(update = false): Promise<void> {
   updateContent();
 }
 
-function resetState(contest: Contest): void {
+function resetState(contest: Contest, kind: ContestKind): void {
+  state.kind = kind;
   state.contestId = contest._id;
   state.contestTitle = contest.title;
   state.contestDate = contest.date;
@@ -538,8 +545,11 @@ function populateHeader(): void {
   }
 }
 
-export async function show(contest: Contest): Promise<void> {
-  resetState(contest);
+export async function show(
+  contest: Contest,
+  kind: ContestKind = "contest",
+): Promise<void> {
+  resetState(contest, kind);
   populateHeader();
   updateRankSortHeaders();
   await modal.show({

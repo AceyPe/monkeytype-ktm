@@ -14,6 +14,11 @@ import { LoadingOptions } from "../pages/page";
 import * as NavigationEvent from "../observables/navigation-event";
 import { checkIfGetParameterExists } from "../utils/misc";
 import Ape from "../ape";
+import * as ActivePage from "../states/active-page";
+import * as PostLoginRedirect from "../utils/post-login-redirect";
+import { MiniContestSlugSchema } from "@monkeytype/schemas/contests";
+import { isContestDateToday } from "../utils/contest-today";
+import { getContestRemainingMs } from "../utils/contest-marathon";
 
 //source: https://www.youtube.com/watch?v=OstALBk-jTc
 // https://www.youtube.com/watch?v=OstALBk-jTc
@@ -102,6 +107,56 @@ const routes: Route[] = [
     },
   },
   {
+    path: "/mini-contest/:slug",
+    load: async (params, options) => {
+      if (!isAuthAvailable()) {
+        await navigate("/", options);
+        return;
+      }
+      if (!isAuthenticated()) {
+        PostLoginRedirect.remember(window.location.pathname);
+        await navigate("/login", options);
+        return;
+      }
+
+      const leaveWithError = async (message: string): Promise<void> => {
+        Notifications.add(message, -1, { important: true });
+        await navigate("/", { ...options, force: true });
+      };
+
+      const slug = MiniContestSlugSchema.safeParse(params["slug"]);
+      if (!slug.success) {
+        await leaveWithError("Mini-contest not found");
+        return;
+      }
+
+      const response = await Ape.miniContests.getBySlug({
+        params: { slug: slug.data },
+      });
+      if (response.status !== 200) {
+        await leaveWithError(response.body.message);
+        return;
+      }
+
+      const contest = response.body.data;
+      if (!isContestDateToday(contest.date)) {
+        await leaveWithError(
+          getContestRemainingMs(contest.date) === 0
+            ? "This mini-contest has ended"
+            : "This mini-contest has not started yet",
+        );
+        return;
+      }
+
+      await PageController.change("miniContest", {
+        ...options,
+        // moving from one mini-contest to another keeps the same page active
+        force: options.force === true || ActivePage.get() === "miniContest",
+        data: contest,
+      });
+    },
+  },
+  {
     path: "/leaderboards",
     load: async (_params, options) => {
       await PageController.change("leaderboards", options);
@@ -151,6 +206,11 @@ const routes: Route[] = [
       }
       if (!isAuthenticated()) {
         await navigate("/login", options);
+        return;
+      }
+      const postLoginPath = PostLoginRedirect.take();
+      if (postLoginPath !== null) {
+        await navigate(postLoginPath, options);
         return;
       }
       await PageController.change("account", options);

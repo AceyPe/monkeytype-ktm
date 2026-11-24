@@ -37,6 +37,7 @@ import * as QuoteRateModal from "../modals/quote-rate";
 import * as Result from "./result";
 import * as MonkeyPower from "../elements/monkey-power";
 import * as ActivePage from "../states/active-page";
+import * as ActiveMiniContest from "../contest/active-mini-contest";
 import * as ContestClient from "../contest/contest-client";
 import * as ContestBestScore from "../elements/contest-best-score";
 import * as TestInput from "./test-input";
@@ -1416,9 +1417,15 @@ async function saveContestResult(
     return;
   }
 
-  const response = await Ape.contests.addTodayResult({
-    body: { result: completedEvent },
-  });
+  const body = { result: completedEvent };
+  const miniContest = ActiveMiniContest.get();
+  const response =
+    miniContest !== null
+      ? await Ape.miniContests.addResult({
+          params: { slug: miniContest.slug },
+          body,
+        })
+      : await Ape.contests.addTodayResult({ body });
 
   AccountButton.loading(false);
 

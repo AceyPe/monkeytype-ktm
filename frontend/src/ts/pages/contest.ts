@@ -1,20 +1,7 @@
-import * as TestStats from "../test/test-stats";
-import * as ManualRestart from "../test/manual-restart-tracker";
-import * as TestLogic from "../test/test-logic";
-import * as Funbox from "../test/funbox/funbox";
 import Page from "./page";
-import { updateFooterAndVerticalAds } from "../controllers/ad-controller";
-import * as ModesNotice from "../elements/modes-notice";
-import * as Keymap from "../elements/keymap";
-import * as TestConfig from "../test/test-config";
-import * as ScrollToTop from "../elements/scroll-to-top";
 import { blurInputElement } from "../input/input-element";
 import * as Notifications from "../elements/notifications";
-import * as Misc from "../utils/misc";
-import * as ContestMode from "../contest/contest-mode";
-import * as ContestClient from "../contest/contest-client";
-import * as ContestMarathonHeader from "../elements/contest-marathon-header";
-import * as ContestBestScore from "../elements/contest-best-score";
+import * as ContestPage from "../contest/contest-page";
 import { getTodaysContest } from "../utils/contest-today";
 import * as NavigationEvent from "../observables/navigation-event";
 
@@ -26,21 +13,7 @@ export const page = new Page({
   beforeHide: async (): Promise<void> => {
     blurInputElement();
   },
-  afterHide: async (): Promise<void> => {
-    await ContestClient.disconnect();
-    $(".page.pageTest").removeClass("contest-mode");
-    ContestMarathonHeader.hide();
-    ContestBestScore.hide();
-    ContestMode.restore();
-    ManualRestart.set();
-    TestLogic.restart({
-      noAnim: true,
-    });
-    void Funbox.clear();
-    void ModesNotice.update();
-    updateFooterAndVerticalAds(true);
-    TestConfig.show();
-  },
+  afterHide: ContestPage.leave,
   beforeShow: async (): Promise<void> => {
     const todaysContest = await getTodaysContest();
     if (todaysContest === null) {
@@ -49,28 +22,6 @@ export const page = new Page({
       return;
     }
 
-    $(".page.pageTest").addClass("contest-mode");
-    ContestMode.apply();
-    ContestBestScore.show();
-    void ContestBestScore.refresh();
-    try {
-      await ContestClient.startSession();
-    } catch (e) {
-      Notifications.add(
-        Misc.createErrorMessage(e, "Contest server unavailable"),
-        -1,
-        { important: true },
-      );
-    }
-    TestConfig.hide();
-    await ContestMarathonHeader.show();
-    updateFooterAndVerticalAds(false);
-    TestStats.resetIncomplete();
-    ManualRestart.set();
-    TestLogic.restart({
-      noAnim: true,
-    });
-    void Keymap.refresh();
-    ScrollToTop.hide();
+    await ContestPage.enter(todaysContest, "Marathon ends in");
   },
 });
