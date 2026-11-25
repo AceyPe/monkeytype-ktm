@@ -18,7 +18,6 @@ import * as ActivePage from "../states/active-page";
 import * as PostLoginRedirect from "../utils/post-login-redirect";
 import { MiniContestSlugSchema } from "@monkeytype/schemas/contests";
 import { isContestDateToday } from "../utils/contest-today";
-import { getContestRemainingMs } from "../utils/contest-marathon";
 
 //source: https://www.youtube.com/watch?v=OstALBk-jTc
 // https://www.youtube.com/watch?v=OstALBk-jTc
@@ -139,19 +138,17 @@ const routes: Route[] = [
       }
 
       const contest = response.body.data;
-      if (!isContestDateToday(contest.date)) {
-        await leaveWithError(
-          getContestRemainingMs(contest.date) === 0
-            ? "This mini-contest has ended"
-            : "This mini-contest has not started yet",
-        );
+      const hasStarted = contest.date <= Date.now();
+      if (hasStarted && !isContestDateToday(contest.date)) {
+        await leaveWithError("This mini-contest has ended");
         return;
       }
 
-      await PageController.change("miniContest", {
+      const pageName = hasStarted ? "miniContest" : "miniContestUpcoming";
+      await PageController.change(pageName, {
         ...options,
         // moving from one mini-contest to another keeps the same page active
-        force: options.force === true || ActivePage.get() === "miniContest",
+        force: options.force === true || ActivePage.get() === pageName,
         data: contest,
       });
     },

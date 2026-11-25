@@ -25,6 +25,15 @@ export function formatMarathonCountdown(remainingMs: number): string {
   return `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
 }
 
+/** Like the marathon countdown, with days in front when there are any. */
+export function formatMarathonStartCountdown(remainingMs: number): string {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const clamped = Math.max(0, remainingMs);
+  const days = Math.floor(clamped / dayMs);
+  const time = formatMarathonCountdown(clamped % dayMs);
+  return days > 0 ? `${days}d ${time}` : time;
+}
+
 /** Countdown until a contest day starts, as `ddd:hh:mm:ss`. */
 export function formatContestStartCountdown(remainingMs: number): string {
   const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));

@@ -6,6 +6,7 @@ import * as Account from "../pages/account";
 import * as PageTest from "../pages/test";
 import * as PageContest from "../pages/contest";
 import * as PageMiniContest from "../pages/mini-contest";
+import * as PageMiniContestUpcoming from "../pages/mini-contest-upcoming";
 import * as PageAbout from "../pages/about";
 import * as PageTeam from "../pages/team";
 import * as PageLogin from "../pages/login";
@@ -76,6 +77,11 @@ const SEO_METADATA_BY_PAGE: Partial<Record<PageName, SeoMetadata>> = {
       "Compete in the IEEE Keyboard Typing Marathon contest mode: 60 seconds, words only — no numbers or punctuation.",
   },
   miniContest: {
+    title: "IEEE Keyboard Typing Marathon | Mini-contest",
+    description:
+      "Compete in an IEEE Keyboard Typing Marathon mini-contest: 60 seconds, words only — no numbers or punctuation.",
+  },
+  miniContestUpcoming: {
     title: "IEEE Keyboard Typing Marathon | Mini-contest",
     description:
       "Compete in an IEEE Keyboard Typing Marathon mini-contest: 60 seconds, words only — no numbers or punctuation.",
@@ -273,6 +279,7 @@ export async function change(
     test: PageTest.page,
     contest: PageContest.page,
     miniContest: PageMiniContest.page,
+    miniContestUpcoming: PageMiniContestUpcoming.page,
     settings: Settings.page,
     about: PageAbout.page,
     team: PageTeam.page,
