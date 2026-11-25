@@ -9,6 +9,7 @@ export type PageName =
   | "test"
   | "contest"
   | "miniContest"
+  | "miniContestUpcoming"
   | "settings"
   | "about"
   | "team"

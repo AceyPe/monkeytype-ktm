@@ -119,6 +119,48 @@
   }
 }
 
+.contestModeHeader {
+  text-align: center;
+
+  &.hidden {
+    display: none;
+  }
+
+  .contestMarathonTitle {
+    font-size: 1.1rem;
+    color: var(--sub-color);
+  }
+
+  .contestMarathonCountdown {
+    margin-top: 0.25rem;
+    font-size: 2rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--main-color);
+  }
+
+  .contestMarathonSubtext {
+    margin-top: 0.35rem;
+    font-size: 0.9rem;
+    color: var(--sub-color);
+
+    &.hidden {
+      display: none;
+    }
+  }
+
+  .contestMoreInfoButton {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+.pageMiniContestUpcoming {
+  display: grid;
+  height: 100%;
+  align-content: center;
+  justify-content: center;
+}
+
 .pageTest {
   .testTopSection {
     grid-row: 1;
@@ -161,41 +203,6 @@
       &.hidden {
         display: none;
       }
-    }
-  }
-
-  .contestModeHeader {
-    text-align: center;
-
-    &.hidden {
-      display: none;
-    }
-
-    .contestMarathonTitle {
-      font-size: 1.1rem;
-      color: var(--sub-color);
-    }
-
-    .contestMarathonCountdown {
-      margin-top: 0.25rem;
-      font-size: 2rem;
-      font-variant-numeric: tabular-nums;
-      color: var(--main-color);
-    }
-
-    .contestMarathonSubtext {
-      margin-top: 0.35rem;
-      font-size: 0.9rem;
-      color: var(--sub-color);
-
-      &.hidden {
-        display: none;
-      }
-    }
-
-    .contestMoreInfoButton {
-      margin-top: 0.5rem;
-      font-size: 0.9rem;
     }
   }
 
