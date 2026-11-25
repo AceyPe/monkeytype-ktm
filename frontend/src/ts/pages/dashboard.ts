@@ -24,6 +24,7 @@ import { SimpleModal } from "../utils/simple-modal";
 import { format } from "date-fns";
 import { UTCDateMini } from "@date-fns/utc";
 import { z } from "zod";
+import { generateQrCodeImage } from "../utils/qr-code";
 import { tryCatch } from "@monkeytype/util/trycatch";
 import { capitalizeFirstLetter } from "../utils/strings";
 import * as ContestLeaderboardModal from "../modals/contest-leaderboard";
@@ -281,6 +282,14 @@ function getContestLinkRow(contest: Contest | MiniContest): string {
           >
             <i class="fas fa-copy"></i>
             copy link
+          </button>
+          <button
+            type="button"
+            class="textButton contestQrCodeButton"
+            data-contest-id="${contest._id}"
+          >
+            <i class="fas fa-qrcode"></i>
+            generate QR code
           </button>
         </div>`;
 }
@@ -1313,6 +1322,35 @@ pageElement.on("click", ".copyContestLinkButton", function () {
   if (contest === undefined || !("slug" in contest)) return;
   void copyMiniContestLink(contest.slug);
 });
+
+pageElement.on("click", ".contestQrCodeButton", function () {
+  const contestId = $(this).attr("data-contest-id");
+  if (contestId === undefined) return;
+  const contest = findContest("miniContest", contestId);
+  if (contest === undefined || !("slug" in contest)) return;
+  void openMiniContestQrCode(contest.slug);
+});
+
+async function openMiniContestQrCode(slug: string): Promise<void> {
+  // opened before any await, otherwise browsers treat it as an unwanted popup
+  const tab = window.open("", "_blank");
+  if (tab === null) {
+    Notifications.add("Allow popups to open the QR code", -1);
+    return;
+  }
+
+  const { data: blob, error } = await tryCatch(
+    generateQrCodeImage(getMiniContestUrl(slug)),
+  );
+  if (error !== null) {
+    tab.close();
+    Notifications.add("Failed to generate QR code", -1);
+    return;
+  }
+
+  // not revoked, the image has to stay downloadable from the new tab
+  tab.location.replace(URL.createObjectURL(blob));
+}
 
 async function copyMiniContestLink(slug: string): Promise<void> {
   const { error } = await tryCatch(
